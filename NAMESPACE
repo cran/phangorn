@@ -1,0 +1,27 @@
+useDynLib(phangorn, .registration=TRUE)
+
+importFrom(graphics, plot)
+
+export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, 
+    phyDat, phyDat.DNA, dfactorial, ldfactorial, hadamard, 
+    fhm, distanceHadamard, treedist, sankoff, fitch, h2st, h4st,
+    dist.logDet, dist.hamming, upgma, write.nexus.splits) 
+        
+S3method(as.character, phyDat)
+S3method(as.data.frame, phyDat)
+S3method(as.phylo, phyloNode)
+S3method(as.phyloNode, phylo)
+S3method(as.phyDat, DNAbin)
+S3method(logLik, pml)
+S3method(plot, pml)
+#S3method(predict, pml)
+S3method(print, phyDat)
+S3method(print, pml)
+S3method(print, summary.pml)
+S3method(print, treedist)
+S3method(summary, pml)
+S3method(update, pml)
+S3method(vcov, pml)
+
+
+

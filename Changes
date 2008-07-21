@@ -1,0 +1,25 @@
+		CHANGES IN PHANGORN VERSION 0.0-2
+
+
+NEW FEATURES
+
+    o more generic functions (plot.pml, update.pml) 
+      
+            
+BUG FIXES
+
+    o the "Fitch" algorithm in parsimony contained a bug 
+    
+    
+OTHER CHANGES    
+    
+    o pml has a cleaner interface (less parameter)
+    
+    o new faster parsimony analysis (more compiled C-Code) 
+          
+    o added NAMESPACE
+    
+          
+
+      
+               

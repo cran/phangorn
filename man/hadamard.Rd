@@ -3,8 +3,6 @@
 \alias{fhm}
 \alias{h4st}
 \alias{h2st}
-\alias{seq2split}
-\alias{split2seq}
 \alias{write.nexus.splits}
 \title{Hadamard Matrices and Fast Hadamard Multiplication}
 \description{

@@ -1,10 +1,9 @@
 .packageName <- "phangorn"
 
-.First.lib  <- function(libname, pkgname) {
+.onLoad  <- function(libname, pkgname) {
     library.dynam("phangorn", pkgname, libname)
-	require(ape) 
+    require(ape) 
 }
-
 
 "ldfactorial" <- function(x){
 	x = (x+1)/2
@@ -65,7 +64,7 @@ distanceHadamard <- function(dm){
     } 
     ns <- 2^(n-1)
     if (n > 23) stop("Hadamard conjugation works only efficient for n < 24")
-    result <- .Call("dist2spectra",dm, as.integer(n), as.integer(ns), PACKAGE = "phangorn")
+    result <- .Call("dist2spectra",dm, as.integer(n), as.integer(ns)) #, PACKAGE = "phangorn")
     res <- data.frame(distances = result, edges = -fhm(result)/2^(n-2))
     attr(result,"Labels") <- Labels
     res
@@ -143,8 +142,9 @@ h2st = function (obj, levels = c("r", "y"))
 }
 
 
-write.nexus.splits = function(obj, file = ""){
 
+
+write.nexus.splits = function(obj, file = ""){
     dec2bin <- function(x){
         res=" "
         i = 1
@@ -155,7 +155,6 @@ write.nexus.splits = function(obj, file = ""){
 	    }
         res
     }   
-
     splits <- lapply(as.numeric(dimnames(obj)[[1]])-1, dec2bin)  
     weight <- obj$edges
     taxa.labels <- attr(obj,"Labels")
@@ -384,16 +383,21 @@ UNJ = function (x)
 
 
 
-dist.logDet <- function(x){
+"dist.logDet" <- function(x){
     if(class(x)!='phyDat') stop("x has to be element of class phyDat")
+    weight <- attr(x, 'weight')
+    r <- attr(x,"nc")
     l = length(x)
     d = numeric((l * (l - 1))/2)
     k = 1
     for (i in 1:(l - 1)) {
         for (j in (i + 1):l) {
-            tmp = crossprod(x[[i]],x[[j]])
+            tmp = crossprod(weight * x[[i]],x[[j]])
 			class(tmp) = 'matrix'
-            d[k] = -(log(det(tmp)) - log(det(diag(rowSums(tmp)*colSums(tmp))))/2)/4
+			if(is.nan( log(det(tmp)) ) ){
+			d[k] = 10
+			}	
+            else d[k] = (-log(det(tmp)) + sum(log(rowSums(tmp) * colSums(tmp)))/2)/r
             k = k + 1
         }
     }
@@ -491,9 +495,9 @@ phyDat.DNA = function (data, return.index = FALSE)
 }
 
 
-as.phyDat.DNAbin <- function(data,...){
-	phyDat.DNA(data,...)
-}
+as.phyDat <- function (x, ...) UseMethod("as.phyDat")
+
+as.phyDat.DNAbin <- function(data,...) phyDat.DNA(data,...)
 
 
 as.data.frame.phyDat <- function(x, ...){
@@ -604,6 +608,457 @@ baseFreq <- function(dat){
 }
 
 
+phylo <- function(edge, tip, edge.length=NULL){
+    res <- list(edge=edge, tip.label=tip, edge.length=edge.length)
+	class(res)="phylo"
+	res
+	}
+	
+	
+phyloNode <- function(root, pvector, cvector, evector, tip, tips, Nnode){
+	res <- list(root=root, pvector=pvector, cvector=cvector, evector=evector, tip=tip, tips=tips, Nnode=Nnode)
+	class(res)="phyloNode"
+	res
+	}
+	
+
+as.phyloNode.phylo <- function(object, ...){
+    parents <- object$edge[,1]
+    child <- object$edge[,2]
+    if (is.null(attr(object, "order")) || attr(object, "order") == "cladewise") root <- parents[1]
+    else root <- parents[length(parents)]
+    pvector <- numeric(max(parents))
+    pvector[child] <- parents
+    tips  <- !logical(max(parents))
+    tips[parents] <-  FALSE
+    cvector <- vector("list",max(parents))   
+    for(i in 1:length(parents))  cvector[[parents[i]]] <- c(cvector[[parents[i]]], child[i]) 
+    evector <- NULL 
+    if(!is.null(object$edge.length)){
+        evector <- numeric(max(parents)) 
+        evector[child] <- object$edge.length
+    } 
+    list(root=root, pvector=pvector, cvector=cvector, evector=evector, tip=object$tip.label, tips=tips, Nnode=object$Nnode)
+}
+ 
+as.phylo <- function (x, ...) UseMethod("as.phylo")
+as.phyloNode <- function (x, ...) UseMethod("as.phyloNode")
+
+as.phylo.phyloNode <- function(object, order="pruningwise", ...){
+	if(order=="pruningwise")result <- phyloPruning(object)
+	if(order=="cladewise")result <- phyloClade(object)
+	result
+}
+
+phyloClade <- function(phyloNode){
+    edge <- NULL
+    root <- phyloNode$root
+    tips <- phyloNode$tips
+    cvector <- phyloNode$cvector
+    pvector <- phyloNode$pvector
+    mylist <- cvector[[root]]
+    edge.length <- NULL
+    while(length(mylist)){
+        kid = mylist[1]
+    	edge <- rbind(edge, cbind(pvector[kid],kid))
+    	if(!is.null(phyloNode$evector)) edge.length <- c(edge.length, phyloNode$evector[kid])
+        if(!tips[kid]) mylist <- c(cvector[[kid]], mylist[-1])     
+        else mylist <- mylist[-1]  
+        } 
+    tree <- list(edge=edge, edge.length=edge.length, tip.label=phyloNode$tip, Nnode=phyloNode$Nnode)
+    class(tree) <- "phylo" 
+    attr(tree, "order") <- "cladewise"
+    tree
+}
+
+
+phyloPruning <- function(phyloNode){
+    edge <- NULL
+    root <- phyloNode$root
+    tips <- phyloNode$tips
+    cvector <- phyloNode$cvector
+    parent.list <- root
+    edge.length <- NULL
+    while(length(parent.list)){
+        parent <- parent.list[1]
+        kids <- cvector[[parent]]
+    	edge <- rbind(cbind(parent,kids),edge)
+    	if(!is.null(phyloNode$evector)) edge.length <- c(phyloNode$evector[kids], edge.length)
+    	parent.list = c(parent.list[-1], kids[which(!tips[kids])] )
+    }
+    tree <- list(edge=edge, edge.length=edge.length, tip.label=phyloNode$tip, Nnode=phyloNode$Nnode)
+    class(tree) <- "phylo" 
+    attr(tree, "order") <- "pruningwise"
+    tree 
+}
+
+
+getCols <- function (data, cols) 
+{
+    attrib = attributes(data)
+    attr(data, "class") <- "list"
+    data = data[cols]
+    if (is.character(cols)) 
+        attrib$names = cols
+    else attrib$names = attrib$names[cols]
+    attributes(data) = attrib
+    attr(data, "class") <- "phyDat" 
+    data
+}
+
+getRows <- function (data, rows) 
+{    
+    for (i in 1:length(data)) data[[i]] = as.matrix(data[[i]])[rows, ]
+    attr(data, "weight") = attr(data, "weight")[rows]
+    attr(data, "nr") = length(rows)
+    data
+}
+
+
+#
+# Maximum Parsimony 
+# 
+
+ 
+sankoff.quartet <- function (dat, cost, p, l, weight) 
+{
+    tmp <- .Call("sankoffQuartet", sdat = dat, sn = p, scost = cost, 
+        sk = l) #, PACKAGE = "phangorn")
+    erg <- .Call("rowMin", tmp, as.integer(p), as.integer(l), PACKAGE = "phangorn")
+    sum(weight * erg)
+}
+
+ 
+sankoffNNI <- function (tree, n, datp, datf, p, l, p0, cost, weight) 
+{
+    edge = matrix(tree$edge, ncol = 2)
+    parent = edge[, 1]
+    child = tree$edge[, 2]
+    k = min(parent) - 1
+    nTips = min(parent) - 1
+    ind = which(child > nTips)[n]
+    p1 = parent[ind]
+    p2 = child[ind]
+    ind1 = which(parent == p1)
+    ind1 = ind1[ind1 != ind]
+    ind1 = c(which(child == p1), ind1)
+    ind2 = which(parent == p2)
+    e1 = child[ind1[1]]
+    if (p1 > k + 1) 
+        e1 = parent[ind1[1]]
+    e2 = child[ind1[2]]
+    e3 = child[ind2[1]]
+    e4 = child[ind2[2]]
+    datn = vector("list", 4)
+    attr(datn, "dim") = c(1, 4)
+    if (p1 == k + 1) 
+        datn[[1]] = datf[[e1]]
+    if (p1 > k + 1) 
+        datn[[1]] = datp[[p1]]
+    datn[[2]] = datf[[e2]]
+    datn[[3]] = datf[[e3]]
+    datn[[4]] = datf[[e4]]
+    datt = datn[, c(1, 3, 2, 4)]
+    attr(datt, "dim") = c(1, 4)
+    new1 <- sankoff.quartet(datt, cost, p, l, weight)
+    datt = datn[, c(1, 4, 3, 2)]
+    attr(datt, "dim") = c(1, 4)
+    new2 <- sankoff.quartet(datt, cost, p, l, weight)
+    res = c(p0, new1, new2)
+    wm = which.min(res)
+    edgeID = NULL
+    swap = FALSE
+    if (wm > 1) {
+        swap = TRUE
+        edgeID = c(ind1, ind2, ind)
+    }
+    list(res = res, edgeID = edgeID, swap = swap, wm = wm)
+}
+
+
+
+
+
+parsimony <- function(tree, data, method='sankoff',...){
+    if(is.rooted(tree))tree <- unroot(tree)
+    if(is.null(attr(tree,"order")) || attr(tree,"order")=="cladewise")tree <- reorder(tree, "pruningwise")  
+    if(method=='sankoff') result <- sankoff(tree,data,...)
+    if(method=='fitch') result <- fitch(tree,data)
+    result 
+}
+
+
+fitch <- function (tree, data) 
+{
+    if (class(data) != "phyDat") 
+        stop("data must be of class phyDat")
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorder(tree, "pruningwise")
+    levels <- attr(data, "levels")
+    l = length(levels)
+    weight = attr(data, "weight")
+    p = attr(data, "nr")
+    q = length(data)
+    data <- prepareDataFitch(data)
+    d = attributes(data)
+    data <- as.integer(data)
+    attributes(data) <-d
+
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+    m = length(edge) + 1
+    dat = integer(m * p)
+    attr(dat, "dim") <- c(m, p)
+    dat[1:q, ] = data[tree$tip.label, ]
+    pars <- integer(p)
+    result <- .C("fitch3", dat, as.integer(p), as.integer(m), 
+        as.integer(pars), as.integer(node), as.integer(edge), 
+        as.integer(length(edge)))
+    sum(weight * result[[4]])
+}
+
+
+
+
+prepareDataFitch <- function(data){
+    lev <- attr(data,"levels")
+    l <- length(lev)
+    nr <- attr(data,"nr")  
+    X <- matrix(ncol=nr, nrow=length(data))
+    for(i in 1:length(data)) X[i,] = data[[i]] %*% 2^c(0:(l-1))
+    attrData <- attributes(data)
+    nam <- attrData$names
+    attrData$names <- NULL
+    X <- as.integer(X)
+    attributes(X) <- attrData 
+    attr(X, "dim") <- c(length(data), nr)
+    dimnames(X) <- list(nam,NULL)
+    X
+}
+
+
+prepareDataSankoff <- function(data){
+    tf = function(dat) {
+        dat[dat == 0] = 1e+06
+        dat[dat == 1] <- 0
+        dat
+    }   
+    attrData <- attributes(data)
+    data <- lapply(data, tf)
+    attributes(data) <- attrData 
+    data
+}
+
+
+sankoff <- function (tree, data, cost = NULL) 
+{
+    if (class(data) != "phyDat") 
+        stop("data must be of class phyDat")
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorder(tree, "p")
+    data <- prepareDataSankoff(data)
+
+    levels <- attr(data, "levels")
+    l = length(levels)  
+
+    if (is.null(cost)) {
+        cost <- matrix(1, l, l)
+        cost <- cost - diag(l)
+    }   
+    for (i in 1:length(data)) storage.mode(data[[i]]) = "double"
+    fit.sankoff(tree, data, cost, FALSE)
+}
+
+
+fit.sankoff <- function (tree, data, cost, returnData = FALSE) 
+{
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorder(tree, "p")
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+    weight = attr(data, "weight")
+    p = attr(data, "nr")
+    q = length(tree$tip.label)
+    l = attr(data, "nc")
+    m = length(edge) + 1
+    dat = vector(mode = "list", length = m)
+    dat[1:q] = data[tree$tip.label]
+    nr = as.integer(dim(dat[[1]])[1])
+    nc = as.integer(dim(dat[[1]])[2])
+    node = as.integer(node - 1)
+    edge = as.integer(edge - 1)
+    nTips = as.integer(length(tree$tip))
+    mNodes = as.integer(max(node) + 1)
+    tips = as.integer((1:length(tree$tip))-1)
+    res <- .Call("sankoff3", dat, as.numeric(cost), as.integer(nr),as.integer(nc),
+         node, edge, mNodes, tips, PACKAGE="phangorn")  
+    root <- node[length(node)] + 1
+    erg <- .Call("rowMin", res[[root]], as.integer(p), as.integer(l), PACKAGE = "phangorn")
+    pscore <- sum(weight * erg)
+    result = pscore
+    if (returnData) 
+        result <- list(pscore = pscore, dat = res)
+    result
+}
+
+
+
+pnodes <- function (tree, dat, cost, external = TRUE) 
+{
+    dl = dim(dat[[1]])[2]
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorder(tree, "p")
+    l = length(dat)
+    parent <- tree$edge[, 1]
+    child <- tree$edge[, 2]
+    datp = vector("list", l)
+    pl = length(parent) + 1
+    p = dim(dat[[1]])[1]
+    pj = parent[pl - 1]
+    start = pl - 1
+    tmp = dat[[1]] * 0
+    datp[[pj]] = tmp
+    nTips = min(parent) - 1
+    for (j in (pl - 1):1) {
+        blub = TRUE
+        isParent = (child[j] > nTips)
+        if (!external & !isParent) 
+            blub = FALSE
+        if (blub) {
+            res <- .Call("sankoff2", sdat = datp[[parent[j]]], 
+                sn = p, scost = cost, sk = dl, PACKAGE = "phangorn")
+            if (pj != parent[j]) {
+                pj = parent[j]
+                start = j
+            }
+            i = start
+            while (i > 0 && pj == parent[i]) {
+                if (i != j) 
+                  res <- res + .Call("sankoff2", sdat = dat[[child[i]]], 
+                    sn = p, scost = cost, sk = dl, PACKAGE = "phangorn")
+                i = i - 1
+            }
+            datp[[child[j]]] = res
+        }
+    }
+    datp
+}
+
+
+sankoff.nni <- function (tree, data, cost, ...) 
+{
+    nnimove2 <- function(tree, id, first) {
+        child = tree$edge[, 2]
+        if (first) {
+            tree$edge[id[2], 2] = child[id[3]]
+            tree$edge[id[3], 2] = child[id[2]]
+        }
+        if (!first) {
+            tree$edge[id[2], 2] = child[id[4]]
+            tree$edge[id[4], 2] = child[id[2]]
+        }
+        tree
+    }
+    if (class(data) != "phyDat") 
+        stop("data must be of class phyDat")
+    levels <- attr(data, "levels")
+    l = length(levels)
+    weight = attr(data, "weight")
+    p = attr(data, "nr")
+    kl = TRUE
+    i = 1
+    tmp = fit.sankoff(tree, data, cost, TRUE)
+    p0 = tmp[[1]]
+    datf = tmp[[2]]
+    datp = pnodes(tree, datf, cost, FALSE)
+    swap = 0
+    result = NULL
+    indM = NULL
+    ll = NULL
+    ind = NULL
+    id <- NULL
+    wm <- NULL
+    tmp = numeric(length(tree$edge[, 1]))
+    while (kl) {
+        res = sankoffNNI(tree, n = i, datp = datp, datf = datf, 
+            p, l, p0, cost, weight)
+        result = rbind(result, res[[1]])
+        if (res$swap) {
+            swap = TRUE
+            tmp2 = tmp
+            tmp2[res$edgeID] = 1
+            indM = rbind(indM, tmp2)
+            ll = c(ll, res$res[res$wm])
+            id = rbind(id, res$edgeID)
+            wm = c(wm, res$wm)
+        }
+        if (i == (tree$Nnode - 1)) 
+            kl = FALSE
+        i = i + 1
+    }
+    if (swap) {
+        l = length(ll)
+        INDEX = matrix(0, l, length(tree$edge[, 1]))
+        for (i in 1:length(ll)) INDEX[i, id[i, ]] = 1
+        ind = which.min(ll)
+        rll = rank(ll, ties.method = "random")
+        tmp = which(tcrossprod(INDEX)[, ind] == 0)
+        while (length(tmp) > 0) {
+            st = tmp[which.min(rll[tmp])]
+            INDEX[ind[1], ] = INDEX[ind[1], ] + INDEX[st, ]
+            ind = c(ind, st)
+            tmp = which(tcrossprod(INDEX)[, ind[1]] == 0)
+        }
+        swap = 0
+        for (i in ind) {
+            tree2 <- nnimove2(tree, id[i, ], wm[i] == 2)
+            tree3 <- as.phylo.phyloNode(as.phyloNode.phylo(tree2))
+            p1 = fit.sankoff(tree3, data, cost)
+            if (p1 < p0) {
+                swap = swap + 1
+                tree = tree2
+                p0 = p1
+            }
+        }
+        cat(swap, "\n")
+        tree <- as.phylo.phyloNode(as.phyloNode.phylo(tree))
+    }
+    list(tree = tree, pscore = p0, swap = swap)
+}
+
+
+optim.parsimony <- function(tree,data,cost=NULL,...) {
+    if(is.rooted(tree))tree <- unroot(tree)
+    if(is.null(attr(tree,"order")) || attr(tree,"order")=="cladewise")tree <- reorder(tree, "pruningwise")
+    
+    dat <- prepareDataSankoff(data)
+    l <- attr(dat, "nc")
+    if (is.null(cost)) {
+        cost <- matrix(1, l, l)
+        cost <- cost - diag(l)
+    }
+    tree$edge.length=NULL
+            swap = 0
+            iter = TRUE
+            pscore <- fit.sankoff(tree,dat,cost)
+            while (iter) {
+                res <- sankoff.nni(tree,dat,cost,...)
+                tree <- res$tree
+                cat("optimize topology: ", pscore , "-->", res$pscore, 
+                  "\n")
+                pscore = res$pscore
+                swap = swap + res$swap
+                if (res$swap == 0) iter = FALSE
+            }
+            cat("Final p-score",pscore,"after ",swap, "nni operations \n") 
+            list(tree=tree,pscore=pscore)          
+}
+
+
 
 #
 # Maximum likelihood estimation
@@ -700,6 +1155,14 @@ optimInv = function(tree, data, inv=0.01, INV=NULL, ll.0=NULL,...){
 	}
   
 
+optimRate <- function(tree, data, rate=1, ...){
+    fn <- function(rate, tree, data, ...) pml2(tree, data, rate=rate, ...)
+    res <- optimize(f = fn, interval = c(0, 100), lower = 0, upper = 100, 
+        maximum = TRUE, tol = 0.01, tree = tree, data = data, ...)
+    res
+}
+		
+	
 optimBf = function(tree, data, bf=c(.25,.25,.25,.25), ll.0=NULL, trace=0,...){
 	l=length(bf)
 	nenner = 1/bf[l]
@@ -807,7 +1270,6 @@ print.summary.pml = function(x,...){
 	QM = matrix(0,length(param$levels), length(param$levels), dimnames = list(param$levels,param$levels))	
 	QM[lower.tri(QM)] = param$Q	
 	QM = QM+t(QM)
-#	diag(QM) = -rowSums(QM)
 	print(QM)
 	cat("\nBase frequencies:  \n")
 	bf = param$bf
@@ -816,8 +1278,8 @@ print.summary.pml = function(x,...){
 	cat("\n")
 }	
 
-
-generateSP <- function(s,levels=c("a","c","g","t"), names=NULL){
+# generateSP <- sitePattern
+allSitePattern <- function(s,levels=c("a","c","g","t"), names=NULL){
 	l=length(levels)
 	X=matrix(0, l^s,s)
 	for(i in 1:s)
@@ -825,7 +1287,7 @@ generateSP <- function(s,levels=c("a","c","g","t"), names=NULL){
 	for(i in 1:l)X[X==i] = levels[i]
 	if(is.null(names))colnames(X) = paste("t",1:s, sep="")
 	else colnames(X)=names
-	as.data.frame(X)
+	phyDat(t(X), levels)
 }	
 
 	
@@ -836,7 +1298,14 @@ write.phylip <- function(data, weight, file=""){
         for(i in 1:m)
         cat(colnames(data)[i],"   ",toupper(rep(data[,i],weight)),"\n", sep="", file=file, append=TRUE)
 }
-	
+
+
+getd2P <- function(el, eig=edQt(), g=1.0){
+	n <- length(eig$values)	
+	res <- .Call("getd2PM",eig,as.integer(n),as.double(el),as.double(g), PACKAGE = "phangorn")
+    attr(res,"dim") <- c(length(g),length(el))
+	res
+}	
 	
 getdP <- function(el, eig=edQt(), g=1.0){
 	n <- length(eig$values)	
@@ -862,42 +1331,7 @@ getP <- function(el, eig=edQt(), g=1.0){
 }
 
 
-pml2 <- function (tree, data, bf = rep(1/length(levels),length(levels)), shape=1, k=1, 
-	Q=rep(1,length(levels)*(length(levels)-1)/2), levels=attr(data,"levels"), 
-	inv=0, g=NULL, w=NULL, eig=NULL, INV=NULL, ll.0=NULL, ...) 
-{
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise") 
-        tree <- reorder(tree, "pruningwise")
-    if (class(data)[1] != "phyDat") stop("data must be of class phyDat")
-    weight = attr(data, "weight")
-    l = length(bf)
-    lll = matrix(0, length(weight), l)
-    m = 1
-    if (is.null(eig)) eig = edQt(bf = bf, Q = Q)
-    if (is.null(w)) {
-        w = rep(1/k, k)
-        if (inv > 0) w <- (1 - inv) * w
-    }
-    if (is.null(g)) {
-        g = discrete.gamma(shape, k)
-        if (inv > 0) g <- g/(1 - inv)
-    }
-    if (is.null(INV)) INV = lli(data, tree, bf)
-    if(is.null(ll.0)) ll.0 = INV %*% (inv*bf)
-    lll <- ll.0 
-    p = length(g)
-    resll = vector("list", p)
-    while (m <= p) {
-		 resll[[m]] = ll(data, tree, bf = bf, g = g[m], Q = Q, eig = eig, ...)  
-        m = m + 1
-    }
-    for (i in 1:p) lll = lll + resll[[i]] * w[i]
-#    siteLik = log(lll %*% bf)
-    siteLik = log(lll)  
-    result = sum(weight * siteLik)
-    result
-}
-	
+
 
 lli <- function (data, tree, bf = c(0.25, 0.25, 0.25, 0.25), ...) 
 {
@@ -943,50 +1377,6 @@ edQ <- function(Q=c(1,1,1,1,1,1), bf=c(0.25,.25,.25,.25)){
 }
 
 
-pml <- function (tree, data, bf=rep(1/length(levels),length(levels)), shape=1, 
-    k=1, Q=rep(1,length(levels)*(length(levels)-1)/2), levels=attr(data,"levels"), 
-    inv=0, g=NULL, w=NULL, eig=NULL, INV=NULL, ll.0=NULL, ...) 
-{
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise") 
-        tree <- reorder(tree, "pruningwise")
-    if (class(data)[1] != "phyDat") 
-        stop("data must be of class phyDat")
-    call <- match.call()    
-    weight = attr(data, "weight")
-    m = 1
-    if (is.null(eig)) 
-        eig <- edQt(bf=bf, Q=Q)
-    if (is.null(w)) {
-        w = rep(1/k, k)
-        if (inv > 0) w <- (1 - inv) * w
-    }
-    if (is.null(g)) {
-        g = discrete.gamma(shape, k)
-        if (inv > 0) g <- g/(1 - inv)
-    }
-    if (is.null(INV)) 
-        INV = lli(data, tree, bf)
-    if(is.null(ll.0)) ll.0 = INV %*% (bf*inv)
-    p = length(g)
-    resll = vector("list", p)
-    while (m <= p) {
-        resll[[m]] = ll(data, tree, bf=bf, g=g[m], Q=Q, eig=eig, assign.dat=FALSE, ...)
-        m = m + 1
-    }
-    lll = ll.0
-    for (i in 1:p) lll = lll + resll[[i]] * w[i]
-    siteLik = log(lll)
-    ll0 = sum(weight * siteLik)
-    df = length(tree$edge.length) + k-1 + (inv>0)
-    parameter = list(logLik=ll0, inv=inv, k=k, shape=shape, 
-        g=g, w=w, eig=eig, Q=Q, bf=bf, levels=levels, df=df)
-    result = list(logLik=ll0, siteLik=siteLik, 
-        weight=weight, g=g, w=w, parameter=parameter, 
-        orig.data=data, INV=INV, ll.0=ll.0, tree=tree, call=call)
-    class(result) = "pml"
-    result
-}
-
 
 pml3 <- function (object,...) 
 {
@@ -997,7 +1387,7 @@ pml3 <- function (object,...)
     eig = para$eig
     w = para$w
     g = para$g
-    data = object$orig.data
+    data = object$data
     ll0 <- object$logLik
     ll.0 <- object$ll.0
     weight = attr(data, "weight")
@@ -1050,6 +1440,7 @@ ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
         }
     result
 }
+
 
 
 fs <- function (old.el, eig, parent.dat, child.dat, weight, g=g, 
@@ -1161,8 +1552,8 @@ pml.nni <- function (fit, ...)
 	    swap=0
         for (i in ind){
 		tree2 <- nnimove(tree, id[i, ], el[i, ], wm[i] == 2)
-		tree3 = read.tree(text = write.tree(tree2, digits = 15))
-		fit2$tree = reorder(tree3, "pruningwise")
+		tree3 <- as.phylo.phyloNode(as.phyloNode.phylo(tree2)) 
+        fit2$tree = tree3
 		l1 = pml3(fit2)
 		if(l1 > l0){
 			swap = swap+1
@@ -1170,9 +1561,8 @@ pml.nni <- function (fit, ...)
 			l0=l1
 			}
 		}
-        cat(swap," \n")    
-        tree = read.tree(text = write.tree(tree, digits = 15))
-        tree = reorder(tree, "pruningwise")   
+        cat(swap," \n")  
+        tree <- as.phylo.phyloNode(as.phyloNode.phylo(tree))  
         fit$tree <- tree
         fit <- optimEdge(fit, control = list(eps = 1e-08, maxit = 5))
     }
@@ -1183,8 +1573,7 @@ pml.nni <- function (fit, ...)
 
 bipartition <- function(tree) 
 {
-    bp <- .Call("bipartition", tree$edge, length(tree$tip), tree$Nnode, 
-        PACKAGE = "ape")
+    bp <- .Call("bipartition", tree$edge, length(tree$tip), tree$Nnode, PACKAGE = "ape")
     nTips = length(tree$tip)	
     l = length(bp)
     m = length(bp[[1]])
@@ -1231,8 +1620,7 @@ rnodes <- function (fit, external = TRUE)
             P = getP(elx, eig, gs)
         
             for (i in 1:l) {
-                tmp2 = (datp[[i, parent[j]]]/(dat[[i, child[j]]] %*% 
-                    P[[i]]))
+                tmp2 = (datp[[i, parent[j]]]/(dat[[i, child[j]]] %*% P[[i]]))
                 dat2[[i, child[j]]] = tmp2
                 if (isParent) 
                     datp[[i, child[j]]] = (tmp2 %*% P[[i]]) * dat[[i, child[j]]]
@@ -1283,625 +1671,6 @@ score <- function (fit)
     result
 }
 
-
-
-#
-# Maximum Parsimony 
-# 
-
- 
-sankoff.quartet <-function (dat, cost, p, l, weight) 
-{
-    tmp <- matrix(0, p, l)
-    res <- tmp 
-    tmp <- .Call("sankoff2", sdat = dat[[1]], sn = p, scost = cost, sk = l, PACKAGE = "phangorn")
-    tmp <- tmp + .Call("sankoff2", sdat = dat[[2]], 
-        sn = p, scost = cost, sk = l, PACKAGE = "phangorn")
-    res <- .Call("sankoff2", sdat = tmp, 
-        sn = p, scost = cost, sk = l, PACKAGE = "phangorn")
-    res <- res + .Call("sankoff2", sdat = dat[[3]], 
-        sn = p, scost = cost, sk = l, PACKAGE = "phangorn")
-    res <- res + .Call("sankoff2", sdat = dat[[4]], 
-        sn = p, scost = cost, sk = l, PACKAGE = "phangorn")    
-            
-    erg <- .Call("rowMin", res, as.integer(p), as.integer(l), PACKAGE = "phangorn")
-    sum(weight * erg)
-}
-
- 
-sankoffNNI <- function (tree, n, datp, datf, p, l, p0, cost, weight) 
-{
-    edge = matrix(tree$edge, ncol = 2)
-    parent = edge[, 1]
-    child = tree$edge[, 2]
-    k = min(parent) - 1
-    nTips = min(parent) - 1
-    ind = which(child > nTips)[n]
-    p1 = parent[ind]
-    p2 = child[ind]
-    ind1 = which(parent == p1)
-    ind1 = ind1[ind1 != ind]
-    ind1 = c(which(child == p1), ind1)
-    ind2 = which(parent == p2)
-    e1 = child[ind1[1]]
-    if (p1 > k + 1) e1 = parent[ind1[1]]
-    e2 = child[ind1[2]]
-    e3 = child[ind2[1]]
-    e4 = child[ind2[2]]
-
-    datn = vector("list", 4)
-    attr(datn, "dim") = c(1, 4)
-    if (p1 == k + 1) datn[[1]] = datf[[e1]]
-    if (p1 > k + 1) datn[[1]] = datp[[p1]]
-    datn[[2]] = datf[[e2]]
-    datn[[3]] = datf[[e3]]
-    datn[[4]] = datf[[e4]]
-   
-    #datt = datn[, c(1, 2, 3, 4)]
-    #attr(datt, "dim") = c(1, 4)
-    #new0 <- sankoff.quartet( datt, cost, p, l, weight)
-
-    datt = datn[, c(1, 3, 2, 4)]
-    attr(datt, "dim") = c(1, 4)
-    new1 <- sankoff.quartet( datt, cost, p, l, weight)
-    datt = datn[, c(1, 4, 3, 2)]
-    attr(datt, "dim") = c(1, 4)
-    new2 <- sankoff.quartet( datt, cost, p, l, weight)
-
-    res = c(p0, new1, new2)
-    wm = which.min(res)
-    edgeID = NULL
-    swap = FALSE
-    if (wm > 1) {
-        swap = TRUE
-        edgeID = c(ind1, ind2, ind)
-    }
-    list(res = res, edgeID = edgeID, swap = swap, wm = wm)
-}
-
-
-
-
-
-parsimony <- function(tree, data, method='sankoff',...){
-    if(is.rooted(tree))tree <- unroot(tree)
-    if(is.null(attr(tree,"order")) || attr(tree,"order")=="cladewise")tree <- reorder(tree, "pruningwise")  
-    if(method=='sankoff') result <- sankoff(tree,data,...)
-    if(method=='fitch') result <- fitch(tree,data)
-    result 
-}
-
-
-fitch <- function (tree, data) 
-{
-    if (class(data) != "phyDat") 
-        stop("data must be of class phyDat")
-    if(is.null(attr(tree,"order")) || attr(tree,"order")=="cladewise")tree <- reorder(tree, "pruningwise")     
-    levels <- attr(data, "levels")
-    l = length(levels)
-    weight = attr(data, "weight")
-    p = attr(data, "nr")
-    q = length(data)
-    node <- tree$edge[, 1]
-    edge <- tree$edge[, 2]
-    m = length(edge) + 1
-    dat = vector(mode = "list", length = m)
-    dat[1:q] = data[tree$tip.label]
-    index <- 1:q
-    tmp <- matrix(0, p, l)
-    tmp2 <- matrix(1, p, l)
-    erg = 0
-    res <- tmp
-    res2 <- tmp2    
-    ni=node[1]
-    for (i in 1:length(node)) {
-        if(ni==node[i]){
-            res = res + dat[[edge[i]]]
-            res2 = res2 * dat[[edge[i]]]
-        } 
-        else{          
-            ind = which(rowSums(res2) == 0)          
-            res2[ind, ] = res[ind, ]       
-            dat[[ni]] <- res2   
-            erg <- erg + sum(weight[ind])                       
-            res <- tmp
-            res2 <- tmp2
-            res = res + dat[[edge[i]]]
-            res2 = res2 * dat[[edge[i]]]
-            ni=node[i]
-        }          
-    }
-    ind = which(rowSums(res2) == 0)
-    erg <- erg + sum(weight[ind])
-    erg
-}
-
-
-prepareDataSankoff <- function(data){
-    tf = function(dat) {
-        dat[dat == 0] = 1e+06
-        dat[dat == 1] <- 0
-        dat
-    }   
-    attrData <- attributes(data)
-    data <- lapply(data, tf)
-    attributes(data) <- attrData 
-    data
-}
-
-
-sankoff <- function (tree, data, cost = NULL) 
-{
-    if (class(data) != "phyDat") 
-        stop("data must be of class phyDat")
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorder(tree, "p")
-    data <- prepareDataSankoff(data)
-
-    levels <- attr(data, "levels")
-    l = length(levels)  
-
-    if (is.null(cost)) {
-        cost <- matrix(1, l, l)
-        cost <- cost - diag(l)
-    }   
-    for (i in 1:length(data)) storage.mode(data[[i]]) = "double"
-    fit.sankoff(tree, data, cost, FALSE)
-}
-
-
-fit.sankoff <- function (tree, data, cost, returnData = FALSE) 
-{
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorder(tree, "p")
-    node <- tree$edge[, 1]
-    edge <- tree$edge[, 2]
-    
-    weight = attr(data, "weight")
-    p = attr(data, "nr")
-    q = length(tree$tip.label) #attr(data, "nseq")
-    l = attr(data, "nc")
- 
-# length(unique) ???
-    m = max(node)
-    dat = vector("list", m)
-    dat[1:q] = data[tree$tip.label]
-
-    tmp <- matrix(0, p, l)
-    res <- tmp
-    ni = node[1]
-    for (i in 1:length(node)) {
-        if (ni == node[i]) {
-            res <- res + .Call("sankoff2", sdat = dat[[edge[i]]], 
-                sn = as.integer(p), scost = cost, sk = as.integer(l), PACKAGE = "phangorn")
-        }
-        else {
-            dat[[ni]] <- res
-            res <- tmp
-            res <- res + .Call("sankoff2", sdat = dat[[edge[i]]], 
-                sn = as.integer(p), scost = cost, sk = as.integer(l), PACKAGE = "phangorn")
-            ni = node[i]
-        }
-    }
-    dat[[ni]] <- res
-    erg <- .Call("rowMin", res, as.integer(p), as.integer(l), 
-        PACKAGE = "phangorn")
-    pscore <- sum(weight * erg)
-    result = pscore
-    if (returnData) 
-        result <- list(pscore = pscore, dat = dat)
-    result
-}
-
-
-pnodes <- function (tree,dna,cost) 
-{
-    levels <- attr(dna, "levels")
-    dl = length(levels)
-
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorder(tree, "p")
-    dat = fit.sankoff(tree,dna,cost,TRUE)[[2]]
-
-    l = length(dat)
-    parent <- tree$edge[, 1]
-    child <- tree$edge[, 2]
-    datp = vector("list", l)
-    pl = length(parent) + 1
-    p = dim(dat[[1]])[1]   
-    pj = parent[pl-1]
-    start=pl-1
-    tmp = dat[[1]]*0
-    datp[[pj]] = tmp
-    for (j in (pl-1):1) {        
-        res <- .Call("sankoff2", sdat = datp[[parent[j]]], 
-             sn = p, scost = cost, sk = dl, PACKAGE = "phangorn")
-        if(pj!=parent[j]){
-            pj=parent[j]
-            start=j
-            }
-        i = start
-        while(i>0 && pj==parent[i]){
-            if(i != j) 
-            res <- res + .Call("sankoff2", sdat = dat[[child[i]]], 
-                sn = p, scost = cost, sk = dl, PACKAGE = "phangorn")
-            i=i-1 
-        }
-        datp[[child[j]]] = res
-        
-    }
-    list(dat, datp)
-}
- 
-
-sankoff.nni <- function (tree,data,cost, ...) 
-{
-    nnimove2 <- function(tree, id, first){
-	    child = tree$edge[, 2]
-	    if(first){
-            tree$edge[id[2], 2] = child[id[3]]
-            tree$edge[id[3], 2] = child[id[2]]
-        }
-	    if(!first){
-            tree$edge[id[2], 2] = child[id[4]]
-            tree$edge[id[4], 2] = child[id[2]]               
-	    }
-	tree
-    }
-    
-    if (class(data) != "phyDat") 
-        stop("data must be of class phyDat")
-        
-    levels <- attr(data, "levels")
-    l = length(levels)
-        
-    weight = attr(data, "weight")
-    p = attr(data, "nr")
-
-    kl = TRUE
-    i = 1
-    
-    p0 = fit.sankoff(tree,data,cost)
-    dat = pnodes(tree,data,cost)
-
-    datf = dat[[1]]
-    datp = dat[[2]]
-    swap = 0
-    result = NULL
-    indM = NULL
-    ll = NULL
-    ind = NULL
-    id <- NULL
-    wm <- NULL
-    tmp = numeric(length(tree$edge[,1]))
-    while (kl) {
-        res = sankoffNNI(tree, n=i, datp=datp, datf=datf, p, l, p0, cost, weight)
-        result = rbind(result, res[[1]])
-        if (res$swap) {
-            swap = TRUE
-            tmp2 = tmp
-            tmp2[res$edgeID] = 1
-            indM = rbind(indM, tmp2)
-            ll = c(ll, res$res[res$wm])
-            id = rbind(id, res$edgeID)
-            wm = c(wm, res$wm)
-        }
-        if (i == (tree$Nnode - 1)) 
-            kl = FALSE
-        i = i + 1
-    }
-
-    if (swap) {
-        l = length(ll)
-        INDEX = matrix(0, l, length(tree$edge[,1]))
-        for (i in 1:length(ll)) INDEX[i, id[i, ]] = 1
-        ind = which.min(ll)
-        rll = rank(ll, ties.method = "random")
-        tmp = which(tcrossprod(INDEX)[, ind] == 0)
-        while (length(tmp) > 0) {
-            st = tmp[which.max(rll[tmp])]
-            INDEX[ind[1], ] = INDEX[ind[1], ] + INDEX[st, ]
-            ind = c(ind, st)
-            tmp = which(tcrossprod(INDEX)[, ind[1]] == 0)
-        }
-        swap = 0
-
-        for (i in ind) {
-            tree2 <- nnimove2(tree, id[i, ], wm[i] == 2)
-            tree3 = read.tree(text = write.tree(tree2))
-            tree3 = reorder(tree3, "p")       
-            p1 = fit.sankoff(tree3,data,cost)
-            if (p1 < p0) {
-                swap = swap + 1
-                tree = tree2
-                p0 = p1
-            }
-        }
-        cat(swap, "\n")
-        tree = read.tree(text = write.tree(tree))
-        tree = reorder(tree, "p")
-    }
-    list(tree=tree, pscore=p0, swap=swap)
-}
-
-
-optim.parsimony <- function(tree,data,cost=NULL,...) {
-    if(is.rooted(tree))tree <- unroot(tree)
-    if(is.null(attr(tree,"order")) || attr(tree,"order")=="cladewise")tree <- reorder(tree, "pruningwise")
-    
-    dat <- prepareDataSankoff(data)
-    l <- attr(dat, "nc")
-    if (is.null(cost)) {
-        cost <- matrix(1, l, l)
-        cost <- cost - diag(l)
-    }
-    tree$edge.length=NULL
-            swap = 0
-            iter = TRUE
-            pscore <- fit.sankoff(tree,dat,cost)
-            while (iter) {
-                res <- sankoff.nni(tree,dat,cost,...)
-                tree <- res$tree
-                cat("optimize topology: ", pscore , "-->", res$pscore, 
-                  "\n")
-                pscore = res$pscore
-                swap = swap + res$swap
-                if (res$swap == 0) iter = FALSE
-            }
-            cat("Final p-score",pscore,"after ",swap, "nni operations \n") 
-            list(tree=tree,pscore=pscore)          
-}
-
-
-optimEdge <- function (fit, control = list(eps = 1e-08, maxit = 50, trace = 0), 
-    ...) 
-{
-    if (class(fit)[1] != "pml") 
-        stop("data must be of class pml")
-    tree = fit$tree
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorder(tree, "pruningwise")
-    fit$tree <- tree
-    el <- tree$edge.length
-    tree$edge.length[el < 0] <- 1e-08
-    dat <- NULL
-    old.ll <- pml5(fit)
-    eig <- fit$parameter$eig
-    w <- fit$w
-    g <- fit$g
-    bf <- fit$parameter$bf   
-    weight <- attr(fit$orig.data, "weight")
-    ll.0 <- fit$ll.0
-    eps = 1
-    iter = 0
-    child = tree$edge[, 2]
-    parent = tree$edge[, 1]
-    nTips = min(parent) - 1
-    n = length(tree$edge.length)
-    while (eps > control$eps && iter < control$maxit) {
-        for (j in n:1) {
-            child.dat = dat[, child[j]]
-            parent.dat = dat[, parent[j]]
-            old.el = tree$edge.length[j]
-            newEL <- fs(old.el, eig, parent.dat, child.dat, weight, 
-                g = g, w = w, bf = bf, ll.0 = ll.0)
-            el[j] = newEL[[1]]
-            dat[, parent[j]] = newEL[[2]]
-            if (child[j] > nTips) {
-                dat[, as.character(child[j])] = newEL[[3]]
-            }
-        }
-        tree$edge.length = el
-        iter = iter + 1
-        fit$tree = tree
-        dat <- NULL
-        newll <- pml5(fit)
-        eps = newll - old.ll
-        old.ll = newll
-    }
-    cat(fit$logLik, " -> ", newll, "\n")
-    fit$logLik = newll
-    fit
-}
-
-
-pml5 <- function (object, ...) 
-{
-    tree = object$tree
-    para = object$parameter
-    Q = para$Q
-    bf = para$bf
-    eig = para$eig
-    w = para$w
-    g = para$g
-    data = object$orig.data
-    ll0 <- object$logLik
-    ll.0 <- object$ll.0
-    weight = attr(data, "weight")
-    lll = ll.0
-    m = 1
-    p = length(g)
-    q = length(tree$edge[, 1]) + 1
-    resll = vector("list", p)
-    dat = vector("list", q * p)
-    attr(dat, "dim") = c(p, q)
-    asdf <- NULL
-    while (m <= p) {
-        resll[[m]] = ll(data, tree, bf = bf, g = g[m], Q = Q, eig = eig, 
-            assign.dat = TRUE, ...)
-        dat[m, ] <- asdf
-        m = m + 1
-    }
-    attr(dat, "dimnames") = list(NULL, attr(asdf, "names"))
-    for (i in 1:p) lll = lll + resll[[i]] * w[i]
-    siteLik = log(lll)
-    ll0 = sum(weight * siteLik)
-    assign("dat", dat, env = parent.frame(n = 1))
-    ll0
-}
-
-
-optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE, 
-    optInv = FALSE, optGamma = FALSE, optEdge = TRUE, control = list(maxit = 10, 
-        eps = 0.001)) 
-{
-    tree = object$tree
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorder(tree, "pruningwise")
-    if (optNni) {
-        if (!is.binary.tree(tree)) 
-            tree = multi2di(tree)
-    }
-    if (is.rooted(tree)) {
-        tree = unroot(tree)
-        warning("I rooted the tree (unrooted trees are not yet supprted)", 
-            call. = FALSE)
-    }
-    para = object$parameter
-    Q = para$Q
-    bf = para$bf
-    eig = para$eig
-    inv = para$inv
-    k = para$k
-    shape = para$shape
-    w = para$w
-    g = para$g
-    dat = object$orig.data
-    ll0 <- object$logLik
-    INV <- object$INV
-    ll.0 <- object$ll.0
-    ll = ll0
-    ll1 = ll0
-    opti = TRUE
-    if (optEdge) {
-        object <- optimEdge(object, control = list(eps = 0.001, maxit = 5))
-        ll <- object$logLik
-        tree <- object$tree
-    }
-    rounds = 1
-    while (opti) {
-        if (optBf) {
-            res = optimBf(tree, dat, bf = bf, inv = inv, Q = Q, w = w, g = g, INV = INV)
-            bf = res[[1]]
-            eig = edQt(Q = Q, bf = bf)
-            ll.0 = INV %*% (bf * inv)
-            cat("optimize base frequencies: ", ll, "-->", res[[2]], 
-                "\n")
-            ll = res[[2]]
-        }
-        if (optQ) {
-            res = optimQ(tree, dat, Q = Q, bf = bf, w = w, g = g, 
-                inv = inv, INV = INV, ll.0 = ll.0)
-            Q = res[[1]]
-            eig = edQt(Q = Q, bf = bf)
-            cat("optimize Q: ", ll, "-->", res[[2]], "\n")
-            ll = res[[2]]
-        }
-        if (optInv) {
-            res = optimInv(tree, dat, inv = inv, INV = INV, Q = Q, 
-                bf = bf, eig = eig, k = k, shape = shape)
-            inv = res[[1]]
-            w = rep(1/k, k)
-            g = discrete.gamma(shape, k)
-            if (inv > 0) {
-                w = (1 - inv) * w
-                g = g/(1 - inv)
-            }
-            ll.0 = INV %*% (bf * inv)
-            cat("optimize invariant sites: ", ll, "-->", res[[2]], 
-                "\n")
-            ll = res[[2]]
-        }
-        if (optGamma) {
-            res = optimGamma(tree, dat, shape = shape, k = k, 
-                inv = inv, INV = INV, Q = Q, bf = bf, eig = eig, 
-                ll.0 = ll.0)
-            shape = res[[1]]
-            w = rep(1/k, k)
-            g = discrete.gamma(shape, k)
-            if (inv > 0) {
-                w = (1 - inv) * w
-                g = g/(1 - inv)
-            }
-            cat("optimize shape parameter: ", ll, "-->", res[[2]], 
-                "\n")
-            ll = res[[2]]
-        }
-        if (optEdge) {
-	        object <- pml(tree = tree, dat = dat, Q = Q, bf = bf, eig = eig, w = w, 
-                g = g, inv = inv, shape = shape, k = k, INV = INV, ll.0 = ll.0)
-            object <- optimEdge(object, control = list(eps = 0.001, maxit = 5))
-            ll <- object$logLik
-            tree <- object$tree
-        }
-        if (optNni) {
-            swap = 0
-            iter = 1
-            while (iter < 4) {
-                tree <- object$tree
-                object <- pml.nni(object)
-                tree <- object$tree
-                cat("optimize topology: ", ll, "-->", object$logLik, "\n")
-                ll = object$logLik
-                swap = swap + object$swap
-                iter = iter + 1
-                if (object$swap == 0){
-                	iter = 4
-                	optNni = FALSE
-                	}
-            }
-            cat(swap, "\n")
-            if (swap > 0) 
-                rounds = 1
-            if (swap == 0) 
-                optNni = FALSE
-        }
-        rounds = rounds + 1
-        if (rounds > control$maxit) 
-            opti = FALSE
-        if (abs(ll1 - ll) < control$eps) 
-            opti = FALSE
-        ll1 = ll
-    }
-    pml(tree = tree, dat = dat, Q = Q, bf = bf, eig = eig, w = w, 
-        g = g, inv = inv, shape = shape, k = k, INV = INV, ll.0 = ll.0)
-}
-
-
-
-
-pml4 <- function (object, ...) 
-{
-    tree = object$tree
-    para = object$parameter
-    Q = para$Q
-    bf = para$bf
-    eig = para$eig
-    w = para$w
-    g = para$g
-    data = object$orig.data
-    ll0 <- object$logLik
-    ll.0 <- object$ll.0
-    weight = attr(data, "weight")
-    lll = ll.0
-    m = 1
-    p = length(g)
-    q = length(tree$edge[, 1]) + 1
-    resll = vector("list", p)
-    while (m <= p) {
-        res = ll(data, tree, bf = bf, g = g[m], Q = Q, eig = eig, 
-            assign.dat = FALSE, ...)
-        resll[[m]] <- res
-        m = m + 1
-    }
-    for (i in 1:p) lll = lll + resll[[i]] * w[i]
-    log(lll)
-}
 
 
 optim.quartet <- function (old.el, eig, bf, dat, g = 1, w = 1, weight, ll.0 = weight * 
@@ -2005,5 +1774,488 @@ phyloNNI <- function (fit, n, datp, datf)
 }
 
 
+
+plot.pml<-function(x,...)plot.phylo(x$tree,...)
+
+
+
+update.pml <- function (object, ...) 
+{
+    extras <- match.call(expand.dots = FALSE)$...
+    pmla <- names(as.list(args(pml)))
+    names(extras) <- pmla[pmatch(names(extras), pmla[-length(pmla)])]
+    existing <- match(pmla, names(extras))
+    if (is.na(existing[1])) 
+        tree <- object$tree
+    else tree <- eval(extras[[existing[1]]], parent.frame())
+    if (is.na(existing[2])) 
+        data <- object$data
+    else data <- eval(extras[[existing[2]]], parent.frame())
+    if (is.na(existing[3])) 
+        bf <- object$parameter$bf
+    else bf <- eval(extras[[existing[3]]], parent.frame())
+    if (is.na(existing[4])) 
+        Q <- object$parameter$Q
+    else Q <- eval(extras[[existing[4]]], parent.frame())
+    inv <- ifelse(is.na(existing[5]), object$parameter$inv, eval(extras[[existing[5]]], 
+        parent.frame()))
+    k <- ifelse(is.na(existing[6]), object$parameter$k, eval(extras[[existing[6]]], 
+        parent.frame()))
+    shape <- ifelse(is.na(existing[7]), object$parameter$shape, 
+        eval(extras[[existing[7]]], parent.frame()))
+    rate <- ifelse(is.na(existing[8]), object$rate, 
+        eval(extras[[existing[8]]], parent.frame()))
+    levels <- attr(data, "levels")
+    weight <- attr(data, "weight")
+    m <- 1
+    eig <- edQt(bf = bf, Q = Q)
+    w <- rep(1/k, k)
+    if (inv > 0) 
+        w <- (1 - inv) * w
+    g <- discrete.gamma(shape, k)
+    if (inv > 0) 
+        g <- g/(1 - inv)
+    g <- rate * g
+    INV <- lli(data, tree, bf)
+    ll.0 <- INV %*% (bf * inv)
+    resll <- vector("list", k)
+    while (m <= k) {
+        resll[[m]] = ll(data, tree, bf, g[m], Q, eig, assign.dat = FALSE)
+        m = m + 1
+    }
+    lll = ll.0
+    for (i in 1:k) lll = lll + resll[[i]] * w[i]
+    siteLik = log(lll)
+    ll0 = sum(weight * siteLik)   
+    df = length(tree$edge.length) + k - 1 + (inv > 0) + length(unique(bf)) - 
+        1 + length(unique(Q)) - 1
+    parameter = list(logLik = ll0, inv = inv, k = k, shape = shape, 
+        g = g, w = w, eig = eig, Q = Q, bf = bf, levels = levels, 
+        df = df)
+    result = list(logLik = ll0, siteLik = siteLik, weight = weight, 
+        g = g, w = w, rate=rate, parameter = parameter, data = data, INV = INV, 
+        ll.0 = ll.0, tree = tree, call = call)
+    class(result) = "pml"
+    
+    result
+}
+
+
+
+phangornParseFormula <- function(model){
+
+    parseSide <- function(model) {
+        model.vars <- list()
+        while (length(model) == 3 && model[[1]] == as.name("+")) {
+            model.vars <- c(model.vars, model[[3]])
+            model <- model[[2]]
+        }
+        unlist(rev(c(model.vars, model)))
+
+    } 
+
+    if (!inherits(model, "formula")) 
+        stop("model must be a formula object")
+    l <- length(model)
+    varsLHS <- NULL
+       
+    if(l==3){        
+    modelLHS <- model[[2]]
+    modelRHS <- model[[3]]
+    varsRHS <- parseSide(modelRHS)
+    varsRHS <- unlist(lapply(varsRHS,as.character))
+    varsLHS <- parseSide(modelLHS)
+    varsLHS <- unlist(lapply(varsLHS,as.character))
+    }
+    if(l==2){
+       modelRHS <- model[[2]]
+       varsRHS <- parseSide(modelRHS)
+       varsRHS <- unlist(lapply(varsRHS,as.character))
+    }
+    list(left=varsLHS, right=varsRHS)
+}
+
+
+
+
+# added lv als likelihood vektor 
+pml <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1, 
+    rate = 1, ...) 
+{
+    call <- match.call()
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorder(tree, "pruningwise")
+    if (class(data)[1] != "phyDat") 
+        stop("data must be of class phyDat")
+    levels <- attr(data, "levels")
+    weight <- attr(data, "weight")
+    if (is.null(bf)) 
+        bf <- rep(1/length(levels), length(levels))
+    if (is.null(Q)) 
+        Q <- rep(1, length(levels) * (length(levels) - 1)/2)
+    m <- 1
+    eig <- edQt(bf = bf, Q = Q)
+    w <- rep(1/k, k)
+    if (inv > 0) 
+        w <- (1 - inv) * w
+    g <- discrete.gamma(shape, k)
+    if (inv > 0) 
+        g <- g/(1 - inv)
+    g <- rate * g
+    INV <- lli(data, tree, bf)
+    ll.0 <- INV %*% (bf * inv)
+    resll <- vector("list", k)
+    while (m <= k) {
+        resll[[m]] = ll(data, tree, bf = bf, g = g[m], Q = Q, 
+            eig = eig, assign.dat = FALSE, ...)
+        m = m + 1
+    }
+    lll <- numeric(length(ll.0))
+    
+    lll <- lll + ll.0
+    for (i in 1:k) lll = lll + resll[[i]] * w[i]
+    siteLik <- lll
+    siteLik <- log(siteLik)
+    loglik = sum(weight * siteLik)
+    df = length(tree$edge.length) + k - 1 + (inv > 0) + length(unique(bf)) - 
+        1 + length(unique(Q)) - 1
+    parameter = list(logLik = loglik, inv = inv, k = k, shape = shape, 
+        g = g, w = w, eig = eig, Q = Q, bf = bf, levels = levels, 
+        df = df)
+    result = list(logLik = loglik, siteLik = siteLik, weight = weight, 
+        g = g, w = w, rate = rate, parameter = parameter, data = data, 
+        INV = INV, ll.0 = ll.0, tree = tree, lv=lll, call=call)
+    class(result) = "pml"
+    result
+}
+
+
+optW <- function (ll, weight, omega,...) 
+{
+    k = length(omega)
+    nenner = 1/omega[1]
+    eta = log(omega * nenner)
+    eta = eta[-1]
+	
+    fn = function(eta, ll, weight) {
+        eta = c(0,eta)
+        p = exp(eta)/sum(exp(eta))
+        res = sum(weight * log(ll %*% p)) 
+        res
+    }
+    if(k==2)res = optimize(f =fn , interval =c(-3,3) , lower = -3, upper = 3, maximum = TRUE, tol = .Machine$double.eps^0.25, ll = ll, weight = weight) 
+    else res = optim(eta, fn = fn, method = "Nelder-Mead", control = list(fnscale = -1, 
+        reltol = 1e-12), gr = NULL, ll = ll, weight = weight)
+    p = exp(c(0,res[[1]]))
+    p = p/sum(p)
+    result = list(par = p, value = res[[2]])
+    result
+}
+
+
+pml.control <- function (epsilon = 1e-06, maxit = 10, trace = FALSE) 
+{
+    if (!is.numeric(epsilon) || epsilon <= 0) 
+        stop("value of 'epsilon' must be > 0")
+    if (!is.numeric(maxit) || maxit <= 0) 
+        stop("maximum number of iterations must be > 0")
+    list(epsilon = epsilon, maxit = maxit, trace = trace)
+}
+
+
+optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE, 
+    optInv = FALSE, optGamma = FALSE, optEdge = TRUE, optRate = FALSE, 
+    control = pml.control(maxit = 10, eps = 0.001, trace=TRUE)) 
+{
+    tree = object$tree
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorder(tree, "pruningwise")
+    if (optNni) {
+        if (!is.binary.tree(tree)) 
+            tree = multi2di(tree)
+    }
+    if (is.rooted(tree)) {
+        tree = unroot(tree)
+        warning("I rooted the tree (unrooted trees are not yet supported)", 
+            call. = FALSE)
+    }
+    if (optEdge & optRate) {
+        warning("you can't optimise edges and rates at the same time, only edges are optimised", 
+            call. = FALSE)
+        optRate = FALSE
+    }
+    trace <- control$trace 
+    para = object$parameter
+    Q = para$Q
+    bf = para$bf
+    eig = para$eig
+    inv = para$inv
+    k = para$k
+    shape = para$shape
+    w = para$w
+    g = para$g
+    dat = object$data
+    ll0 <- object$logLik
+    INV <- object$INV
+    ll.0 <- object$ll.0
+    rate <- object$rate
+    ll = ll0
+    ll1 = ll0
+    opti = TRUE
+    if (optEdge) {
+        object <- optimEdge(object, control = pml.control(eps = 0.001, maxit = 5,trace))
+        ll <- object$logLik
+        tree <- object$tree
+    }
+    rounds = 1
+    df = 0
+    while (opti) {
+        if (optBf) {
+            res = optimBf(tree, dat, bf = bf, inv = inv, Q = Q, 
+                w = w, g = g, INV = INV, rate = rate)
+            bf = res[[1]]
+            eig = edQt(Q = Q, bf = bf)
+            ll.0 = INV %*% (bf * inv)
+            cat("optimize base frequencies: ", ll, "-->", res[[2]], 
+                "\n")
+            ll = res[[2]]
+        }
+        if (optQ) {
+            res = optimQ(tree, dat, Q = Q, bf = bf, w = w, g = g, 
+                inv = inv, INV = INV, ll.0 = ll.0, rate = rate)
+            Q = res[[1]]
+            eig = edQt(Q = Q, bf = bf)
+            cat("optimize Q: ", ll, "-->", res[[2]], "\n")
+            ll = res[[2]]
+        }
+        if (optInv) {
+            res = optimInv(tree, dat, inv = inv, INV = INV, Q = Q, 
+                bf = bf, eig = eig, k = k, shape = shape, rate = rate)
+            inv = res[[1]]
+            w = rep(1/k, k)
+            g = discrete.gamma(shape, k)
+            if (inv > 0) {
+                w = (1 - inv) * w
+                g = g/(1 - inv)
+            }
+            g <- g * rate
+            ll.0 = INV %*% (bf * inv)
+            cat("optimize invariant sites: ", ll, "-->", res[[2]], 
+                "\n")
+            ll = res[[2]]
+        }
+        if (optGamma) {
+            res = optimGamma(tree, dat, shape = shape, k = k, 
+                inv = inv, INV = INV, Q = Q, bf = bf, eig = eig, 
+                ll.0 = ll.0, rate = rate)
+            shape = res[[1]]
+            w = rep(1/k, k)
+            g = discrete.gamma(shape, k)
+            if (inv > 0) {
+                w = (1 - inv) * w
+                g = g/(1 - inv)
+            }
+            g <- g * rate
+            cat("optimize shape parameter: ", ll, "-->", res[[2]], 
+                "\n")
+            ll = res[[2]]
+        }
+        if (optRate) {
+            res = optimRate(tree, dat, inv = inv, INV = INV, 
+                Q = Q, bf = bf, eig = eig, k = k, shape = shape, 
+                rate = rate)
+            rate = res[[1]]
+            w = rep(1/k, k)
+            g = discrete.gamma(shape, k)
+            if (inv > 0) {
+                w = (1 - inv) * w
+                g = g/(1 - inv)
+            }
+            g <- g * rate
+            cat("optimize rate: ", ll, "-->", res[[2]], "\n")
+            ll = res[[2]]
+        }
+        if (optEdge) {
+            object <- pml(tree = tree, dat = dat, Q = Q, bf = bf, 
+                inv = inv, shape = shape, k = k, rate = rate)
+            object <- optimEdge(object, control = list(eps = 0.001, maxit = 5))
+            ll <- object$logLik
+            tree <- object$tree
+        }
+        if (optNni) {
+            swap = 0
+            iter = 1
+            while (iter < 4) {
+                tree <- object$tree
+                object <- pml.nni(object)
+                tree <- object$tree
+                cat("optimize topology: ", ll, "-->", object$logLik, 
+                  "\n")
+                ll = object$logLik
+                swap = swap + object$swap
+                iter = iter + 1
+                if (object$swap == 0) {
+                  iter = 4
+                  optNni = FALSE
+                }
+            }
+            cat(swap, "\n")
+            if (swap > 0) 
+                rounds = 1
+            if (swap == 0) 
+                optNni = FALSE
+        }
+        rounds = rounds + 1
+        if (rounds > control$maxit) 
+            opti = FALSE
+        if (abs(ll1 - ll) < control$eps) 
+            opti = FALSE
+        ll1 = ll
+    }
+    df = (optEdge) * length(tree$edge.length) + optGamma * (k - 
+        1) + optInv * (inv > 0) + optBf * (length(unique(bf)) - 
+        1) + optQ * (length(unique(Q)) - 1)
+    object <- pml(tree = tree, dat = dat, Q = Q, bf = bf, inv = inv, 
+        shape = shape, k = k, rate = rate)
+    object$parameter$df = df
+    object
+}
+
+
+pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)), 
+    shape = 1, k = 1, Q = rep(1, length(levels) * (length(levels) - 
+        1)/2), levels = attr(data, "levels"), inv = 0, rate = 1, 
+    g = NULL, w = NULL, eig = NULL, INV = NULL, ll.0 = NULL, ...) 
+{
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorder(tree, "pruningwise")
+    if (class(data)[1] != "phyDat") 
+        stop("data must be of class phyDat")
+    weight = attr(data, "weight")
+    l = length(bf)
+    lll = matrix(0, length(weight), l)
+    m = 1
+    if (is.null(eig)) 
+        eig = edQt(bf = bf, Q = Q)
+    if (is.null(w)) {
+        w = rep(1/k, k)
+        if (inv > 0) 
+            w <- (1 - inv) * w
+    }
+    if (is.null(g)) {
+        g = discrete.gamma(shape, k)
+        if (inv > 0) 
+            g <- g/(1 - inv)
+    }
+    g <- g * rate
+    if (is.null(INV)) 
+        INV = lli(data, tree, bf)
+    if (is.null(ll.0)) 
+        ll.0 = INV %*% (inv * bf)
+    lll <- ll.0
+    p = length(g)
+    resll = vector("list", p)
+    while (m <= p) {
+        resll[[m]] = ll(data, tree, bf = bf, g = g[m], Q = Q, eig = eig, ...)
+        m = m + 1
+    }
+    for (i in 1:p) lll = lll + resll[[i]] * w[i]
+    siteLik = log(lll)
+    result = sum(weight * siteLik)
+    result
+}
+
+optimEdge <- function (fit, control = list(eps = 1e-08, maxit = 50, trace = 0), 
+    ...) 
+{
+    if (class(fit)[1] != "pml") 
+        stop("data must be of class pml")
+    tree = fit$tree
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorder(tree, "pruningwise")
+    fit$tree <- tree
+    el <- tree$edge.length
+    tree$edge.length[el < 0] <- 1e-08
+    dat <- NULL    
+    rate <- fit$rate 
+    old.ll <- pml5(fit)
+    eig <- fit$parameter$eig
+    w <- fit$w
+    g <- fit$g
+
+    bf <- fit$parameter$bf
+    weight <- attr(fit$data, "weight")
+    ll.0 <- fit$ll.0
+    eps = 1
+    iter = 0
+    child = tree$edge[, 2]
+    parent = tree$edge[, 1]
+    nTips = min(parent) - 1
+    n = length(tree$edge.length)
+    while (eps > control$eps && iter < control$maxit) {
+        for (j in n:1) {
+            child.dat = dat[, child[j]]
+            parent.dat = dat[, parent[j]]
+            old.el = tree$edge.length[j]
+            newEL <- fs(old.el, eig, parent.dat, child.dat, weight, 
+                g = g, w = w, bf = bf, ll.0 = ll.0)
+            el[j] = newEL[[1]]
+            dat[, parent[j]] = newEL[[2]]
+            if (child[j] > nTips) {
+                dat[, child[j]] = newEL[[3]]
+            }
+        }
+        tree$edge.length = el
+        iter = iter + 1
+        fit$tree = tree
+        dat <- NULL
+        newll <- pml5(fit)
+        eps = newll - old.ll
+        old.ll = newll
+    }
+    cat(fit$logLik, " -> ", newll, "\n")
+    fit$logLik = newll
+    fit
+}
+
+pml5<-function (object, ...) 
+{
+    tree = object$tree
+    para = object$parameter
+    Q = para$Q
+    bf = para$bf
+    eig = para$eig
+    w = para$w
+    g = para$g
+    data = object$data
+    ll0 <- object$logLik
+    ll.0 <- object$ll.0
+    weight = attr(data, "weight")
+    lll = ll.0
+    m = 1
+    p = length(g)
+    q = length(tree$edge[, 1]) + 1
+    resll = vector("list", p)
+    dat = vector("list", q * p)
+    attr(dat, "dim") = c(p, q)
+    asdf <- NULL
+    while (m <= p) {
+        resll[[m]] = ll(data, tree, bf = bf, g = g[m], Q = Q, 
+            eig = eig, assign.dat = TRUE, ...)
+        dat[m, ] <- asdf
+        m = m + 1
+    }
+    attr(dat, "dimnames") = list(NULL, attr(asdf, "names"))
+    for (i in 1:p) lll = lll + resll[[i]] * w[i]
+    siteLik <- lll
+    siteLik <- log(siteLik)
+    ll0 = sum(weight * siteLik)
+    assign("dat", dat, env = parent.frame(n = 1))
+    ll0
+}
 
 

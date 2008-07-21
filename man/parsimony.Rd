@@ -32,7 +32,7 @@ optim.parsimony(tree, data, cost=NULL, ...)
 \seealso{ \code{\link{sankoff}}, \code{\link{NJ}}}
 \examples{
 data(Laurasiatherian)
-dm = dist.dna(as.DNAbin(as.character(Laurasiatherian)))
+dm = dist.logDet(Laurasiatherian)
 tree = NJ(dm)
 parsimony(tree, Laurasiatherian)
 ptree <- optim.parsimony(tree, Laurasiatherian)
