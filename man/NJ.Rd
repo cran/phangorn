@@ -32,11 +32,11 @@ version, UNJ. in Birkin et. al. \emph{Mathematical Hierarchies and Biology},
  149--170., }    
 \author{Klaus P. Schliep \email{K.P.Schliep@massey.ac.nz}}
 
-\seealso{  \code{\link[ape]{dist.dna}}}
+\seealso{  \code{\link[ape]{nj}}, \code{\link[ape]{dist.dna}}, \code{\link[phangorn]{dist.hamming}}, \code{\link[phangorn]{upgma}}}
 \examples{
 data(Laurasiatherian)
-dm = dist.dna(as.DNAbin(as.character(Laurasiatherian)))
-tree = NJ(dm)
+dm <- dist.logDet(Laurasiatherian)
+tree <- NJ(dm)
 plot(tree)
 }
 \keyword{ cluster }% at least one, from doc/KEYWORDS

@@ -2,7 +2,6 @@
 \alias{phyDat}
 \alias{as.phyDat.DNAbin}
 \alias{phyDat.DNA}
-\alias{print.phyDat}
 \alias{as.data.frame.phyDat}
 \alias{as.character.phyDat}
 \title{Conversion amoung Sequence Formats}
@@ -12,7 +11,7 @@ These functions transform several DNA formats into the \code{phyDat} format.
 \usage{
 phyDat(data, levels, return.index=FALSE)
 phyDat.DNA(data, return.index=FALSE) 
-as.phyDat.DNAbin(data, ...)
+\method{as.phyDat}{DNAbin}(data, ...)
 \method{as.character}{phyDat}(x, ...)
 \method{as.data.frame}{phyDat}(x, ...)
 }

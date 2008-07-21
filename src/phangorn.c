@@ -137,7 +137,88 @@ void out(double *d, double *r, int *n, int *k, int *l){
 		}		
 	}
 
+
 	
+SEXP rowMin(SEXP sdat, SEXP sn, SEXP sk){
+	int i, h, n=INTEGER(sn)[0], k=INTEGER(sk)[0];  
+	double x, *res, *dat;
+	SEXP result;
+	PROTECT(result = allocVector(REALSXP, n));
+	res = REAL(result);
+	PROTECT(sdat = coerceVector(sdat, REALSXP));
+	dat = REAL(sdat);
+	for(i = 0; i < n; i++){
+		x = dat[i];
+        for(h = 1; h< k; h++) {if(dat[i + h*n] < x) x=dat[i + h*n];}
+		res[i] = x;   			
+		}
+	UNPROTECT(2);
+	return(result);		
+}
+
+
+SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk){
+	int i, h, n=INTEGER(sn)[0], k=INTEGER(sk)[0];  
+	double x, *res, *dat;
+	SEXP result;
+	PROTECT(result = allocVector(REALSXP, n));
+	res = REAL(result);
+	PROTECT(sdat = coerceVector(sdat, REALSXP));
+	dat = REAL(sdat);
+	for(i = 0; i < n; i++){
+		x = dat[i];
+        for(h = 1; h< k; h++) {if(dat[i + h*n] > x) x=dat[i + h*n];}
+		res[i] = x;   			
+		}
+	UNPROTECT(2);
+	return(result);		
+}
+	
+	
+	
+	
+void fitch(unsigned char *dat, int *n, int *m, int *i, int *j, unsigned char * result, int *pars){
+	int k;
+	unsigned char tmp;
+	for(k = 0; k < (*n); k++){
+		tmp = dat[*i + k*(*m)] & dat[*j + k*(*m)];
+		if(tmp) result[k] = tmp;
+		else {result[k] = dat[*i + k*(*m)] | dat[*j + k*(*m)];
+			pars[k] += 1;
+	    }
+	} 
+}		
+
+
+
+
+void fitch2(int *dat, int *n, int *m, int i, int j, int *pars){
+	int k;
+	int tmp;
+	for(k = 0; k < (*n); k++){
+		tmp = dat[i + k*(*m)] & dat[j + k*(*m)];
+		if(tmp) dat[i + k*(*m)] = tmp;
+		else {dat[i + k*(*m)] = dat[i + k*(*m)] | dat[j + k*(*m)];
+			pars[k] += 1;
+	    }
+	} 
+}		
+
+
+void fitch3(int *dat, int *n, int *m, int *pars, int *node, int *edge, int *nl) 
+{   
+	int i, ni, k;
+    ni = 0;
+    for (i=0; i< *nl; i++) {
+        if (ni == node[i]) fitch2(dat, n, m, ni-1, edge[i]-1, pars);	        	        
+        else {
+	        ni = node[i];
+	        for(k = 0; k < (*n); k++) dat[ni-1 + k*(*m)] = dat[edge[i]-1 + k*(*m)];                     
+        }
+    }
+}
+	
+		
 void sankoff(double *dat, int *n, double *cost, int *k, double *result){
 	int i, j, h; 
 	double tmp[*k], x;
@@ -175,39 +256,78 @@ SEXP sankoff2(SEXP sdat, SEXP sn, SEXP scost, SEXP sk){
 }	
 
 
-SEXP rowMin(SEXP sdat, SEXP sn, SEXP sk){
-	int i, h, n=INTEGER(sn)[0], k=INTEGER(sk)[0];  
-	double x, *res, *dat;
-	SEXP result;
-	PROTECT(result = allocVector(REALSXP, n));
-	res = REAL(result);
-	PROTECT(sdat = coerceVector(sdat, REALSXP));
-	dat = REAL(sdat);
+static R_INLINE void sankoff4(double *dat, int n, double *cost, int k, double *result){
+	int i, j, h; 
+	double tmp[k], x;
 	for(i = 0; i < n; i++){
-		x = dat[i];
-        for(h = 1; h< k; h++) {if(dat[i + h*n] < x) x=dat[i + h*n];}
-		res[i] = x;   			
-		}
-	UNPROTECT(2);
-	return(result);		
-}
+		for(j = 0; j < k; j++){
+		    for(h = 0; h< k; h++){tmp[h] = dat[i + h*n] + cost[h + j*k];}
+		    x = tmp[0];
+            for(h = 1; h< k; h++) {if(tmp[h]<x) {x=tmp[h];}}
+		    result[i+j*n] += x;
+		    }	   			
+		}		
+}	
 
 
-SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk){
-	int i, h, n=INTEGER(sn)[0], k=INTEGER(sk)[0];  
-	double x, *res, *dat;
-	SEXP result;
-	PROTECT(result = allocVector(REALSXP, n));
+
+SEXP sankoffQuartet(SEXP dat, SEXP sn, SEXP scost, SEXP sk){
+	int j, n=INTEGER(sn)[0], k = INTEGER(sk)[0];  
+	double *cost, *res, *rtmp;
+	SEXP result, tmp;
+	PROTECT(result = allocMatrix(REALSXP, n, k));
+	PROTECT(tmp = allocMatrix(REALSXP, n, k));
 	res = REAL(result);
-	PROTECT(sdat = coerceVector(sdat, REALSXP));
-	dat = REAL(sdat);
-	for(i = 0; i < n; i++){
-		x = dat[i];
-        for(h = 1; h< k; h++) {if(dat[i + h*n] > x) x=dat[i + h*n];}
-		res[i] = x;   			
-		}
-	UNPROTECT(2);
-	return(result);		
+	PROTECT(scost = coerceVector(scost, REALSXP));
+	cost = REAL(scost);
+	rtmp = REAL(tmp);
+    for(j=0; j<(n*k); j++) rtmp[j] = 0.0;
+    for(j=0; j<(n*k); j++) res[j] = 0.0;   
+    sankoff4(REAL(VECTOR_ELT(dat,0)), n, cost, k, rtmp);
+    sankoff4(REAL(VECTOR_ELT(dat,1)), n, cost, k, rtmp);
+    sankoff4(rtmp, n, cost, k, res);
+    sankoff4(REAL(VECTOR_ELT(dat,2)), n, cost, k, res);
+    sankoff4(REAL(VECTOR_ELT(dat,3)), n, cost, k, res);
+    UNPROTECT(3);
+    return(result);		
+}	
+
+
+
+SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips){
+	R_len_t i, n = length(node), nt = length(tips);
+	int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], mn=INTEGER(mNodes)[0];
+	int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node);
+	SEXP result, dlist2; //tmp, 
+	double *res, *rtmp, *cost;
+	cost = REAL(scost);
+	if(!isNewList(dlist)) error("‘dlist’ must be a list");
+	ni = nodes[0];
+	PROTECT(dlist2 = allocVector(VECSXP, mn));
+	PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
+	res = REAL(result);
+	rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
+	for(i = 0; i < nt; i++) SET_VECTOR_ELT(dlist2, INTEGER(tips)[i], VECTOR_ELT(dlist, INTEGER(tips)[i]));
+    for(j=0; j<(nrx * ncx); j++) res[j] = 0.0; 
+ 
+	for(i = 0; i < n; i++) {
+		ei = edges[i]; 
+		if(ni == nodes[i]){
+			sankoff4(REAL(VECTOR_ELT(dlist2,ei)), nrx, cost, ncx, res);
+			}
+        else{  		
+			SET_VECTOR_ELT(dlist2, ni, result);
+			UNPROTECT(1); 
+			PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
+			res = REAL(result);
+			for(j=0; j<(nrx * ncx); j++) res[j] = 0.0; 
+			ni = nodes[i];
+			sankoff4(REAL(VECTOR_ELT(dlist2,ei)), nrx, cost, ncx, res); 
+			}
+	}
+	SET_VECTOR_ELT(dlist2, ni, result);	
+	UNPROTECT(2); // result dlist2  return dlist2
+	return(dlist2);
 }
 
 
@@ -284,7 +404,6 @@ void getdP2(double *eva, double *ev, double *evi, int m, double el, double w, do
 
 void getd2P(double *eva, double *ev, double *evi, int m, double el, double w, double *result){
 	int i, j, h;
-
 	double tmp[m], res;
 	for(i = 0; i < m; i++) tmp[i] = (eva[i] * w * el) * (eva[i] * w * el) * exp(eva[i] * w * el);
 	for(i = 0; i < m; i++){	
@@ -297,11 +416,14 @@ void getd2P(double *eva, double *ev, double *evi, int m, double el, double w, do
 }
 
 
+
+
+
 SEXP LogLik(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes){
 	R_len_t i, n = length(node);
 	int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], nt=INTEGER(nTips)[0], mn=INTEGER(mNodes)[0];
 	int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node);
-	SEXP ans, result; //tmp, 
+	SEXP ans, result;  
 	double *res, *rtmp;
 	if(!isNewList(dlist)) error("‘dlist’ must be a list");
 	ni = nodes[0];
@@ -333,12 +455,11 @@ SEXP LogLik(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTi
 }
 
 
-
 double *NR4(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child, int ld, int nr, double *bf, double *weight){
 
-	int i, j, k; //m=INTEGER(nc)[0], n=INTEGER(nr)[0], l=INTEGER(ld)[0], 
-	double *kid; //, *WEIGHT=REAL(weight); 
-	double *eva, *eve, *evei; //	double edgelen=REAL(el)[0];//, newel
+	int i, j, k; 
+	double *kid;  
+	double *eva, *eve, *evei; 
 	double *dP, *dtmp, *res, *dF;
 	if(!isNewList(eig)) error("‘eig’ must be a list");
 	if(!isNewList(dad)) error("dad‘’ must be a list");
@@ -458,9 +579,36 @@ SEXP getdPM2(SEXP eig, SEXP nc, SEXP el, SEXP w){
     return(RESULT);
 } 
 
+SEXP getd2PM(SEXP eig, SEXP nc, SEXP el, SEXP w){
+	R_len_t i, j, nel, nw;
+	int m=INTEGER(nc)[0], l=0;
+	double *ws=REAL(w);
+	double *edgelen=REAL(el);
+	double *eva, *eve, *evei;
+	SEXP P, RESULT;
+	nel = length(el);
+	nw = length(w);
+	eva = REAL(VECTOR_ELT(eig, 0));
+	eve = REAL(VECTOR_ELT(eig, 1));
+	evei = REAL(VECTOR_ELT(eig, 2));
+	PROTECT(RESULT = allocVector(VECSXP, nel*nw));	
+	double *p;
+	if(!isNewList(eig)) error("‘dlist’ must be a list");	
+	for(j=0; j<nel; j++){
+		for(i=0; i<nw; i++){
+	        PROTECT(P = allocMatrix(REALSXP, m, m));
+	        p = REAL(P);
+            getd2P(eva, eve, evei, m, edgelen[j], ws[i], p);
+            SET_VECTOR_ELT(RESULT, l, P);
+            UNPROTECT(1); //P
+            l++;
+        }
+    }
+    UNPROTECT(1); //RESULT
+    return(RESULT);
+} 
 
-
-//(dad  * (child %*% P))	
+//(dad  * (child %*% P)) 	
 SEXP getM3(SEXP dad, SEXP child, SEXP P, SEXP nr, SEXP nc){
 	R_len_t i, n=length(P);
 	int ncx=INTEGER(nc)[0], nrx=INTEGER(nr)[0], j;
@@ -485,7 +633,7 @@ SEXP getM3(SEXP dad, SEXP child, SEXP P, SEXP nr, SEXP nc){
 SEXP FS(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP ld, SEXP nr, SEXP basefreq, SEXP weight,SEXP f0, SEXP ll0, SEXP ff0)
 {
 	R_len_t j, n=length(dad);	
-	SEXP RESULT, EL, DAT, DAT2, P, logLik; 
+	SEXP RESULT, EL, DAT, P, logLik; 
 	double *df, *tmp, *tmp2, *f, *wgt=REAL(weight), edle, ledle, newedle, eps=10, *bf=REAL(basefreq);
 	double ll, lll, delta, scalep = 1.0, *ws=REAL(w), *gs=REAL(g), l1=0.0, l0;
 	int i, k=0, ncx=INTEGER(nc)[0], nrx=INTEGER(nr)[0];
@@ -501,7 +649,7 @@ SEXP FS(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP l
     while ( (eps > 1e-05) &&  (k < 5) ) {
 	    PROTECT(EL = allocVector(REALSXP, 1));
   	    REAL(EL)[0] = edle;
-	    df = NR4(eig, ncx, edle, ws, gs, dad, child, INTEGER(ld)[0], nrx, bf, wgt);
+	    df = NR4(eig, ncx, edle, ws, gs, dad, child, INTEGER(ld)[0], nrx, bf, wgt);   
 	    for(i=0; i<nrx ;i++) tmp[i]=df[i]/f[i];
         ll=0.0;  
         lll=0.0;        
@@ -545,16 +693,18 @@ SEXP FS(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP l
     PROTECT(EL = allocVector(REALSXP, 1));
     REAL(EL)[0] = edle;
     PROTECT(P = getPM(eig, nc, EL, g));
-    PROTECT(DAT = getM3(child, dad, P, nr, nc));
-    PROTECT(DAT2 = getM3(dad, child, P, nr, nc));
     REAL(logLik)[0] = l1; 
 	SET_VECTOR_ELT(RESULT, 0, EL);
-	SET_VECTOR_ELT(RESULT, 1, DAT);
-	SET_VECTOR_ELT(RESULT, 2, DAT2);
+	SET_VECTOR_ELT(RESULT, 1, getM3(child, dad, P, nr, nc));
+	SET_VECTOR_ELT(RESULT, 2, getM3(dad, child, P, nr, nc));
 	SET_VECTOR_ELT(RESULT, 3, logLik);
-	UNPROTECT(6); //RESULT, DAT, DAT2, EL, logLik, P
+	UNPROTECT(4); //RESULT, DAT, DAT2, EL, logLik, P
     return (RESULT);
 }	
 
-		
+
+
+
+
+	
 

@@ -21,7 +21,7 @@ A phylogenetic tree of class \code{phylo}.
 \seealso{ \code{\link[stats]{hclust}}, \code{\link[ape]{as.phylo}} }
 \examples{
 data(Laurasiatherian)
-dm = dist.dna(as.DNAbin(as.character(Laurasiatherian)))
+dm = dist.logDet(Laurasiatherian)
 tree = upgma(dm)
 plot(tree)
 

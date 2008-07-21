@@ -1,6 +1,6 @@
 \name{treedist}
 \alias{treedist}
-\alias{print.treedist}
+%\alias{print.treedist}
 \title{ Distances between trees }
 \description{
   \code{treedist} computes different tree distance methods.
