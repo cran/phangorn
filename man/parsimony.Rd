@@ -3,6 +3,7 @@
 \alias{optim.parsimony}
 \alias{sankoff}
 \alias{fitch}
+\alias{PNJ}
 \title{Parsimony tree.}
 \description{
 
