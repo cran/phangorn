@@ -1,3 +1,43 @@
+		CHANGES IN PHANGORN VERSION 0.0-3
+
+
+NEW FEATURES
+
+    o amino acid models 
+
+    o several new maximum likelihood models:
+    
+      mixture models (pmlMix), and some model for 
+      
+      phylogenomic data partition models (pmlPart), 
+      
+      and clustering of partitions / genes (pmlCluster)  
+      
+      (still experimental, feed back wellcome)
+        
+    o design matrices for phylogenetic distance methods 
+    
+    o added some functions useful for simulations
+    
+      (nni, allTrees) 
+    
+        
+       
+    
+OTHER CHANGES    
+    
+    o the data object phyDat changed slightly internally
+    
+    o a new dataset 
+    
+    o read.aa to read amino acid data in phylip format 
+      
+      based on read.dna from the ape package
+       
+
+      
+      
+
 		CHANGES IN PHANGORN VERSION 0.0-2
 
 

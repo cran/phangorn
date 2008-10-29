@@ -1,0 +1,59 @@
+\name{pmlPart}
+\alias{pmlPart}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{ Partition model. }
+\description{
+  Model to estimate phylogenies for partitioned data. 
+}
+\usage{
+pmlPart(formula, object, ...)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{formula}{ a formula object (see details).}
+  \item{object}{ an object of class \code{pml} or a list of objects of class  \code{pml} . }
+  \item{\dots}{ Further arguments passed to or from other methods. }
+}
+\details{
+    The \code{formula} object allows to specify which parameter get     
+    optimised. The formula is generally of the form \code{edge + bf + Q 
+    ~ rate + shape + \dots}, on the left side are the parameters which 
+    get optimised over all partitions, on the right the parameter which
+    are optimised specific to each partition. The parameters available 
+    are \code{"nni", "bf", "Q", "inv", "shape", "edge", "rate"}.
+    Each parameters can be used only once in the formula. 
+    \code{"rate"} and \code{"nni"} are only available for the right side
+    of the formula. 
+     
+}
+\value{
+  \code{kcluster} returns a list with elements
+  \item{logLik}{log-likelihood of the fit}
+  \item{trees}{a list of all trees during the optimisation.} 
+  \item{object}{an object of class \code{"pml"} or \code{"pmlPart"}}
+}
+%\references{ ~put references to the literature/web site here ~ }
+\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+%\note{ ~~further notes~~ 
+%
+% ~Make other sections like Warning with \section{Warning }{....} ~
+%}
+\seealso{  \code{\link{pml}},\code{\link{pmlCluster}},\code{\link{pmlMix}} }
+\examples{
+data(yeast)
+dm <- dist.logDet(yeast)
+tree <- NJ(dm)
+fit <- pml(tree,yeast)
+fits <- optim.pml(fit)
+
+weight=xtabs(~ index+genes,attr(yeast, "index"))[,1:10]
+
+set.seed(1)
+
+sp <- pmlPart(edge ~ rate + inv, fits, weight=weight)
+sp
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ cluster }
+%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

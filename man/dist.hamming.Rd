@@ -1,19 +1,24 @@
 \name{dist.hamming}
 \alias{dist.hamming}
 \alias{dist.logDet}
+\alias{dist.ml}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{Pairwise Distances from Sequences}
 \description{
 \code{dist.hamming} and \code{dist.logDet} compute pairwise distances 
-for an object of class \code{phyDat}. 
+for an object of class \code{phyDat}. \code{dist.ml} fits distances
+for amino acid models.
 }
 \usage{
 dist.hamming(x, ratio = TRUE)
 dist.logDet(x)
+dist.ml(x, model="JC69",...)
 }
 \arguments{
   \item{x}{an object of class \code{dist.logDet}}
   \item{ratio}{compute uncorrected ('p') distance or character difference.}
+  \item{model}{One of "JC69", "WAG", "JTT", "LG" or "Dayhoff"}
+  \item{\dots}{Further arguments passed to or from other methods.}
 }
 \value{
   an object of class \code{dist}

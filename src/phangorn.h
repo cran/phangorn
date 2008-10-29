@@ -12,6 +12,7 @@ SEXP dist2spectra(SEXP dm, SEXP nx, SEXP ns);
 SEXP sankoff2(SEXP sdat, SEXP sn, SEXP scost, SEXP sk);
 SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips);
 SEXP sankoffQuartet(SEXP dat, SEXP sn, SEXP scost, SEXP sk);
+SEXP sankoffQuartet2(SEXP dat, SEXP sn, SEXP scost, SEXP sk);
 SEXP rowMin(SEXP sdat, SEXP sn, SEXP sk);
 SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk);
 SEXP matpro(SEXP X, SEXP Y, SEXP nrx, SEXP ncx, SEXP nry, SEXP ncy);

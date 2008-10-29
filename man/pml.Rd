@@ -1,8 +1,6 @@
 \name{pml}
 \alias{pml}
-\alias{summary.pml}
 \alias{optim.pml}
-\alias{update.pml}
 \title{Likelihood of a tree.}
 \description{
 \code{pml} computes the likelihood of a phylogenetic tree 
@@ -10,10 +8,10 @@ given a sequence alignment and a model. \code{optim.pml} optimizes the
 different model parameters.
 }
 \usage{
-pml(tree, data, bf=NULL, Q=NULL, inv=0, k=1, shape=1, rate=1, ...)     
+pml(tree, data, bf=NULL, Q=NULL, inv=0, k=1, shape=1, rate=1, model="", ...)     
 optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
     optInv=FALSE, optGamma=FALSE, optEdge=TRUE, optRate=FALSE, 
-    control = pml.control(maxit=10, eps=0.001, trace=TRUE))
+    control = pml.control(maxit=10, eps=0.001, trace=TRUE), ...)  
 }
 \arguments{
   \item{tree}{A phylogenetic \code{tree}, object of class \code{phylo}. }
@@ -24,6 +22,7 @@ optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
   \item{k}{Number of intervalls of the discrete gamma distribution.}
   \item{shape}{Shape parameter of the gamma distribution.}
   \item{rate}{Rate.}
+  \item{model}{Amino acid models: one of "WAG", "JTT", "Dayhoff" or "LG"}
   \item{object}{An object of class \code{pml}.}
   \item{optNni}{Logical value indicating whether toplogy gets optimized (NNI).}
   \item{optBf}{Logical value indicating whether base frequencies gets optimized.}
@@ -36,19 +35,19 @@ optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
   \item{\dots}{Further arguments passed to or from other methods.}
 }
 \details{
-The input variables \code{w0, pl0, rate} are mainly for the use
-in mixture or partition models and are only used internally. 
-The toppology search uses a nearest neighbour interchange (NNI) 
+The topology search uses a nearest neighbour interchange (NNI) 
 and the implenatation is similar to phyML. 
+The option model is only used for amino acid models. 
 Here is a overview how to estimate different phylogenetic models 
 with \code{pml}:  
 \tabular{lll}{
 model \tab optBf \tab optQ \cr
 Jukes-Cantor \tab FALSE \tab FALSE \cr
 F81 \tab TRUE \tab FALSE \cr
+symmetric \tab FALSE \tab TRUE \cr
 GTR \tab TRUE \tab TRUE
 }
-
+So far 4 amino acid models are supported ("WAG", "JTT", "Dayhoff" and "LG"). 
 }
 \value{
 Returns a list of class \code{ll.phylo}
@@ -57,12 +56,20 @@ Returns a list of class \code{ll.phylo}
   \item{root}{likelihood in the root node.}
   \item{weight}{Weight of the site patterns.}
 }
-\references{ Felsenstein, J. (1981) Evolutionary trees from DNA sequences: a maxumum
+\references{ 
+Felsenstein, J. (1981) Evolutionary trees from DNA sequences: a maxumum
 likelihood approach. \emph{Journal of Molecular Evolution}, \bold{17}, 368--376. 
 
 Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
 
 Yang, Z. (2006). \emph{Computational Molecular evolution}. Oxford University Press, Oxford.
+
+Whelan, S. and Goldman, N. (2001) A general empirical model of 
+protein evolution derived from multiple protein families using 
+a maximum-likelihood approach. \emph{Molecular Biology and Evolution},  \bold{18}, 691--699
+
+Le, S.Q. and Gascuel, O. (2008) LG: An Improved, General 
+Amino-Acid Replacement Matrix \emph{Molecular Biology and Evolution} \bold{25(7)}, 1307--1320
 }
 \author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
 %\note{For small trees the likelihood seems to be similar to Paup* or PhyML.}
@@ -70,25 +77,23 @@ Yang, Z. (2006). \emph{Computational Molecular evolution}. Oxford University Pre
 \examples{
   example(NJ)
 # Jukes-Cantor (starting tree from NJ)  
-  fitJC <- pml(tree, Laurasiatherian) 
+  fitJC <- pml(tree, Laurasiatherian)  
 # optimise edge length parameter     
   fitJC <- optim.pml(fitJC)
-  summary(fitJC)
-
+  fitJC 
+  
 \dontrun{    
 # search for a better tree using NNI rearrangements     
-  fitJC <- optim.pml(fitJC, optNni=TRUE)   
-  summary(fitJC)
+  fitJC <- optim.pml(fitJC, optNni=TRUE)
+  fitJC   
   plot(fitJC$tree)
 
 # JC + Gamma + I - model
   fitJC_GI <- update(fitJC, k=4, inv=.2)
 # optimise shape parameter + proportion of invariant sites     
   fitJC_GI <- optim.pml(fitJC_GI, optGamma=TRUE, optInv=TRUE)
-  summary(fitJC_GI) 
 # GTR + Gamma + I - model
   fitGTR <- optim.pml(fitJC_GI, optNni=TRUE, optGamma=TRUE, optInv=TRUE, optBf=TRUE, optQ=TRUE) 
-  summary(fitGTR)
 }
 
 # 2-state data (RY-coded)  
@@ -102,7 +107,7 @@ Yang, Z. (2006). \emph{Computational Molecular evolution}. Oxford University Pre
   dat <- phyDat(dat, levels=c("r","y"))
   fit2ST <- pml(tree, dat, k=4, inv=.25) 
   fit2ST <- optim.pml(fit2ST,optNni=TRUE, optGamma=TRUE, optInv=TRUE) 
-  
+  fit2ST
   # show some of the methods available for class pml
   methods(class="pml")  
 }
