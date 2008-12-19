@@ -23,8 +23,10 @@ pmlPart(formula, object, ...)
     are \code{"nni", "bf", "Q", "inv", "shape", "edge", "rate"}.
     Each parameters can be used only once in the formula. 
     \code{"rate"} and \code{"nni"} are only available for the right side
-    of the formula. 
-     
+    of the formula.  
+    
+    For partitions with different edge weights, but same topology, \code{pmlPen}
+    can try to find more parsimonious models (see example).             
 }
 \value{
   \code{kcluster} returns a list with elements
@@ -34,10 +36,7 @@ pmlPart(formula, object, ...)
 }
 %\references{ ~put references to the literature/web site here ~ }
 \author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
-%\note{ ~~further notes~~ 
-%
-% ~Make other sections like Warning with \section{Warning }{....} ~
-%}
+
 \seealso{  \code{\link{pml}},\code{\link{pmlCluster}},\code{\link{pmlMix}} }
 \examples{
 data(yeast)
@@ -52,8 +51,14 @@ set.seed(1)
 
 sp <- pmlPart(edge ~ rate + inv, fits, weight=weight)
 sp
+
+sp2 <- pmlPart(~ edge + inv, fits, weight=weight)
+sp2
+AIC(sp2)
+
+sp3 <- pmlPen(sp2, lambda = 2) 
+AIC(sp3)
+
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
 \keyword{ cluster }
 %\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

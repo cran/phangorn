@@ -66,7 +66,7 @@ dat[dat=="c"] = "y"
 dat[dat=="t"] = "y"
 
 fit = h2st(dat)
-write.nexus.splits(fit[fit$edges>1e-4, ], file = "test.nxs")
+write.nexus.splits(fit[fit$edges>1e-4, ][-1,], file = "test.nxs")
 # read this file into Spectronet or Splitstree to show the network
 unlink("test.nxs") 
 }

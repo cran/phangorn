@@ -1,3 +1,27 @@
+		CHANGES IN PHANGORN VERSION 0.0-4
+
+
+NEW FEATURES
+
+    o splitsNetwork fits a phylogenetic network using a L1 penalty. 
+    
+      (High memory consumption)  
+
+    o pmlPen: A new function to estimate penalized likelihood models
+    
+      for sets of edge weights in mixtures or partition models.
+
+BUG FIXES
+
+    o dist.ml should be more forgiving for different inputs.
+    
+OTHER CHANGES    
+    
+    o a new dataset.     
+      
+      
+      
+
 		CHANGES IN PHANGORN VERSION 0.0-3
 
 

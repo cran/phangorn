@@ -4,9 +4,9 @@ phangorn at one stage or another.
 
   Emmanuel Paradis and all the other authors of the APE package.  
   
-  Tim White for provinding some C-code for the Hadamard distances. 
+  Tim White for provinding some C-code to compute the Hadamard distances. 
   
-  Bennet McComish for the allTrees function. 
+  Bennet McComish for providing the allTrees function. 
 
   Financial support was provided by the Alan Wilson Centre of 
   Molecular Ecology and Evolution 
