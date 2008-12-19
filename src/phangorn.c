@@ -156,6 +156,15 @@ SEXP rowMin(SEXP sdat, SEXP sn, SEXP sk){
 	return(result);		
 }
 
+void rowMin2(double *dat, int n,  int k, double *res){
+	int i, h;  
+	double x;
+	for(i = 0; i < n; i++){
+		x = dat[i];
+        for(h = 1; h< k; h++) {if(dat[i + h*n] < x) x=dat[i + h*n];}
+		res[i] = x;   			
+		}		
+    }
 
 
 SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk){
@@ -779,5 +788,57 @@ SEXP FS(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP l
     UNPROTECT(3);
     return (RESULT);
 }	
+
+
+
+void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root){ 
+    int i, j, sum=0, k, l, Nnode, ind, *ord, *csum, *tips, *stack, z=0;  
+    double *parent;
+    int m=sumNode[0];
+    parent = (double *) R_alloc((*n), sizeof(double));
+    tips = (int *) R_alloc(m, sizeof(int));
+    ord = (int *) R_alloc((*n), sizeof(int));
+    csum = (int *) R_alloc( (m+1), sizeof(int));
+    stack = (int *) R_alloc(m, sizeof(int));
+    for(j=0;j<(*n);j++) parent[j] = (double)from[j];
+   
+    for(j=0;j<(*n);j++) ord[j] = j;
+    for(j=0;j<m;j++) tips[j] = 0;
+        
+    rsort_with_index(parent, ord, *n);
+    R_tabulate(from, n, sumNode, tips);
+    csum[0]=0;
+    for(i=0;i<(*sumNode);i++){
+        sum+=tips[i];                 
+        csum[i+1] = sum;                        
+    }    
+    
+    k = (*n)-1;
+    l = (*n)-1;
+    Nnode = 0;
+    stack[0] = *root;
+    
+    while(z > -1){
+	    j=stack[z];          
+        if(tips[j]>0){   
+            for(i=csum[j];i<csum[j+1];i++){
+                ind = ord[i];                     
+                neworder[k] = ind + 1;        
+                stack[z] = to[ind]-1;
+                k -=1;
+                z++;                            
+            }         
+            Nnode += 1; 
+            }
+        z--;       
+    }                
+    root[0]=Nnode;      
+}
+
+
+
+
+
+
 
 	

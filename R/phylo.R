@@ -2,8 +2,8 @@
 
 .onLoad  <- function(libname, pkgname) {
     library.dynam("phangorn", pkgname, libname)
-    require(ape) 
     require(quadprog)
+    require(ape)
 }
 
 
@@ -326,9 +326,8 @@ NJ <- function (x)
     attr(edge.length,"names") = NULL
     result = list(edge = rbind(c(nam[2], nam[1]), edge), edge.length = edge.length,
      tip.label = labels, Nnode = m)
-    class(result) <- "phylo"
-    # test 
-    reorder(result, "pruningwise")
+    class(result) <- "phylo" 
+    reorderPruning(result)
 }
 
 
@@ -375,7 +374,7 @@ UNJ = function (x)
     result = list(edge = rbind(c(nam[2], nam[1]), edge), 
     edge.length=edge.length, tip.label = labels, Nnode=m)
     class(result) <- "phylo"
-    reorder(result, "pruningwise")  
+    reorderPruning(result)  
 }
 
 
@@ -412,9 +411,7 @@ dist.tip <- function(x1,x2,weight,el, eig=edQt(), bf){
     ll0 <- sum(d * log(getP(el,eig)[[1]]*bf))
     eps=1
     el = 1 - (sum(diag(d)) / sum(d))
-#    if(sum(d)==sum(diag(d))){
     if(el==0){
-# 	 ll1 <- sum(d * log(getP(el,eig)[[1]] * bf))   
         ll1 <- sum(d * log(getP(el,eig)[[1]] * bf))
         return(c(0, 0, ll0, ll1))
         } 
@@ -1067,13 +1064,27 @@ read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
 #
 # tree manipulation
 #	 
-		
-phyloNode <- function(root, pvector, cvector, evector, tip, tips, Nnode){
-	res <- list(root=root, pvector=pvector, cvector=cvector, evector=evector, tip=tip, tips=tips, Nnode=Nnode)
-	class(res)="phyloNode"
-	res
-	}
-	
+
+
+
+reorderPruning <- function (x, ...) 
+{
+    parents <- as.integer(x$edge[, 1])
+    child <- as.integer(x$edge[, 2])
+    root <- as.integer(parents[!match(parents, child, 0)][1])  # unique out
+    if (length(root) > 2) 
+        stop("more than 1 root found")
+    
+    n = length(parents)    
+    m = max(parents)  # edge   
+    
+    neworder = .C("reorder", as.integer(parents), as.integer(child), as.integer(n), as.integer(m), integer(n), as.integer(root-1))[[5]]
+       
+    x$edge = x$edge[neworder,]
+    x$edge.length = x$edge.length[neworder]
+    attr(x, "order") <- "pruningwise"
+    x
+}
 
 
 add.tip <- function(phy, n, edgeLength=NULL, tip=""){ 
@@ -1089,90 +1100,11 @@ add.tip <- function(phy, n, edgeLength=NULL, tip=""){
      phy$edge.length <- c(phy$edge.length, edgeLength[-1])
      phy$tip.label <- c(phy$tip.label, tip) 
      phy <- old2new.phylo(phy)
-     phy <- as.phylo.phyloNode(as.phyloNode.phylo(phy))
+     phy <- reorderPruning(phy) 
      phy
 }
 
 
-
-as.phyloNode.phylo <- function (x, ...) {
-    parents <- x$edge[, 1]
-    child <- x$edge[, 2]
-    root <- unique(parents[is.na(match(parents,child))])
-    if(length(root)>2) stop("more than 1 root found")
-    pvector <- numeric(max(parents))
-    pvector[child] <- parents
-    tips <- !logical(max(parents))
-    tips[parents] <- FALSE
-    cvector <- vector("list", max(parents))
-    for (i in 1:length(parents)) cvector[[parents[i]]] <- c(cvector[[parents[i]]], 
-        child[i])
-    evector <- NULL
-    if (!is.null(x$edge.length)) {
-        evector <- numeric(max(parents))
-        evector[child] <- x$edge.length
-    }
-    list(root = root, pvector = pvector, cvector = cvector, evector = evector, 
-        tip = x$tip.label, tips = tips, Nnode = x$Nnode)
-}
-
- 
-as.phylo <- function (x, ...) UseMethod("as.phylo")
-as.phyloNode <- function (x, ...) UseMethod("as.phyloNode")
-
-as.phylo.phyloNode <- function(x, order="pruningwise", ...){
-	if(order=="pruningwise")result <- phyloPruning(x)
-	if(order=="cladewise")result <- phyloClade(x)
-	result
-}
-
-
-phyloClade <- function(phyloNode, root=NULL){
-    edge <- NULL
-    if(is.null(root))root <- phyloNode$root
-    tips <- phyloNode$tips
-    cvector <- phyloNode$cvector
-    pvector <- phyloNode$pvector
-    mylist <- cvector[[root]]
-    edge.length <- NULL
-    while(length(mylist)){
-        kid = mylist[1]
-    	edge <- rbind(edge, cbind(pvector[kid],kid))
-    	if(!is.null(phyloNode$evector)) edge.length <- c(edge.length, phyloNode$evector[kid])
-        if(!tips[kid]) mylist <- c(cvector[[kid]], mylist[-1])     
-        else mylist <- mylist[-1]  
-        }
-    tip.label = phyloNode$tip   
-    tree <- list(edge=edge, edge.length=edge.length, tip.label=tip.label, Nnode= length(unique(edge[,1]))) # phyloNode$Nnode)
-    class(tree) <- "phylo" 
-    attr(tree, "order") <- "cladewise"
-    tree
-}
-
-
-phyloPruning <- function (phyloNode, root=NULL) 
-{
-    edge <- NULL
-    if(is.null(root))root <- phyloNode$root
-    tips <- phyloNode$tips
-    cvector <- phyloNode$cvector
-    parent.list <- root
-    edge.length <- NULL
-    while (length(parent.list)) {
-        parent <- parent.list[1]
-        kids <- cvector[[parent]]
-        edge <- rbind(cbind(parent, kids), edge)
-        if (!is.null(phyloNode$evector)) 
-            edge.length <- c(phyloNode$evector[kids], edge.length)
-        parent.list = c(parent.list[-1], kids[which(!tips[kids])])
-    }
-    tip.label = phyloNode$tip 
-    tree <- list(edge = edge, edge.length = edge.length, tip.label = tip.label, 
-        Nnode = length(unique(edge[,1]))) 
-    class(tree) <- "phylo"
-    attr(tree, "order") <- "pruningwise"
-    tree
-}
 
 
 nnin <- function (tree, n) 
@@ -1197,8 +1129,8 @@ nnin <- function (tree, n)
     tree1$edge[ind2[1], 2] = e1
     tree2$edge[ind1, 2] = e3
     tree2$edge[ind2[2], 2] = e1
-    tree1 <- as.phylo.phyloNode(as.phyloNode.phylo(tree1))
-    tree2 <- as.phylo.phyloNode(as.phyloNode.phylo(tree2))
+    tree1 <- reorderPruning(tree1) 
+    tree2 <- reorderPruning(tree2) 
     result = list(tree1, tree2)
     result
 } 
@@ -1303,20 +1235,14 @@ allTrees <- function(n, rooted = FALSE, tip.label = NULL) {
 	m <- length(edges)
 	for (x in 1:m) {
 		trees[[x]] <- list(edge = edges[[x]])
-		trees[[x]]$tip.label <- if (is.null(tip.label)) 
-			paste("t", 1:n, sep = "")
-		else tip.label
 		trees[[x]]$Nnode <- n - 2 + rooted
 		class(trees[[x]]) <- "phylo"
-
-		# Reorder the trees cladewise, because otherwise some of them
-		# will, for some arcane reason, crash R when it tries to
-		# reorder them pruningwise.
-#		trees[[x]] <- reorder(trees[[x]], "cladewise")
-		
-		trees[[x]] <- as.phylo.phyloNode(as.phyloNode.phylo(trees[[x]]))
+		trees[[x]] <- reorderPruning(trees[[x]]) 
 	}
-	class(trees) <- "multiPhylo"
+	attr(trees, "TipLabel") <- if (is.null(tip.label)) 
+            paste("t", 1:n, sep = "")
+        else tip.label
+    class(trees) <- "multiPhylo"
 	trees
 }
 
@@ -1333,6 +1259,7 @@ sankoff.quartet <- function (dat, cost, p, l, weight)
     erg <- .Call("rowMin", tmp, as.integer(p), as.integer(l), PACKAGE = "phangorn")
     sum(weight * erg)
 }
+
 
  
 sankoffNNI <- function (tree, n, datp, datf, p, l, p0, cost, weight) 
@@ -1520,12 +1447,9 @@ pnodes <- function (tree, dat, cost, external = TRUE)
     tmp = dat[[1]] * 0
     datp[[pj]] = tmp
     nTips = min(parent) - 1
+   
     for (j in (pl - 1):1) {
-#        blub = TRUE
-#        isParent = (child[j] > nTips)
-#        if (!external & !isParent) 
-#            blub = FALSE
-#        if (blub) {
+
             res <- .Call("sankoff2", sdat = datp[[parent[j]]], 
                 sn = p, scost = cost, sk = dl, PACKAGE = "phangorn")
             if (pj != parent[j]) {
@@ -1540,7 +1464,7 @@ pnodes <- function (tree, dat, cost, external = TRUE)
                 i = i - 1
             }
             datp[[child[j]]] = res
-#        }
+
     }
     datp
 }
@@ -1613,7 +1537,7 @@ sankoff.nni <- function (tree, data, cost, ...)
         swap = 0
         for (i in ind) {
             tree2 <- nnimove2(tree, id[i, ], wm[i] == 2)
-            tree3 <- as.phylo.phyloNode(as.phyloNode.phylo(tree2))
+            tree3 <- reorderPruning(tree2) 
             p1 = fit.sankoff(tree3, data, cost)
             if (p1 < p0) {
                 swap = swap + 1
@@ -1622,7 +1546,7 @@ sankoff.nni <- function (tree, data, cost, ...)
             }
         }
         cat(swap, "\n")
-        tree <- as.phylo.phyloNode(as.phyloNode.phylo(tree))
+        tree <- reorderPruning(tree) 
     }
     list(tree = tree, pscore = p0, swap = swap)
 }
@@ -2038,7 +1962,7 @@ pml.nni <- function (fit, ...)
 	    swap=0
         for (i in ind){
 		tree2 <- nnimove(tree, id[i, ], el[i, ], wm[i] == 2)
-		tree3 <- as.phylo.phyloNode(as.phyloNode.phylo(tree2)) 
+		tree3 <- reorderPruning(tree2) 
         fit2$tree = tree3
 		l1 = pml3(fit2)
 		if(l1 > l0){
@@ -2048,7 +1972,7 @@ pml.nni <- function (fit, ...)
 			}
 		}
         cat(swap," \n")  
-        tree <- as.phylo.phyloNode(as.phyloNode.phylo(tree))  
+        tree <- reorderPruning(tree) 
         fit$tree <- tree
         fit <- optimEdge(fit, control = list(eps = 1e-08, maxit = 5))
     }
@@ -2381,7 +2305,6 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
                 INV = INV, Q = Q, bf = bf, eig = eig, k = k, 
                 shape = shape, w = w, ll.0 = ll.0)
             rate = res[[1]]
-            # w = rep(1/k, k)
             g = discrete.gamma(shape, k)
             w = rep(1/k, k) 
             if (inv > 0) {
@@ -2976,11 +2899,10 @@ PNJ <- function (data)
             D = rbind(D, 0)
         }
     }
-    tree <- list(edge = cbind(as.character(parentNodes),as.character(childNodes)),tip.label=tip.label) #,edge.length=height
+    tree <- list(edge = cbind(as.character(parentNodes),as.character(childNodes)),tip.label=tip.label) 
     class(tree) <- "phylo"
-    tree <- old2new.phylo(tree)
-    #as.phylo.phyloNode(as.phyloNode.phylo(tree),"pruningwise")  
-    read.tree(text=write.tree(tree))    
+    tree <- old2new.phylo(tree)   
+    reorderPruning(tree)    
 }
 
 
@@ -3159,15 +3081,12 @@ pmlCluster <- function (formula, fit, weight, p = 4, part = NULL, ...)
         eps2 = loli
         loli=sum(apply(LL,1,max))
         eps2 = eps2-loli
-#        print(eps2)
         logLik = c(logLik, loli) 
         print(logLik)
         Part = cbind(Part, part)
         df2 = df2 + df2
         m = m + 1
     }
-#    df = df2
-#    for (i in 1:p) df = df + fits[[i]]$df
     
     df <- matrix(1, 6 ,2)
     colnames(df) <- c("#df", "group")
@@ -3185,7 +3104,6 @@ pmlCluster <- function (formula, fit, weight, p = 4, part = NULL, ...)
     if(PartQ) df[5,2] = p
     if(PartRate) df[6,1] = p-1     
     attr(logLik, "df") = sum(df[,1]*df[,2])
-#    object <- list(logLik = logLik, fits = fits, call = call, df=df) 
    
     res = list(logLik = logLik, Partition = Part, trees = trees)
     result <- list(logLik = loli, fits = fits, Partition = part, 
@@ -3259,7 +3177,7 @@ pml <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1,
     if (inv > 0) 
         g <- g/(1 - inv)
     g <- rate * g
-    INV <- lli(data, tree)#, bf)
+    INV <- lli(data, tree)
     ll.0 <- INV %*% (bf * inv)
     resll <- matrix(0, nr, k)
     while (m <= k) {
@@ -3356,7 +3274,7 @@ update.pml <- function (object, ...)
 {
     extras <- match.call(expand.dots = FALSE)$...
     pmla <- c("tree", "data", "bf", "Q", "inv", "k", "shape", 
-        "rate", "model", "wMix", "llMix", "...") ## "ll.0", "w", 
+        "rate", "model", "wMix", "llMix", "...") 
     names(extras) <- pmla[pmatch(names(extras), pmla[-length(pmla)])]
     existing <- match(pmla, names(extras))
 
@@ -3445,8 +3363,7 @@ update.pml <- function (object, ...)
     if (inv > 0) 
         w <- (1 - inv) * w
     if (wMix > 0) 
-        w <- wMix * w     # (1 - wMix) 
-              
+        w <- wMix * w                  
     m <- 1
     resll <- matrix(0, nr, k)
     while (m <= k) {
@@ -3563,7 +3480,7 @@ pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)),
         g <- g * rate     
     } 
     if (is.null(INV)) 
-        INV = lli(data, tree)#, bf)
+        INV = lli(data, tree)
     if (is.null(ll.0)) 
         ll.0 <- numeric(attr(data,"nr"))
     if(inv>0) 
@@ -3680,7 +3597,6 @@ optimMixEdge <- function(object, omega,...){
             }     
         }             
         iter <- iter+1
-#        cat("eps: ", eps, "ll: ", ll1, "\n")
         ll0 <- ll1
     }       
     tree$edge.length <- theta
@@ -3716,7 +3632,6 @@ pmlMix <- function (formula, fit, m = 2, omega = rep(1/m, m), ...)
         fits <- list()
         for (i in 1:m) fits[[i]] <- fit
     }
-#    for(i in 1:r)fits[[i]]<-update(fits[[i]], k=1)  
     dat <- fits[[1]]$data
     p = attr(dat, "nr")
     weight = attr(dat, "weight")
@@ -3742,17 +3657,17 @@ pmlMix <- function (formula, fit, m = 2, omega = rep(1/m, m), ...)
         iter1 <- 0
         
         if (AllQ) {
-            newQ <- optimMixQ(fits, Q = fits[[1]]$parameter$Q, 
+            newQ <- optimMixQ(fits, Q = fits[[1]]$Q, 
                 omega = omega)[[1]]
             for (i in 1:m) fits[[i]] <- update(fits[[i]], Q = newQ)
         }
         if (AllBf) {
-            newBf <- optimMixBf(fits, bf = fits[[1]]$parameter$bf, 
+            newBf <- optimMixBf(fits, bf = fits[[1]]$bf, 
                 omega = omega)
             for (i in 1:m) fits[[i]] <- update(fits[[i]], bf = newBf)
         }
         if (AllInv) {
-            newInv <- optimMixInv(fits, inv = fits[[1]]$parameter$inv, 
+            newInv <- optimMixInv(fits, inv = fits[[1]]$inv, 
                 omega = omega)
             for (i in 1:m) fits[[i]] <- update(fits[[i]], Inv = newInv)
         }
@@ -3815,7 +3730,7 @@ pmlMix <- function (formula, fit, m = 2, omega = rep(1/m, m), ...)
          fits[[i]] <- update(fits[[i]], llMix = pl0, wMix = omega[i])
     }
 
-            ll2 = sum(weight * log(ll %*% omega)) # res$value
+            ll2 = sum(weight * log(ll %*% omega)) 
             eps1 = llold - ll2
             iter1 <- iter1 + 1
             llold = ll2
@@ -4077,8 +3992,7 @@ pmlMixPen = function (object, lambda, optOmega=TRUE, ...)
         eps = abs(loglik1 - loglik)
         theta = exp(thetanew)
         loglik <- loglik1
-        iter = iter + 1
-#        print(iter)   
+        iter = iter + 1  
        }
        if(optOmega){
             res = optWPen(ll, weight, omega, pen)
@@ -4235,6 +4149,10 @@ score3 = function (fit, ...)
     }
     res 
 }
+
+
+
+
 
 
 

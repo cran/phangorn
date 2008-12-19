@@ -1,6 +1,8 @@
 useDynLib(phangorn, .registration=TRUE)
 
-importFrom(graphics, plot)
+#importFrom(graphics, plot)
+import(ape)
+importFrom(stats, AIC, logLik)
 
 export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ, 
     phyDat, dfactorial, ldfactorial, hadamard, nni, allSitePattern,
@@ -13,8 +15,8 @@ export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ,
 S3method(as.character, phyDat)
 S3method(as.data.frame, phyDat)
 S3method(c, phyDat)
-S3method(as.phylo, phyloNode)
-S3method(as.phyloNode, phylo)
+#S3method(as.phylo, phyloNode)
+#S3method(as.phyloNode, phylo)
 S3method(as.phyDat, DNAbin)
 S3method(logLik, pml)
 S3method(logLik, pmlPart)
