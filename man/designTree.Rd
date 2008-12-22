@@ -7,6 +7,7 @@
 \description{
 \code{designTree} and \code{designSplits} compute design matrices for the 
 estimation of edge length of (phylogenetic) trees using linear models. 
+\code{designTree} also computes a contrast matrix if the method is "rooted".
 }
 \usage{
 designTree(tree, method = "unrooted", ...)
@@ -14,11 +15,11 @@ designSplits(x, splits = "all", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{tree}{ an object of class \code{phylo} }
-  \item{method}{ design matrix for an "unrooted" or "rooted" ultrametric tree}
-  \item{x} {number of taxa. }
-  \item{splits} {one of "all", "star"}
-  \item{\dots}{ further arguments, passed to other methods.  }
+  \item{tree}{an object of class \code{phylo} }
+  \item{method}{design matrix for an "unrooted" or "rooted" ultrametric tree}
+  \item{x}{number of taxa. }
+  \item{splits}{one of "all", "star"}
+  \item{\dots}{further arguments, passed to other methods.  }
 }
 \value{
  a matrix. 

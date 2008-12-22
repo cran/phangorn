@@ -23,9 +23,9 @@ Data. \emph{Journal of Classification}, \bold{10}, 5-24.
 \seealso{\code{\link[phangorn]{hadamard}}}
 
 \examples{
-data(Laurasiatherian)
-dm = dist.hamming(Laurasiatherian)
-dm = as.matrix(dm)[1:10,1:10]
+data(yeast)
+dm = dist.hamming(yeast)
+dm = as.matrix(dm)
 fit = distanceHadamard(dm)
 }
 \keyword{ cluster }% at least one, from doc/KEYWORDS

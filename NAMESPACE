@@ -6,8 +6,8 @@ export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ,
     phyDat, dfactorial, ldfactorial, hadamard, nni, allSitePattern,
     fhm, distanceHadamard, treedist, sankoff, fitch, h2st, h4st,
     dist.logDet, dist.hamming, dist.ml, upgma, write.nexus.splits, 
-    pmlPart, pmlCluster, pmlMix, read.aa, allTrees,
-    designTree, designSplits, getEdgeLength) 
+    pmlPart, pmlCluster, pmlMix, pmlPen, read.aa, allTrees,
+    designTree, designSplits, splitsNetwork) 
 
            
 S3method(as.character, phyDat)
@@ -17,6 +17,8 @@ S3method(as.phylo, phyloNode)
 S3method(as.phyloNode, phylo)
 S3method(as.phyDat, DNAbin)
 S3method(logLik, pml)
+S3method(logLik, pmlPart)
+S3method(logLik, pmlMix)
 S3method(plot, pml)
 S3method(print, phyDat)
 S3method(print, pml)

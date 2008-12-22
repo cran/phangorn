@@ -16,6 +16,7 @@ R_CallMethodDef callMethods[] = {
 {"getdPM", (DL_FUNC) &getdPM, 4},
 {"getdPM2", (DL_FUNC) &getdPM2, 4},
 {"getd2PM", (DL_FUNC) &getd2PM, 4},
+{"getd2PM2", (DL_FUNC) &getd2PM, 4},
 {"getM3", (DL_FUNC) &getM3, 5},
 {"FS", (DL_FUNC) &FS, 14},
 {NULL, NULL, 0}

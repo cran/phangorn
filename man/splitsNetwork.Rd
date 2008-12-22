@@ -1,0 +1,46 @@
+\name{splitsNetwork}
+
+\alias{splitsNetwork}
+\title{Phylogenetic Network}
+\description{
+\code{splitsNetwork} estimates a splits graph from a distance matrix.
+}
+\usage{
+splitsNetwork(dm, gamma=.1, lambda=0.001)
+}
+\arguments{
+  \item{dm}{A distance matrix.}
+  \item{gamma}{penalty value for the L1 constraint.}
+  \item{lambda}{penalty value for the L2 constraint.}
+}
+
+\details{
+\code{splitsNetwork} fits phylogenetic networks using L1, L2 and 
+non-negativity constraints.  
+The function minimises the peanlised least squares
+\deqn{\beta = min \sum(dm - X\beta)^2 + \lambda \|\beta \|^2_2 }{%
+beta = sum(dm - X*beta)^2 + lambda |beta|^2_2 }
+with respect to \deqn{\|\beta \|_1 <= \gamma, \beta >= 0}{%
+|beta|_1 = gamma, beta >= 0}
+where X is a design matrix constructed with \code{designSplits}. 
+External edges are fitted without constraints. 
+}
+\value{
+\code{splitsNetwork} returns a matrix. The first column contains the 
+indices of the splits, the second column an unconstraint fit 
+without penalty terms and the third column the constraint fit.
+}
+%\references{K. P. Schliep (2008). Statistical Phylogenetics (PhD Thesis)
+%}
+\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\seealso{\code{\link[phangorn]{distanceHadamard}}, \code{\link[phangorn]{designTree}}}
+
+\examples{
+data(yeast)
+dm = dist.ml(yeast)
+fit = splitsNetwork(dm)
+write.nexus.splits(fit)
+}
+\keyword{ cluster }% at least one, from doc/KEYWORDS
+
+
