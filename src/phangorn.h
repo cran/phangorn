@@ -6,7 +6,7 @@ void fhm(double *v, int *n);
 void out(double *d, double *r, int *n, int *k, int *l);
 void fitch3(int *dat, int *n, int *m, int *pars, int *node, int *edge, int *nl);
 void sankoff4(double *dat, int n, double *cost, int k, double *result);
-
+void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root);
 
 SEXP dist2spectra(SEXP dm, SEXP nx, SEXP ns);
 SEXP sankoff2(SEXP sdat, SEXP sn, SEXP scost, SEXP sk);

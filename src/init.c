@@ -27,6 +27,7 @@ R_CMethodDef cMethods[] = {
 {"fhm", (DL_FUNC) &fhm, 2},
 {"out", (DL_FUNC) &out, 5},
 {"fitch3", (DL_FUNC) &fitch3, 7},
+{"reorder", (DL_FUNC) &reorder, 6},
 {NULL, NULL, 0}
 };
 
