@@ -18,7 +18,7 @@ A phylogenetic tree of class \code{phylo}.
 }
 \author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
 
-\seealso{ \code{\link[stats]{hclust}}, \code{\link[ape]{as.phylo}} }
+\seealso{ \code{\link[stats]{hclust}}, \code{\link[phangorn]{NJ}}, \code{\link[ape]{as.phylo}} }
 \examples{
 data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)

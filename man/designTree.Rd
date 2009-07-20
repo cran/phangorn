@@ -1,7 +1,6 @@
 \name{designTree}
 \alias{designTree}
 \alias{designSplits}
-\alias{getEdgeLength}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Compute a design matrix }
 \description{

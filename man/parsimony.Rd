@@ -14,13 +14,16 @@ rearrangements.
 \usage{
 parsimony(tree, data, method="sankoff", ...)
 optim.parsimony(tree, data, cost=NULL, ...)
+fitch(tree, data, site = FALSE)
+sankoff(tree, data, cost = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{data}{A (dna) sequences.}
+  \item{data}{A object of class phyDat containing (dna) sequences.}
   \item{tree}{ tree to start the nni search from.}
   \item{method}{one of 'fitch' or 'sankoff'.}
-  \item{cost}{A cost matrix for the transitions between two states.}  
+  \item{cost}{A cost matrix for the transitions between two states.} 
+  \item{site}{logical, if TRUE site wise parsimony scores are returned. } 
   \item{...}{Further arguments passed to or from other methods.} 
 }
 \value{
@@ -30,7 +33,7 @@ optim.parsimony(tree, data, cost=NULL, ...)
 \references{Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
 }
 \author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
-\seealso{ \code{\link{sankoff}}, \code{\link{NJ}}}
+\seealso{ \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}}
 \examples{
 data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)

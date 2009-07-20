@@ -41,6 +41,4 @@ read.aa(file, format = "interleaved", skip = 0,
   \code{\link[phangorn]{phyDat}}, \code{\link[seqinr]{read.alignment}}
 }
 \author{Klaus Schliep \email{k.p.schliep@massey.ac.nz}}
-\examples{
-}
 \keyword{IO}

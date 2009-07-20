@@ -1,20 +1,23 @@
 \name{treedist}
 \alias{treedist}
+\alias{RF.dist}
 %\alias{print.treedist}
 \title{ Distances between trees }
 \description{
-  \code{treedist} computes different tree distance methods.
+  \code{treedist} computes different tree distance methods and \code{RF.dist} the Robinson-Foulds distance.
 }
 \usage{
 treedist(tree1, tree2)
+RF.dist(tree1, tree2, check.labels = FALSE)
 }
 \arguments{
   \item{tree1}{ A phylogenetic tree. }
   \item{tree2}{ A phylogenetic tree. }
+  \item{check.labels}{compares labels of the trees.}
 }
 \value{
-  \code{treedist} returns list containing the following tree distance methods
-  \item{symmetric.difference}{symmetric.difference}
+  \code{treedist} returns a vector containing the following tree distance methods
+  \item{symmetric.difference}{symmetric.difference or  Robinson-Foulds distance}
   \item{branch.score.difference}{branch.score.difference}
   \item{path.difference}{path.difference}
   \item{weighted.path.difference}{weighted.path.difference}

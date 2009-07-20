@@ -32,7 +32,7 @@ version, UNJ. in Birkin et. al. \emph{Mathematical Hierarchies and Biology},
  149--170., }    
 \author{Klaus P. Schliep \email{K.P.Schliep@massey.ac.nz}}
 
-\seealso{  \code{\link[ape]{nj}}, \code{\link[ape]{dist.dna}}, \code{\link[phangorn]{dist.hamming}}, \code{\link[phangorn]{upgma}}}
+\seealso{  \code{\link[ape]{nj}}, \code{\link[ape]{dist.dna}}, \code{\link[phangorn]{dist.hamming}}, \code{\link[phangorn]{upgma}}, \code{\link[phangorn]{fastme.bal}}}
 \examples{
 data(Laurasiatherian)
 dm <- dist.logDet(Laurasiatherian)
