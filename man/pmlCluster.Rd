@@ -24,9 +24,12 @@ pmlCluster(formula, fit, weight, p = 4, part = NULL, ...)
     get optimised over all cluster, on the right the parameter which
     are optimised specific to each cluster. The parameters available 
     are \code{"nni", "bf", "Q", "inv", "shape", "edge", "rate"}.
-    Each parameters can be used only once in the formula. 
-    \code{"rate"} is only available for the right side and so is 
-    \code{"nni"}. 
+    Each parameter can be used only once in the formula. 
+    There are also some restriction on the combinations how parameters 
+    can get used. \code{"rate"} is only available for the right side.  
+    When \code{"rate"} is speciefied on the left hand side \code{"edge"}
+    has to be specified (on either side), if  \code{"rate"} is specified on 
+    the right hand side it follows directly that \code{edge} is too. 
 }
 \value{
   \code{pmlCluster} returns a list with elements
@@ -40,7 +43,7 @@ pmlCluster(formula, fit, weight, p = 4, part = NULL, ...)
 %
 % ~Make other sections like Warning with \section{Warning }{....} ~
 %}
-\seealso{  \code{\link{pml}},\code{\link{pmlPart}},\code{\link{pmlMix}} }
+\seealso{  \code{\link{pml}},\code{\link{pmlPart}},\code{\link{pmlMix}},\code{\link{SH.test}} }
 \examples{
 \dontrun{
 data(yeast)
@@ -54,6 +57,7 @@ set.seed(1)
 
 sp <- pmlCluster(edge~rate, fit, weight, p=4)
 sp
+SH.test(sp)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

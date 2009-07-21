@@ -3,17 +3,24 @@
 \alias{as.phyDat.DNAbin}
 \alias{as.data.frame.phyDat}
 \alias{as.character.phyDat}
+\alias{as.DNAbin.phyDat}
+\alias{read.phyDat}
+\alias{write.phyDat}
 \alias{allSitePattern}
+\alias{as.phyDat}
 \title{Conversion amoung Sequence Formats}
 \description{
 These functions transform several DNA formats into the \code{phyDat} format. 
 \code{allSitePattern} generates an alignment of all possible site patterns.
 }
 \usage{
-phyDat(data, type = "DNA", levels = NULL, return.index=FALSE, ...) 
+phyDat(data, type = "DNA", levels = NULL, return.index=TRUE, ...) 
+read.phyDat(file, format="phylip", type="DNA", ...)
+write.phyDat(x, file, format="phylip",...)
 \method{as.phyDat}{DNAbin}(x, ...)
 \method{as.character}{phyDat}(x, ...)
 \method{as.data.frame}{phyDat}(x, ...)
+\method{as.DNAbin}{phyDat}(x, ...)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -23,6 +30,8 @@ allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
   \item{type}{Type of sequences ("DNA", "AA" or "USER").}
   \item{levels}{Level atttributes.}
   \item{return.index}{If TRUE returns a index of the site patterns.}
+  \item{file}{A file name.}
+  \item{format}{File format of the sequence alignment (see details).}
   \item{n}{Number of sequences.}
   \item{names}{Names of sequences.}
   \item{...}{further arguments passed to or from other methods.}
@@ -33,15 +42,20 @@ For example c("a", "c", "g", "t", "-") would create a data object that
 can be used in phylogenetic analysis with gaps as fifth state.  
 \code{allSitePattern} returns all possible site patternsis and can
 be usefull in simulation studies.  
+\code{write.phyDat} calls the function write.dna or write.nexus.data and  
+\code{read.phyDat} calls the function read.dna, read.aa or read.nexus.data
+see for more details over there.
+  
+You may import data directly with \code{\link[ape]{read.dna}} or \code{\link[ape]{read.nexus.data}}
+and convert the data to class phyDat. 
 }
 \value{
 The functions return an object of class \code{phyDat}. 
-You may import data with \code{\link[ape]{read.dna}} or \code{\link[ape]{read.nexus.data}}. 
 }
 
 \author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
 
-\seealso{ \code{\link[ape]{as.DNAbin}}, \code{\link[ape]{read.dna}} and \code{\link[ape]{read.nexus.data}} and 
+\seealso{ \code{\link[ape]{as.DNAbin}}, \code{\link[ape]{read.dna}},  \code{\link[phangorn]{read.aa}} and \code{\link[ape]{read.nexus.data}} and 
 the example of \code{\link[phangorn]{pmlMix}} for the use of \code{allSitePattern}}
 \examples{
 data(Laurasiatherian)

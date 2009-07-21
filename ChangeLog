@@ -1,0 +1,138 @@
+		CHANGES IN PHANGORN VERSION 0.99-2
+
+
+NEW FEATURES
+
+    o bootstrap.pml and bootstrap.phyDat: parametric 
+    
+      bootstrap methods
+
+    o simSeq: A new function to simulate sequence data 
+
+    o read.phyDat: simplifies reading in alignments
+    
+    o SH.test: Shimodaira-Hasegawa test
+    
+    o RF.dist: Robinson-Foulds distance as replacement 
+    
+      for treedist (uses less memory and is much faster)
+          
+BUG FIXES
+
+    o dist.ml returned wrong variances.   
+    
+    o as.character.phyDat, as.data.frame caused an error 
+       
+      for alignments with only one site.    
+          
+OTHER CHANGES    
+    
+    o added vignette describing how to perform some
+    
+      standard phylogenetic analysis with phangorn.   
+      
+    o more functions to convert between different data formats.
+    
+    o NNI tree search is now general possible for 
+      
+      partition models (pmlPart, pmlCluster)
+        
+      
+
+		CHANGES IN PHANGORN VERSION 0.0-5
+
+
+BUG FIXES
+
+    o Solved a namespace problem with ape (>=2.2-3). 
+
+
+
+		CHANGES IN PHANGORN VERSION 0.0-4
+
+
+NEW FEATURES
+
+    o splitsNetwork fits a phylogenetic network using a L1 penalty. 
+    
+      (High memory consumption)  
+
+    o pmlPen: A new function to estimate penalized likelihood models
+    
+      for sets of edge weights in mixtures or partition models.
+
+BUG FIXES
+
+    o dist.ml should be more forgiving for different inputs.
+    
+OTHER CHANGES    
+    
+    o a new dataset.     
+      
+      
+      
+
+		CHANGES IN PHANGORN VERSION 0.0-3
+
+
+NEW FEATURES
+
+    o amino acid models 
+
+    o several new maximum likelihood models:
+    
+      mixture models (pmlMix), and some model for 
+      
+      phylogenomic data partition models (pmlPart), 
+      
+      and clustering of partitions / genes (pmlCluster)  
+      
+      (still experimental, feed back wellcome)
+        
+    o design matrices for phylogenetic distance methods 
+    
+    o added some functions useful for simulations
+    
+      (nni, allTrees) 
+    
+       
+    
+OTHER CHANGES    
+    
+    o the data object phyDat changed slightly internally
+    
+    o a new dataset 
+    
+    o read.aa to read amino acid data in phylip format 
+      
+      based on read.dna from the ape package
+       
+
+      
+      
+
+		CHANGES IN PHANGORN VERSION 0.0-2
+
+
+NEW FEATURES
+
+    o more generic functions (plot.pml, update.pml) 
+      
+            
+BUG FIXES
+
+    o the "Fitch" algorithm in parsimony contained a bug 
+    
+    
+OTHER CHANGES    
+    
+    o pml has a cleaner interface (less parameter)
+    
+    o new faster parsimony analysis (more compiled C-Code) 
+          
+    o added NAMESPACE
+    
+          
+
+      
+               

@@ -10,7 +10,7 @@ Both methods assume bifurcating trees.
 }
 \usage{
 allTrees(n, rooted = FALSE, tip.label = NULL)
-nni(tree,  edge.length = FALSE)
+nni(tree)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,7 +18,6 @@ nni(tree,  edge.length = FALSE)
   \item{rooted}{Rooted or unrooted trees (default: rooted).  }
   \item{tip.label}{Tip labels.}
   \item{tree}{A phylogenetic \code{tree}, object of class \code{phylo}.}
-  \item{edge.length}{Keep edge lengths?}
 }
 \value{
    an object of class phylo. 
