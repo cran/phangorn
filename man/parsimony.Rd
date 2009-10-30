@@ -32,7 +32,7 @@ sankoff(tree, data, cost = NULL)
 }
 \references{Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
 }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \seealso{ \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}}
 \examples{
 data(Laurasiatherian)

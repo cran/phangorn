@@ -2,7 +2,7 @@ useDynLib(phangorn, .registration=TRUE)
 
 #importFrom(graphics, plot)
 import(ape)
-importFrom(stats, AIC, logLik)
+importFrom(stats, AIC, logLik)  
 
 export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ, 
     phyDat, read.phyDat, write.phyDat, as.phyDat,
@@ -11,8 +11,9 @@ export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ,
     dist.logDet, dist.hamming, dist.ml, upgma, write.nexus.splits, 
     pmlPart, pmlCluster, pmlMix, pmlPen, read.aa, allTrees,
     designTree, designSplits, splitsNetwork, simSeq, SH.test, bootstrap.pml,
-    bootstrap.phyDat, RF.dist) 
+    bootstrap.phyDat, RF.dist, pmlCluster2, rNNI, rSPR) 
 
+# sankoff.nni
            
 S3method(as.character, phyDat)
 S3method(as.data.frame, phyDat)

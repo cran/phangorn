@@ -71,9 +71,9 @@ a maximum-likelihood approach. \emph{Molecular Biology and Evolution},  \bold{18
 Le, S.Q. and Gascuel, O. (2008) LG: An Improved, General 
 Amino-Acid Replacement Matrix \emph{Molecular Biology and Evolution} \bold{25(7)}, 1307--1320
 }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
-%\note{For small trees the likelihood seems to be similar to Paup* or PhyML.}
-\seealso{ For a different implementation see \code{\link[ape]{mlphylo}}.} 
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
+% \note{For small trees the likelihood seems to be similar to Paup* or PhyML.}
+% \seealso{ For a different implementation see \code{\link[ape]{mlphylo}}.} 
 \examples{
   example(NJ)
 # Jukes-Cantor (starting tree from NJ)  

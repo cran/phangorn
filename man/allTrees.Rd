@@ -1,36 +1,29 @@
 \name{allTrees}
 \alias{allTrees}
-\alias{nni}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ Compute all trees topologies and nearest neighbor interchange.}
+\title{ Compute all trees topologies.}
 \description{
-\code{allTrees} computes all tree topologies for rooted or unrooted trees with up to 10 tips.
-\code{nni} returns a list of all trees which are one nearest neighbor interchange away. 
-Both methods assume bifurcating trees.
+\code{allTrees} computes all tree topologies for rooted or unrooted trees with up to 10 tips. \code{allTrees}  returns bifurcating trees.
 }
 \usage{
 allTrees(n, rooted = FALSE, tip.label = NULL)
-nni(tree)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{n}{Number of tips (<=10).}
   \item{rooted}{Rooted or unrooted trees (default: rooted).  }
   \item{tip.label}{Tip labels.}
-  \item{tree}{A phylogenetic \code{tree}, object of class \code{phylo}.}
 }
 \value{
-   an object of class phylo. 
+   an object of class multiPhylo. 
 }
-\author{ Klaus Schliep \email{K.P.Schliep@massey.ac.nz} }
+\author{ Klaus Schliep \email{klaus.schliep@gmail.com} }
 
-\seealso{ \code{\link[ape]{fastme}}, \code{\link[phangorn]{distanceHadamard}} }
+% \seealso{}
 \examples{
 trees <- allTrees(5)
 par(mfrow = c(3,5))
 for(i in 1:15)plot(trees[[i]])
-
-neighborhood <- nni(trees[[1]])
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

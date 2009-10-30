@@ -53,10 +53,10 @@ and convert the data to class phyDat.
 The functions return an object of class \code{phyDat}. 
 }
 
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
-\seealso{ \code{\link[ape]{as.DNAbin}}, \code{\link[ape]{read.dna}},  \code{\link[phangorn]{read.aa}} and \code{\link[ape]{read.nexus.data}} and 
-the example of \code{\link[phangorn]{pmlMix}} for the use of \code{allSitePattern}}
+\seealso{ \code{\link{DNAbin}}, \code{\link{as.DNAbin}}, \code{\link{read.dna}},  \code{\link{read.aa}} and \code{\link{read.nexus.data}} and 
+the example of \code{\link{pmlMix}} for the use of \code{allSitePattern}}
 \examples{
 data(Laurasiatherian)
 class(Laurasiatherian)

@@ -28,7 +28,7 @@ Lockhart, P. J., Steel, M. A., Hendy, M. D. and Penny, D. (1994)
 Recovering evolutionary trees under a more realistic model of sequence
 evolution. \emph{Molecular Biology and Evolution}, \bold{11}, 605--602.
 }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
 \seealso{For more distance methods for nucleotide data see \code{\link[ape]{dist.dna}} }
 \examples{

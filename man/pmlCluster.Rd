@@ -1,5 +1,6 @@
 \name{pmlCluster}
 \alias{pmlCluster}
+\alias{pmlCluster2}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Stochastic Partitioning }
 \description{
@@ -38,7 +39,7 @@ pmlCluster(formula, fit, weight, p = 4, part = NULL, ...)
   \item{fits}{fits for the final partitions}
 }
 %\references{ ~put references to the literature/web site here ~ }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 %\note{ ~~further notes~~ 
 %
 % ~Make other sections like Warning with \section{Warning }{....} ~

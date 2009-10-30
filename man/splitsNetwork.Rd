@@ -32,7 +32,7 @@ indices of the splits, the second column an unconstraint fit
 without penalty terms and the third column the constraint fit.
 }
 \references{K. P. Schliep (2009). Some Applications of statistical phylogenetics (PhD Thesis)}
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \seealso{\code{\link[phangorn]{distanceHadamard}}, \code{\link[phangorn]{designTree}}}
 
 \examples{

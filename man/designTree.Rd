@@ -23,7 +23,7 @@ designSplits(x, splits = "all", ...)
 \value{
  a matrix. 
 }
-\author{ Klaus Schliep \email{K.P.Schliep@massey.ac.nz} }
+\author{ Klaus Schliep \email{klaus.schliep@gmail.com} }
 
 \seealso{ \code{\link[ape]{fastme}}, \code{\link[phangorn]{distanceHadamard}} }
 \examples{

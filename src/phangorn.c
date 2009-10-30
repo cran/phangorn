@@ -1,7 +1,7 @@
 /* 
  * phangorn.c
  *
- * (c) 2009  Klaus Schliep (k.p.schliep@massey.ac.nz)
+ * (c) 2009  Klaus Schliep (klaus.schliep@gmail.com)
  * 
  * 
  * This code may be distributed under the GNU GPL
@@ -25,6 +25,28 @@
 #include <Rinternals.h>
 #include <R_ext/Applic.h>
 #include <R_ext/Lapack.h>
+
+
+
+#define DINDEX(i, j) n*(i - 1) - i * (i - 1)/2 + j - i - 1
+
+int give_index(int i, int j, int n)
+{
+    if (i > j) return(DINDEX(j, i));
+    else return(DINDEX(i, j));
+}
+
+void giveIndex(int *left, int* right, int *ll, int *lr, int *n, int *res){
+    int i, j, k;
+    k=0;
+    for (i = 0; i < *ll; i++){
+	    for (j = 0; j < *lr; j++){
+	         res[k] = give_index(left[i], right[j], *n);
+             k++;
+	         }    
+	    }
+	}
+
 
 
 void fhm(double *v, int *n){
@@ -227,9 +249,66 @@ void fitch3(int *dat, int *n, int *m, int *pars, int *node, int *edge, int *nl)
     }
 }
 	
+// fitch4 fitch5 m raus
+void fitch4(int *dat, int *nr, int *m, int i, int j, int *pars){
+	int k;
+	int tmp;
+	for(k = 0; k < (*nr); k++){
+		tmp = dat[i*(*nr) + k] & dat[j*(*nr) + k];
+		if(tmp) dat[i*(*nr) + k] = tmp;
+		else {dat[i*(*nr) + k] = dat[i*(*nr) + k] | dat[j*(*nr) + k];
+			pars[k] += 1;
+	    }
+	} 
+}
+
+void fitch5(int *dat, int *nr, int *m, int *pars, int *node, int *edge, int *nl) 
+{   
+	int i, ni, k;
+    ni = 0;
+    for (i=0; i< *nl; i++) {
+        if (ni == node[i]) fitch4(dat, nr, m, ni-1, edge[i]-1, pars);	        	        
+        else {
+	        ni = node[i];
+	        for(k = 0; k < (*nr); k++) dat[(ni-1)*(*nr) + k] = dat[(edge[i]-1)*(*nr) + k];                     
+        }
+    }
+}
+
+// testen
+
+void fNodes(int *dat, int *nr, int *m, int *node, int *edge, int *n, int *result){   
+	int k, pj, i, j, start, *pars, *tmp, *res;
+//	double *res;
+	pj = node[(*n)-1L];
+	start = (*n)-1L;
+	tmp = (int *) R_alloc(*nr, sizeof(int)); 
+	pars = (int *) R_alloc(*nr, sizeof(int));   
+    res = (int *) R_alloc(*nr, sizeof(int));
+	for(i=0; i<(*nr); i++) tmp[i] = 0;
+    for(i=0; i<(*nr); i++) pars[i] = 0;
+    for(j=((*n)-1L); j>=0; j--) {
+	    if (pj != node[j]) {
+	        for(i=0; i<(*nr); i++) tmp[i] = 0;
+            fitch4(dat, nr, m, (*n)-1L, edge[i]-1, tmp);
+            for(i=0; i<(*nr); i++) pars[i] = tmp[i] ;  
+            pj = node[j];
+            start = j;
+        }
+        else for(i=0; i<(*nr); i++) pars[i] = tmp[i] ;
+        k = start;
+        while (k >= 0 && pj == node[k]) {
+            if (k != j) 
+                fitch4(dat, nr, m, (*n)-1L, edge[i]-1, pars);
+            k--;
+        }
+    }
+    result[0] = 0L; 
+    for(i=0; i<(*nr); i++) result[0] += pars[i];
+}
 
 
-		
+//wird nicht verwendet		
 void sankoff(double *dat, int *n, double *cost, int *k, double *result){
 	int i, j, h; 
 	double tmp[*k], x;
@@ -347,11 +426,12 @@ SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SE
 SEXP pNodes(SEXP data, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge){
 	R_len_t n = length(node); //, nt = length(tips);, SEXP tips , SEXP mNodes , mn=INTEGER(mNodes)[0]
 	int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0];
-	int k, pj, i, j, start=0L, *edges=INTEGER(edge), *nodes=INTEGER(node);
+	int k, pj, i, j, start, *edges=INTEGER(edge), *nodes=INTEGER(node);
 	SEXP result, dlist;  
 	double *res, *tmp, *cost;
 	cost = REAL(scost);
 	pj = nodes[n-1L];
+	start = n-1L;
 	PROTECT(dlist = allocVector(VECSXP, length(data)));
 	tmp = (double *) R_alloc(nrx*ncx, sizeof(double));    
     for(i=0; i<(nrx * ncx); i++) tmp[i] = 0.0;
@@ -512,6 +592,11 @@ SEXP LogLik(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTi
 	PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
 	res = REAL(result);
 	rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
+	
+    char *transa = "N", *transb = "N";
+    double one = 1.0, zero = 0.0;
+//	F77_CALL(dgemm)(transa, transb, &nrx, &ncy, &ncx, &one, x, &nrx, y, &nry, &zero, z, &nrx);
+	
 	for(j=0; j < (nrx * ncx); j++) res[j] = 1.0;
 	for(i = 0; i < n; i++) {
 		ei = edges[i]; 
@@ -521,12 +606,20 @@ SEXP LogLik(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTi
 			PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
 			res = REAL(result);
 			ni = nodes[i];
-			if(ei < nt) matprod(REAL(VECTOR_ELT(dlist, ei)), nrx, ncx, REAL(VECTOR_ELT(P, i)), ncx, ncx, res);
-			else matprod(REAL(VECTOR_ELT(ans, ei-nt)), nrx, ncx, REAL(VECTOR_ELT(P, i)), ncx, ncx, res);
+			if(ei < nt) //matprod(REAL(VECTOR_ELT(dlist, ei)), nrx ncx, REAL(VECTOR_ELT(P, i)), ncx, ncx, res);
+			 F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(dlist, ei)), &nrx, 
+			                       REAL(VECTOR_ELT(P, i)), &ncx, &zero, res, &nrx);
+			else //matprod(REAL(VECTOR_ELT(ans, ei-nt)), nrx, ncx, REAL(VECTOR_ELT(P, i)), ncx, ncx, res);
+			 F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
+			                       REAL(VECTOR_ELT(P, i)), &ncx, &zero, res, &nrx);
 			}
 		else {
-			if(ei < nt) matprod(REAL(VECTOR_ELT(dlist, ei)), nrx, ncx, REAL(VECTOR_ELT(P, i)), ncx, ncx, rtmp);
-			else matprod(REAL(VECTOR_ELT(ans, ei-nt)), nrx, ncx, REAL(VECTOR_ELT(P, i)), ncx, ncx, rtmp);
+			if(ei < nt) //matprod(REAL(VECTOR_ELT(dlist, ei)), nrx, ncx, REAL(VECTOR_ELT(P, i)), ncx, ncx, rtmp);
+			 F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(dlist, ei)), &nrx, 
+			                       REAL(VECTOR_ELT(P, i)), &ncx, &zero, rtmp, &nrx);
+			else //matprod(REAL(VECTOR_ELT(ans, ei-nt)), nrx, ncx, REAL(VECTOR_ELT(P, i)), ncx, ncx, rtmp);
+			 F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
+			                       REAL(VECTOR_ELT(P, i)), &ncx, &zero, rtmp, &nrx);
 			for(j=0; j < (nrx*ncx); j++) res[j] *= rtmp[j];
 			}			
 	}
@@ -972,3 +1065,166 @@ void cisort(int *x, int *y, int *a, int *b, int *res){
 }	
 
 
+
+
+void matp(int *x, double *contrast, double *P, int *nr, int *nc, int *nrs, double *result){
+    int i, j;
+    double *tmp; 
+    tmp = (double *) R_alloc((*nc) *(*nrs), sizeof(double));
+    matprod(contrast, (*nrs), (*nc), P, (*nc), (*nc), tmp);   
+	for(i = 0; i < (*nr); i++){ 
+        for(j = 0; j < (*nc); j++) result[i + j*(*nr)] = tmp[x[i] + j*(*nrs)];  
+	}	
+}
+
+void matp2(int *x, double *contrast, double *P, int *nr, int *nc, int *nrs, double *result){
+    int i, j;
+    double *tmp; 
+    tmp = (double *) R_alloc((*nc) *(*nrs), sizeof(double));
+    matprod(contrast, (*nrs), (*nc), P, (*nc), (*nc), tmp);   
+	for(j = 0; j < (*nc); j++){ 
+	   for(i = 0; i < (*nr); i++)  result[i + j*(*nr)] = tmp[x[i] + j*(*nrs)];  
+	}	
+}
+
+void matp3(int *x, double *tmp, int *nr, int *nc, int *nrs, double *result){
+    int i, j;   
+	for(j = 0; j < (*nc); j++){ 
+	   for(i = 0; i < (*nr); i++)  result[i + j*(*nr)] = tmp[x[i] + j*(*nrs)];  
+	}	
+}
+void matp4(int *x, double *tmp, int *nr, int *nc, int *nrs, double *result){
+    int i, j;   
+	for(i = 0; i < (*nr); i++){ 
+	   for(j = 0; j < (*nc); j++)  result[i + j*(*nr)] = tmp[x[i] + j*(*nrs)];  
+	}	
+}
+
+
+/*
+SEXP matp(int *x, double *contrast, double *P, int *nr, int *nc, int *nrs){
+    int i, j;
+    double *tmp , *result; 
+    tmp = (double *) R_alloc((*nc) *(*nrs), sizeof(double));
+    matprod(contrast, (*nrs), (*nc), P, (*nc), (*nc), tmp);   
+	for(i = 0; i < (*nr); i++){ 
+        for(j = 0; j < (*nc); j++) result[i + j*(*nr)] = tmp[x[i] + j*(*nrs)];  
+	}	
+}
+	SEXP result;
+	PROTECT(result = allocVector(REALSXP, n));
+
+void matp2(int *x, double *contrast, double *P, int *nr, int *nc, int *nrs, double *result){
+    int i, j;
+    double *tmp; 
+    tmp = (double *) R_alloc((*nc) *(*nrs), sizeof(double));
+    matprod(contrast, (*nrs), (*nc), P, (*nc), (*nc), tmp);   
+	for(j = 0; j < (*nc); j++) {
+		for(i = 0; i < (*nr); i++) result[i + j*(*nr)] = tmp[x[i] + j*(*nrs)];  
+	}	
+}
+
+
+rm(list=ls())
+library(phangorn)
+
+
+blub = function(x,contrast,P){
+	d = dim(contrast)
+	l = length(x)
+#	browser()
+    .C("matp", as.integer(x-1), as.double(contrast), as.double(P), as.integer(l),
+        as.integer(d[2]), as.integer(d[1]), double(l*d[2]), dup=FALSE)
+}
+
+pDNA = function (data, return.index = FALSE) 
+{
+    if (is.matrix(data)) 
+        nam = row.names(data)
+    else nam = names(data)
+    if (class(data) == "DNAbin") 
+        data = as.character(data)
+    if (is.matrix(data)) 
+        data = as.data.frame(t(data))
+    ac = c("a", "c", "g", "t", "u", "m", "r", "w", "s", "y", 
+        "k", "v", "h", "d", "b", "n", "?", "-")
+    AC = matrix(c(c(1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 
+        0, 1, 1, 1), c(0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 
+        0, 1, 1, 1, 1), c(0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 
+        0, 1, 1, 1, 1, 1), c(0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 
+        0, 1, 1, 1, 1, 1, 1)), 18, 4, dimnames = list(NULL, c("a", 
+        "c", "g", "t")))
+    data = as.data.frame(data, stringsAsFactors = FALSE)
+    ddd = phangorn:::fast.table(data)
+    data = ddd$data
+    index = ddd$index
+    q = length(data)
+    p = length(data[[1]])
+    for (i in 1:q) data[[i]] = factor(data[[i]], levels = ac)
+    for (i in 1:q) class(data[[i]]) = "integer"
+    class(data) <- "data.frame"
+    row.names(data) = as.character(1:p)
+    data = na.omit(data)
+    rn = as.numeric(rownames(data))
+    ind = which(!duplicated(c(rn, as.character(unique(index)))))
+    ind = ind - length(rn)
+    ind = ind[ind > 0]
+    for (i in 1:length(ind)) index[which(index == ind[i])] = NA
+    indextmp = diff(sort(unique(index)))
+    l1 = which(indextmp > 1)
+    d1 = indextmp[l1]
+    if (length(l1) > 0) {
+        for (i in 1:length(l1)) {
+            index[index > l1[i] & !is.na(index)] = index[index > 
+                l1[i] & !is.na(index)] - (d1[i] - 1)
+        }
+    }
+    weight = ddd$weight[rn]
+    p = dim(data)[1]
+    names(data) = nam
+    attr(data, "weight") = weight
+    attr(data, "nr") = p
+    attr(data, "nc") = 4
+    if (return.index) 
+        attr(data, "index") = index
+    attr(data, "levels") = c("a", "c", "g", "t")
+    attr(data, "type") = "DNA"
+    class(data) = "phyDat"
+    data
+}
+
+
+data(Laurasiatherian)
+eig = phangorn:::edQt()
+P = phangorn:::getP(.1,eig)[[1]]
+system.time(Laurasiatherian[[1]] %*% P)
+x = pDNA(as.character(Laurasiatherian))
+    AC = matrix(c(c(1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 
+        0, 1, 1, 1), c(0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 
+        0, 1, 1, 1, 1), c(0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 
+        0, 1, 1, 1, 1, 1), c(0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 
+        0, 1, 1, 1, 1, 1, 1)), 18, 4, dimnames = list(NULL, c("a", 
+        "c", "g", "t")))
+        
+dyn.load("C:\\Users\\Klaus\\Phangorn\\phangorn\\src\\phangorn.dll")
+        
+test = blub(x[[1]], AC, P)
+
+dyn.unload("C:\\Users\\Klaus\\Phangorn\\phangorn\\src\\phangorn.dll")        
+
+
+Rprof(tmp <- tempfile())
+for(i in 1:5000) test <- blub(x[[1]], AC, P)
+Rprof()
+summaryRprof(tmp)
+unlink(tmp)
+
+sehr viel schneller
+Rprof(tmp <- tempfile())
+for(i in 1:5000) test <- (AC %*% P)[x[[1]],]
+Rprof()
+summaryRprof(tmp)
+unlink(tmp)
+
+
+*/

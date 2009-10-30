@@ -19,7 +19,7 @@ contains the distance spectra, the second one the edge-spectra.
 \references{Hendy, M. D. and Penny, D. (1993). Spectral Analysis of Phylogenetic
 Data. \emph{Journal of Classification}, \bold{10}, 5-24.
 }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}, Tim White}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}, Tim White}
 \seealso{\code{\link[phangorn]{hadamard}}}
 
 \examples{

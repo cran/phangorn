@@ -36,7 +36,7 @@ pmlMix(formula, fit, m = 2, omega = rep(1/m, m), ...)
   \item{omega}{mixing weights.} 
   \item{fits}{fits for the final mixtures.}
 }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
 \seealso{  \code{\link{pml}},\code{\link{pmlPart}},\code{\link{pmlCluster}} }
 \examples{

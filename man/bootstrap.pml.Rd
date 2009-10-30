@@ -33,10 +33,10 @@ returns an object of class multi.phylo or a list where each
 element is an object of class pml.
 }
 \author{
-Klaus Schliep \email{K.P.Schliep@massey.ac.nz}
+Klaus Schliep \email{klaus.schliep@gmail.com}
 }
 \seealso{
-\code{\link[phangorn]{optim.pml}}, \code{\link[phangorn]{pml}}
+\code{\link{optim.pml}}, \code{\link{pml}}
 }
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the

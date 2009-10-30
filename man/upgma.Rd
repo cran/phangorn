@@ -16,7 +16,7 @@ upgma(D, method = "average", ...)
 \value{
 A phylogenetic tree of class \code{phylo}. 
 }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
 \seealso{ \code{\link[stats]{hclust}}, \code{\link[phangorn]{NJ}}, \code{\link[ape]{as.phylo}} }
 \examples{

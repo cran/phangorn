@@ -25,7 +25,7 @@ SH.test(..., B = 10000, data=NULL)
   inference. \emph{Molecular Biology and Evolution}, \bold{16},
   1114--1116.
 }
-\author{Klaus Schliep \email{k.p.schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \seealso{
   \code{\link{pml}}, \code{\link{pmlPart}}, \code{\link{pmlCluster}}
 }
