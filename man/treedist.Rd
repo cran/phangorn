@@ -8,7 +8,7 @@
 }
 \usage{
 treedist(tree1, tree2)
-RF.dist(tree1, tree2, check.labels = FALSE)
+RF.dist(tree1, tree2, check.labels=TRUE)
 }
 \arguments{
   \item{tree1}{ A phylogenetic tree. }
@@ -23,6 +23,6 @@ RF.dist(tree1, tree2, check.labels = FALSE)
   \item{weighted.path.difference}{weighted.path.difference}
 }
 \references{Steel M. A. and Penny P. (1993) \emph{Distributions of tree comparision metrics - some new results}, Syst. Biol.,42(2), 126-141}
-\author{ Klaus P. Schliep \email{K.P.Schliep@massey.ac.nz}} 
+\author{ Klaus P. Schliep \email{klaus.schliep@gmail.com}} 
 
 \keyword{ classif }% at least one, from doc/KEYWORDS

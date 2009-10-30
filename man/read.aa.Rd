@@ -40,5 +40,5 @@ read.aa(file, format = "interleaved", skip = 0,
   \code{\link[ape]{read.dna}}, \code{\link[ape]{read.GenBank}}, 
   \code{\link[phangorn]{phyDat}}, \code{\link[seqinr]{read.alignment}}
 }
-\author{Klaus Schliep \email{k.p.schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \keyword{IO}

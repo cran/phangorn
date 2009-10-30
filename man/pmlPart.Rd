@@ -35,7 +35,7 @@ pmlPart(formula, object, ...)
   \item{object}{an object of class \code{"pml"} or \code{"pmlPart"}}
 }
 %\references{ ~put references to the literature/web site here ~ }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
 \seealso{  \code{\link{pml}},\code{\link{pmlCluster}},\code{\link{pmlMix}} }
 \examples{

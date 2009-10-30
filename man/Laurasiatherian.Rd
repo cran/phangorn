@@ -9,7 +9,7 @@
 
 \source{
 Data have been taken from \url{http://awcmee.massey.ac.nz}
-and were converted to R format by \email{K.P.Schliep@massey.ac.nz}.   
+and were converted to R format by \email{klaus.schliep@gmail.com}.   
 }
 \examples{
 data(Laurasiatherian)

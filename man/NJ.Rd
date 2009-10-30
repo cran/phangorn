@@ -30,9 +30,9 @@ Algorithm of Saitou and Nei. \emph{Molecular Biology and Evolution},
 Gascuel, O. (1997) Concerning the NJ algorithm and its unweighted 
 version, UNJ. in Birkin et. al. \emph{Mathematical Hierarchies and Biology}, 
  149--170., }    
-\author{Klaus P. Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus P. Schliep \email{klaus.schliep@gmail.com}}
 
-\seealso{  \code{\link[ape]{nj}}, \code{\link[ape]{dist.dna}}, \code{\link[phangorn]{dist.hamming}}, \code{\link[phangorn]{upgma}}, \code{\link[phangorn]{fastme.bal}}}
+\seealso{  \code{\link[ape]{nj}}, \code{\link[ape]{dist.dna}}, \code{\link[phangorn]{dist.hamming}}, \code{\link[phangorn]{upgma}}, \code{\link[ape]{fastme}}}
 \examples{
 data(Laurasiatherian)
 dm <- dist.logDet(Laurasiatherian)

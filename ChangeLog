@@ -1,3 +1,22 @@
+		CHANGES IN PHANGORN VERSION 0.99-3
+
+		
+BUG FIXES
+
+    o RF.dist sometimes returned wrong distances
+    
+    o rate parameter is now properly normalized in pml.Part 
+    
+      and pmlCluster
+    
+    o simSeq had problems simulating a single character 
+        
+NEW FEATURES
+
+    o rSPR and rNNI to simulate tree rearrangements
+
+                    
+   
 		CHANGES IN PHANGORN VERSION 0.99-2
 
 

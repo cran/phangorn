@@ -19,7 +19,7 @@ ldfactorial(x)
 and \code{ldfactorial(x)} is the natural logarithm of it. 
 }
 
-\author{ Klaus Schliep \email{K.P.Schliep@massey.ac.nz}  }
+\author{ Klaus Schliep \email{klaus.schliep@gmail.com}  }
 
 \seealso{ \code{\link[base:Special]{factorial}} }
 \examples{

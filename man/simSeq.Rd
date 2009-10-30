@@ -36,7 +36,7 @@ In fact it is possible to generate DNA, RNA, amino acid, or 0/1.
 \value{
 \code{simSeq} returns an object of class phyDat.
 }
-\author{ Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{ Klaus Schliep \email{klaus.schliep@gmail.com}}
 
 \seealso{  \code{\link[phangorn]{phyDat}}}
 \examples{

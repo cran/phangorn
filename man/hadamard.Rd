@@ -48,7 +48,7 @@ In O. Gascuel, editor, \emph{Mathematics of evolution and phylogeny}, Oxford Uni
 Waddell P. J. (1995). Statistical methods of phylogenetic analysis: Including hadamard conjugation, 
 LogDet transforms, and maximum likelihood. \emph{PhD thesis}.
 }
-\author{Klaus Schliep \email{K.P.Schliep@massey.ac.nz}}
+\author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \seealso{\code{\link[phangorn]{distanceHadamard}}}
 
 \examples{
