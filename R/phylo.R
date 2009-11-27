@@ -14,16 +14,16 @@ dec2bin <- function(x){
         if(x %% 2L) res = paste(res, as.character(i))
             x = x %/% 2L 
             i=i+1L
-	    }
+        }
         res
     }  
 
 
 
 "ldfactorial" <- function(x){
-	x = (x+1)/2
-	res = lgamma(2*x)-(lgamma(x)+(x-1)*log(2))
-	res
+    x = (x+1)/2
+    res = lgamma(2*x)-(lgamma(x)+(x-1)*log(2))
+    res
 }
 
 
@@ -35,27 +35,27 @@ dec2bin <- function(x){
 #
 
 hadamard <- function(x){
-	res=1
-	while(x>0){
-		res=rbind(cbind(res,res),cbind(res,-res))
-		x=x-1
-	}
-	res
+    res=1
+    while(x>0){
+        res=rbind(cbind(res,res),cbind(res,-res))
+        x=x-1
+    }
+    res
 }
 
 
 fhm <- function(v){
-	n = length(v)
-	n = log2(n)
-	res = .C("fhm", v = as.double(v), n = as.integer(n), PACKAGE = "phangorn")$v
-	res
+    n = length(v)
+    n = log2(n)
+    res = .C("fhm", v = as.double(v), n = as.integer(n), PACKAGE = "phangorn")$v
+    res
 }
 
 
 seq2split = function(s){
-	n=length(s)
-	res= fhm(log(fhm(s)))/n
-	res
+    n=length(s)
+    res= fhm(log(fhm(s)))/n
+    res
 }
 
 
@@ -90,9 +90,11 @@ distanceHadamard <- function (dm)
 
 
 h4st = function(obj, levels=c('a','c','g','t')){
-	if(is.matrix(obj)) obj = as.data.frame(t(obj))
+#	if(is.matrix(obj)) obj = as.data.frame(t(obj))
 
-	DNA = as.data.frame(obj)
+#	DNA = as.data.frame(obj)
+	DNA = t(as.character(obj))
+
 	n = dim(DNA)[1]
 	p = dim(DNA)[2]
 
@@ -137,7 +139,8 @@ h2st = function (obj, levels = c("r", "y"))
 {
     if (is.matrix(obj)) 
         obj = as.data.frame(t(obj))
-    obj = as.data.frame(obj)
+    #obj = as.data.frame(obj)
+    if(class(obj)=="phyDat")  obj = as.data.frame(t(as.character(obj)))
     n = dim(obj)[1]
     p = dim(obj)[2]
     if (p > 23) 
@@ -297,12 +300,12 @@ RF.dist <- function (tree1, tree2, check.labels = TRUE)
 #
 
 "upgma" <- function(D,method="average",...){
-	DD=as.dist(D)
-	hc = hclust(DD,method=method,...)
-	result = as.phylo(hc)
-	result = reorderPruning(result)
-	result$edge.length=result$edge.length/2
-	result
+    DD=as.dist(D)
+    hc = hclust(DD,method=method,...)
+    result = as.phylo(hc)
+    result = reorderPruning(result)
+    result$edge.length=result$edge.length/2
+    result
 }
 
 
@@ -396,16 +399,18 @@ UNJ = function (x)
 }
 
 
-"dist.hamming" <- function (x, ratio = TRUE) 
+dist.hamming <- function (x, ratio = TRUE) 
 {
     if(class(x)!='phyDat') stop("x has to be element of class phyDat")
     l = length(x)
     weight <- attr(x, 'weight')
+    contrast <- attr(x, 'contrast')
     d = numeric((l * (l - 1))/2)
     k = 1
     for (i in 1:(l - 1)) {
+        X = contrast[x[[i]], ,drop=FALSE]
         for (j in (i + 1):l) {
-            d[k] = sum( weight * (rowSums(x[[i]] * x[[j]])==0))
+            d[k] = sum( weight * (rowSums(X * contrast[x[[j]], ,drop=FALSE])==0))
             k = k + 1
         }
     }
@@ -462,6 +467,7 @@ dist.ml <- function(x, model="JC69",...){
         stop("x has to be element of class phyDat")
     l = length(x)
     weight <- attr(x, "weight")
+    contrast <- attr(x, 'contrast')
     nr <- attr(x, "nr")
     nc <- attr(x, "nc")
     ll.0 <- numeric(length(weight))
@@ -500,9 +506,9 @@ dist.ml <- function(x, model="JC69",...){
     old.el <- 0.1
     k = 1
     for (i in 1:(l - 1)) {
-	    Xi = weight * x[[i]]
+	    Xi = weight * contrast[x[[i]], , drop=FALSE] 
         for (j in (i + 1):l) {
-            tmp <- dist.tip(Xi, x[[j]], old.el, eig=eig, bf)
+            tmp <- dist.tip(Xi, contrast[x[[j]], , drop=FALSE], old.el, eig=eig, bf)
             d[k] <- tmp[1] 
             v[k] <- tmp[2]  
             k = k + 1
@@ -529,14 +535,15 @@ dist.logDet = function (x)
     if (class(x) != "phyDat") 
         stop("x has to be element of class phyDat")
     weight <- attr(x, "weight")
+    contrast <- attr(x, 'contrast')
     r <- attr(x, "nc")
     l = length(x)
     d = numeric((l * (l - 1))/2)
     k = 1
     for (i in 1:(l - 1)) {
-        Xi = weight * x[[i]]
+        Xi = weight * contrast[x[[i]], , drop=FALSE]
         for (j in (i + 1):l) {
-            tmp = crossprod(Xi, x[[j]])
+            tmp = crossprod(Xi, contrast[x[[j]], , drop=FALSE])
             class(tmp) = "matrix"
             z = determinant.matrix(tmp, logarithm=TRUE)  
             res = z$sign*z$modulus
@@ -560,6 +567,15 @@ dist.logDet = function (x)
 }
 
 
+
+#
+# write new 
+#
+
+#
+# dm, trees or splits or Hadamard
+# plotNetwork
+#
 splitsNetwork <- function(dm, gamma=.1, lambda=1e-6, weight=NULL){
     dm = as.matrix(dm)
     k = dim(dm)[1]
@@ -619,26 +635,28 @@ splitsNetwork <- function(dm, gamma=.1, lambda=1e-6, weight=NULL){
 
 fast.table <- function (data)                                                            
 {                                                                                        
-	if(is.list(data))data = as.data.frame(data, stringsAsFactors=FALSE)                    
-	da = do.call("paste", c(data, sep = "\r"))                                             
-	ind = !duplicated(da)                                                                  
-	levels = da[ind]                                                                       
-	cat <- factor(da,levels = levels)                                                      
-	nl <- length(levels(cat))                                                        
-	bin <- (as.integer(cat) - 1)                                                           
-	pd <- nl                                                                               
-	bin <- bin[!is.na(bin)]                                                                
-	if (length(bin)) bin <- bin + 1                                                        
-	y <- tabulate(bin, pd)                                                                 
-	result=list(index = bin, weights = y, data = data[ind,])	                                                                              
-	result                                                                                 
+    if(is.list(data))data = as.data.frame(data, stringsAsFactors=FALSE)                    
+    da = do.call("paste", c(data, sep = "\r"))                                             
+    ind = !duplicated(da)                                                                  
+    levels = da[ind]                                                                       
+    cat <- factor(da,levels = levels)                                                      
+    nl <- length(levels(cat))                                                        
+    bin <- (as.integer(cat) - 1)                                                           
+    pd <- nl                                                                               
+    bin <- bin[!is.na(bin)]                                                                
+    if (length(bin)) bin <- bin + 1                                                        
+    y <- tabulate(bin, pd)                                                                 
+    result=list(index = bin, weights = y, data = data[ind,])	                                                                              
+    result                                                                                 
 }                                                                                        
-                                                                   
+         
 
-phyDat.DNA = function (data, return.index = FALSE) 
+
+phyDat.DNA = function (data, return.index = TRUE) 
 {
-    if(is.matrix(data)) nam = row.names(data)
-    else nam = names(data)  
+    if (is.matrix(data)) 
+        nam = row.names(data)
+    else nam = names(data)
     if (class(data) == "DNAbin") 
         data = as.character(data)
     if (is.matrix(data)) 
@@ -649,18 +667,15 @@ phyDat.DNA = function (data, return.index = FALSE)
         0, 1, 1, 1), c(0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 
         0, 1, 1, 1, 1), c(0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 
         0, 1, 1, 1, 1, 1), c(0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 
-        0, 1, 1, 1, 1, 1, 1)), 18, 4, 
-        dimnames = list(NULL, c("a", "c", "g", "t")))
+        0, 1, 1, 1, 1, 1, 1)), 18, 4, dimnames = list(NULL, c("a", 
+        "c", "g", "t")))
     data = as.data.frame(data, stringsAsFactors = FALSE)
-
     ddd = fast.table(data)
     data = ddd$data
     index = ddd$index
     q = length(data)
     p = length(data[[1]])
-    tmp <- vector("list", q)
-    for (i in 1:q) tmp[[i]] = factor(data[[i]], levels = ac)
-    data <- tmp
+    for (i in 1:q) data[[i]] = factor(data[[i]], levels = ac)
     for (i in 1:q) class(data[[i]]) = "integer"
     class(data) <- "data.frame"
     row.names(data) = as.character(1:p)
@@ -669,7 +684,7 @@ phyDat.DNA = function (data, return.index = FALSE)
     ind = which(!duplicated(c(rn, as.character(unique(index)))))
     ind = ind - length(rn)
     ind = ind[ind > 0]
-    for (i in 1:length(ind)) index[which(index == ind[i])] = NA    
+    for (i in 1:length(ind)) index[which(index == ind[i])] = NA
     indextmp = diff(sort(unique(index)))
     l1 = which(indextmp > 1)
     d1 = indextmp[l1]
@@ -681,23 +696,20 @@ phyDat.DNA = function (data, return.index = FALSE)
     }
     weight = ddd$weight[rn]
     p = dim(data)[1]
-    dat = vector("list", q) #list()
-    for (i in 1:q) dat[[i]] = AC[data[[i]],]
-    names(dat) = nam
-    attr(dat, "weight") = weight
-    attr(dat, "nr") = p
-    attr(dat, "nc") = 4
+    names(data) = nam
+    attr(data, "weight") = weight
+    attr(data, "nr") = p
+    attr(data, "nc") = 4
     if (return.index) 
-        attr(dat, "index") = index
-    attr(dat, "levels") = c("a", "c", "g", "t")
-    attr(dat, "type") = "DNA"
-    class(dat) = "phyDat"
-    dat
+        attr(data, "index") = index
+    attr(data, "levels") = c("a", "c", "g", "t")
+    attr(data, "type") = "DNA"
+    attr(data, "contrast") = AC
+    class(data) = "phyDat"
+    data
 }
 
-
-
-phyDat.AA <- function (data, return.index = FALSE) 
+phyDat.AA <- function (data, return.index = TRUE) 
 {
     if(is.matrix(data)) nam = row.names(data)
     else nam = names(data)  
@@ -745,25 +757,26 @@ phyDat.AA <- function (data, return.index = FALSE)
     }
     weight = ddd$weight[rn]
     p = dim(data)[1]
-    dat = vector("list", q) 
-    for (i in 1:q) dat[[i]] = AA[data[[i]], ]
-    names(dat) = nam
-    attr(dat, "weight") = weight
-    attr(dat, "nr") = p
-    attr(dat, "nc") = 20
+#    dat = vector("list", q) 
+#    for (i in 1:q) dat[[i]] = data[[i]]
+    names(data) = nam
+    attr(data, "weight") = weight
+    attr(data, "nr") = p
+    attr(data, "nc") = 20
     if (return.index) 
-        attr(dat, "index") = index
-    attr(dat, "levels") = aa
-    attr(dat, "type") = "AA"
-    class(dat) = "phyDat"
-    dat
+        attr(data, "index") = index
+    attr(data, "levels") = aa
+    attr(data, "type") = "AA"
+    attr(data, "contrast") = AA    
+    class(data) = "phyDat"
+    data
 }
 
 
 
 as.phyDat <- function (x, ...){
     if (class(x) == "phyDat") return(x)
-	UseMethod("as.phyDat")
+    UseMethod("as.phyDat")
 }
 
 
@@ -783,26 +796,27 @@ as.phyDat.alignment <- function (x, type="DNA",...)
 }
 
 
-
-as.data.frame.phyDat <- function(x, ...){
-        lev = attr(x,"levels")
-        fn = function(x, levels, y) paste(levels[x*y], collapse="")               
-        nr = attr(x, "nr")
-        nc = attr(x, "nc")
-        y = 1:nc
-        X = matrix(nrow=nr, ncol=length(x))
-        for(i in 1:length(x)) X[,i]= apply(x[[i]], 1, fn, lev, y)
-        if(is.null(attr(x,"index"))) index=rep(1:nr, attr(x,"weight"))
-        else index = attr(x,"index")
-        result = X[index, , drop=FALSE]
-        colnames(result) = names(x)
-        result = as.data.frame(result, stringsAsFactors = FALSE)
-        result
-}
+# attention
+#as.data.frame.phyDat <- function(x, ...){
+#        lev = attr(x,"levels")
+#        fn = function(x, levels, y) paste(levels[x*y], collapse="")               
+#        nr = attr(x, "nr")
+#        nc = attr(x, "nc")
+#        y = 1:nc
+#        X = matrix(nrow=nr, ncol=length(x))
+#        for(i in 1:length(x)) X[,i]= apply(x[[i]], 1, fn, lev, y)
+#        if(is.null(attr(x,"index"))) index=rep(1:nr, attr(x,"weight"))
+#        else index = attr(x,"index")
+#        result = X[index, , drop=FALSE]
+#       colnames(result) = names(x)
+#        result = as.data.frame(result, stringsAsFactors = FALSE)
+#        result
+#}
 
 as.phyDat.matrix <- function (x, ...) phyDat(data=x, ...)
 as.phyDat.data.frame <- function (x, ...) phyDat(data=x, ...)
  
+
 
 as.character.phyDat <- function (x, ...) 
 {
@@ -812,36 +826,17 @@ as.character.phyDat <- function (x, ...)
     if (type == "DNA") {
         labels <- c("a", "c", "g", "t", "t", "m", "r", "w", "s", 
             "y", "k", "v", "h", "d", "b", "n", "-")
-        levels <- matrix(c(c(1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 
-            1, 1, 1, 0, 1, 0), c(0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 
-            0, 1, 1, 0, 1, 1, 0), c(0, 0, 1, 0, 0, 0, 1, 0, 1, 
-            0, 1, 1, 0, 1, 1, 1, 0), c(0, 0, 0, 1, 1, 0, 0, 1, 
-            0, 1, 1, 0, 1, 1, 1, 1, 0)), 17, 4, dimnames = list(NULL, 
-            c("a", "c", "g", "t")))
-        levels <- levels %*% (2^c(0:3)) 
-    }
+        }
     if (type == "AA") {
         labels <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", 
             "i", "l", "k", "m", "f", "p", "s", "t", "w", "y", 
             "v", "b", "z", "x")
-        AA <- diag(20)
-        AA <- rbind(AA, matrix(0, 3, 20))
-        AA[21, 3] <- AA[21, 4] <- 1
-        AA[22, 6] <- AA[22, 7] <- 1
-        AA[23, ] = 1
-        levels <- AA %*% (2^c(0:19)) 
     }
     if(type == "USER"){
         labels = attr(x, "levels")
-        levels <- 1:nc
     }
-    y = 1:nc
-    X = matrix(nrow = length(x), ncol = nr)
-    if(type=="AA" | type=="DNA") for (i in 1:length(x)) X[i,] <- x[[i]] %*% (2^c(0:(nc-1)))
-    else  for (i in 1:length(x)) X[i,] <- x[[i]] %*% c(1:nc)
     result = matrix(NA, nrow = length(x), ncol = nr)
-    for(i in 1:length(labels)) result[X==levels[i]] <- labels[i]
-
+    for(i in 1:length(x)) result[i,] <- labels[x[[i]]]
     if (is.null(attr(x, "index"))) 
         index = rep(1:nr, attr(x, "weight"))
     else {
@@ -873,18 +868,18 @@ phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...)
 
 
 phyDat.default = function(data, levels, return.index=TRUE){
-	if(is.matrix(data)) nam = row.names(data)
+    if(is.matrix(data)) nam = row.names(data)
     else nam = names(data)  
-	# new ape format
-	if(class(data)=="DNAbin") data = as.character(data)
-	# old ape format 
-	if(is.matrix(data)) data = as.data.frame(t(data))                                                                   
-	data = as.data.frame(data, stringsAsFactors=FALSE)                                    
-	ddd = fast.table(data)                                                                 
-	data = ddd$data                                                                        
-	weight = ddd$weight  
-	index = ddd$index                                                                
-  	q = length(data)                                                                       
+    # new ape format
+    if(class(data)=="DNAbin") data = as.character(data)
+    # old ape format 
+    if(is.matrix(data)) data = as.data.frame(t(data))                                                                   
+    data = as.data.frame(data, stringsAsFactors=FALSE)                                    
+    ddd = fast.table(data)                                                                 
+    data = ddd$data                                                                        
+    weight = ddd$weight  
+    index = ddd$index                                                                
+    q = length(data)                                                                       
     p = length(data[[1]])
     tmp <- vector("list", q)
     for (i in 1:q) tmp[[i]] = factor(data[[i]], levels = levels)
@@ -896,34 +891,34 @@ phyDat.default = function(data, levels, return.index=TRUE){
     data = na.omit(data)
     rn = as.numeric(rownames(data))
     ind = which(!duplicated(c(rn,as.character(unique(index)))))
-	ind = ind-length(rn)
-	ind = ind[ind>0]
+    ind = ind-length(rn)
+    ind = ind[ind>0]
     for(i in 1:length(ind)) index[which(index==ind[i])] = NA
     indextmp = diff(sort(unique(index)))
-	l1 = which(indextmp>1)
-	d1 = indextmp[l1]
-	if(length(l1)>0){
-		for(i in 1:length(l1)){
-			index[index>l1[i] & !is.na(index)] = index[index>l1[i] & !is.na(index)] - (d1[i]-1)
-		}
-	}	   
-	weight = ddd$weight[rn]
+    l1 = which(indextmp>1)
+    d1 = indextmp[l1]
+    if(length(l1)>0){
+        for(i in 1:length(l1)){
+            index[index>l1[i] & !is.na(index)] = index[index>l1[i] & !is.na(index)] - (d1[i]-1)
+        }
+    }   
+    weight = ddd$weight[rn]
                                                                
     p = dim(data)[1]                                                                     
-    dat = vector("list", q)                                                                          
+#    dat = vector("list", q)                                                                          
     l = length(levels)                                                                   
     AACC = diag(l)                                                                       
-    for (i in 1:q) dat[[i]] = matrix(unlist(AACC[,data[[i]]], TRUE, FALSE), ncol = l, 
-    	byrow = TRUE)                                                                            
-    names(dat) = nam                     
-    attr(dat,"weight") = weight  
-    attr(dat,"nr") = p
-    attr(dat,"nc") = length(levels)
-    if(return.index) attr(dat,"index") = index
-    attr(dat, "levels") = levels 
-    attr(dat, "type") = "USER"                                                            
-    class(dat) = "phyDat"
-    dat                                                                               
+#    for (i in 1:q) dat[[i]] = matrix(unlist(AACC[,data[[i]]], TRUE, FALSE), ncol = l, byrow = TRUE)                                                                            
+    names(data) = nam                     
+    attr(data,"weight") = weight  
+    attr(data,"nr") = p
+    attr(data,"nc") = length(levels)
+    if(return.index) attr(data,"index") = index
+    attr(data, "levels") = levels 
+    attr(data, "type") = "USER"                                                            
+    attr(data, "contrast") = AACC    
+    class(data) = "phyDat"
+    data                                                                        
 }
 
 
@@ -939,8 +934,8 @@ c.phyDat <- function(...){
     x <- list(...)
     n <- length(x) 
     match.names <- function(a,b){
-	    if(any(!(a %in% b)))stop("names do not match previous names") 
-	    }
+        if(any(!(a %in% b)))stop("names do not match previous names") 
+        }
     if (n == 1) 
         return(x[[1]])
     type <- attr(x[[1]], "type")
@@ -972,18 +967,18 @@ c.phyDat <- function(...){
 
 
 write.phyDat <- function(x, file, format="phylip",...){
-	if(format=="fasta") write.dna(as.character(x), file, format="fasta", ...)
-	if(format=="phylip") write.dna(as.character(x), file, format="sequential", ...)	
-	if(format=="nexus"){
-		 type = attr(x, "type")
-		 if(type=="DNA") write.nexus.data(as.character(x), file, format = "dna",...)
-	     else write.nexus.data(as.list(as.data.frame(x)), file, format = "protein", ...)
-         }	
-	}
+    if(format=="fasta") write.dna(as.character(x), file, format="fasta", ...)
+    if(format=="phylip") write.dna(as.character(x), file, format="sequential", ...)	
+    if(format=="nexus"){   
+         type = attr(x, "type")
+         if(type=="DNA") write.nexus.data(as.character(x), file, format = "dna",...)
+         else write.nexus.data(as.list(as.data.frame(x)), file, format = "protein", ...)
+         }
+    }
 
-	
+
 read.phyDat <- function(file, format="phylip", type="DNA", ...){
-	if(format=="nexus") data=read.nexus.data(file, ...)
+    if(format=="nexus") data=read.nexus.data(file, ...)
     else {
         if (type == "DNA"){ 
             if(format=="phylip")format="interleaved"  #"sequential"
@@ -994,13 +989,13 @@ read.phyDat <- function(file, format="phylip", type="DNA", ...){
     phyDat(data, type, return.index = TRUE)
 }
 
-	
 
+# attention  
 baseFreq <- function(dat){
     if (class(dat) != "phyDat") 
         stop("data must be of class phyDat")
     levels <- attr(dat,"levels")
-    weight <- attr(dat,"weight")	
+    weight <- attr(dat,"weight")
     n <- length(dat)	
     res <- numeric(length(levels)) 	
     for(i in 1:n)res <- res+colSums(dat[[i]]*weight)	
@@ -1016,7 +1011,7 @@ phylo <- function(edge, tip, edge.length=NULL){
 	res
 	}
 
-	
+
 getCols <- function (data, cols) 
 {
     attrib = attributes(data)
@@ -1038,20 +1033,51 @@ getRows <- function (data, rows)
     attr(data, "nr") = length(rows)
     data
 }
-	
+
+#getRows <- function (data, rows, site=TRUE) 
+#{
+#    if(site){
+#        weight = attr(data, "weight")[rows]
+#        for (i in 1:length(data)) data[[i]] = as.matrix(data[[i]])[rows,]
+#        attr(data, "weight") = weight
+#        attr(data, "nr") = length(rows)
+#        attr(data, "index") <- rep(1:length(rows), weight)
+#        }
+#   else{
+#        ind = as.data.frame(attr(data, "index"))[rows, 1]
+#        ind2 = table(ind)
+#        rowInd = sort(unique(ind))
+#        for (i in 1:length(data)) data[[i]] = as.matrix(data[[i]])[rowInd,]
+#        attr(data, "weight") = as.vector(ind2)
+#        attr(data, "nr") = length(ind2)
+#        attr(data, "index") <- rep(1:length(ind2), ind2)
+#    } 
+#    data
+#}
+
+#"[.phyDat" <- function (x, i, j) 
+#{  
+#    if (!missing(i)) x <- getCols(x, i)
+#    if (!missing(j)) x <- getRows(x, j, FALSE)    
+#    x 
+#}
+
+
+unique.phyDat <- function(x, incomparables=FALSE, ...) getCols(x, !duplicated(x))
+
 
 allSitePattern <- function(n,levels=c("a","c","g","t"), names=NULL){
-	l=length(levels)
-	X=matrix(0, l^n,n)
-	for(i in 1:n)
-	X[, i] = rep(rep(c(1:l), each=l^(i-1)),l^(n-i))
-	for(i in 1:l)X[X==i] = levels[i]
-	if(is.null(names))colnames(X) = paste("t",1:n, sep="")
-	else colnames(X)=names
-	phyDat.default(t(X), levels)
-}	
+    l=length(levels)
+    X=matrix(0, l^n,n)
+    for(i in 1:n)
+    X[, i] = rep(rep(c(1:l), each=l^(i-1)),l^(n-i))
+    for(i in 1:l)X[X==i] = levels[i]
+    if(is.null(names))colnames(X) = paste("t",1:n, sep="")
+    else colnames(X)=names
+    phyDat.default(t(X), levels)
+} 
 
-	
+
 write.phylip <- function(data, weight, file=""){
         n = sum(weight)
         m = dim(data)[2]
@@ -1059,7 +1085,7 @@ write.phylip <- function(data, weight, file=""){
         for(i in 1:m)
         cat(colnames(data)[i],"   ",toupper(rep(data[,i],weight)),"\n", sep="", file=file, append=TRUE)
 }
-	
+
 
 
 read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0, 
@@ -1158,11 +1184,11 @@ read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
     }
     obj   
 }
-		
+
 
 #
 # tree manipulation
-#	 
+# 
 
 
 
@@ -1228,9 +1254,9 @@ nnin <- function (tree, n)
     tree2$edge[ind1, 2] = e3
     tree2$edge[ind2[2], 2] = e1
     if(!is.null(tree$edge.length)){
-	    tree1$edge.length[c(ind1, ind2[1])] = tree$edge.length[c(ind2[1] ,ind1)]
-	    tree2$edge.length[c(ind1, ind2[2])] = tree$edge.length[c(ind2[2] ,ind1)]
-	    }
+        tree1$edge.length[c(ind1, ind2[1])] = tree$edge.length[c(ind2[1] ,ind1)]
+        tree2$edge.length[c(ind1, ind2[2])] = tree$edge.length[c(ind2[2] ,ind1)]
+        }
     tree1 <- reorderPruning(tree1) 
     tree2 <- reorderPruning(tree2) 
     result = list(tree1, tree2)
@@ -1355,7 +1381,7 @@ rSPR <- function(tree, moves=1, n=1){
 }
 
 sprMove <- function(tree, m){
-    if(is.rooted(tree))browser()
+    if (is.rooted(tree)) tree <- unroot(tree)
     #stop("Sorry trees must be unrooted")
     if(!is.binary.tree(tree))stop("Sorry trees must be binary!")
 
@@ -1409,7 +1435,7 @@ sprMove <- function(tree, m){
         
         newroot = cv[[ch]] #[ 1]
         newroot = newroot[newroot>nTips][1]
-        if(length(newroot)==0)browser()
+ #       if(length(newroot)==0)browser()
 
         tree <- reroot2(tree, newroot)
         edge = tree$edge
@@ -1477,7 +1503,7 @@ rNNI <- function(tree, moves=1, n=1){
         trees = vector("list", n)
         for(j in 1:n){
             tmp = tree 
-            for(i in 1:moves) tmp = nnin(trees,sample(k,1))[[sample(2,1)]]
+            for(i in 1:moves) tmp = nnin(tmp, sample(k,1))[[sample(2,1)]]
             tmp$tip.label=NULL
             trees[[j]] = tmp
         }
@@ -1547,9 +1573,10 @@ fitch <- function (tree, data, site=FALSE)
 prepareDataFitch <- function(data){
     lev <- attr(data,"levels")
     l <- length(lev)
-    nr <- attr(data,"nr")  
+    nr <- attr(data,"nr")
+    contrast <- attr(data,"contrast")  
     X <- matrix(ncol=nr, nrow=length(data))
-    for(i in 1:length(data)) X[i,] = data[[i]] %*% 2^c(0:(l-1))
+    for(i in 1:length(data)) X[i,] = contrast[data[[i]],,drop=FALSE] %*% 2^c(0:(l-1))
     attrData <- attributes(data)
     nam <- attrData$names
     attrData$names <- NULL
@@ -1565,8 +1592,9 @@ prepareDataFitch2 <- function(data){
     lev <- attr(data,"levels")
     l <- length(lev)
     nr <- attr(data,"nr")  
+    contrast <- attr(data,"contrast")
     X <- matrix(ncol=length(data), nrow=nr)
-    for(i in 1:length(data)) X[,i] = data[[i]] %*% 2^c(0:(l-1))
+    for(i in 1:length(data)) X[,i] = contrast[data[[i]],,drop=FALSE] %*% 2^c(0:(l-1))
     attrData <- attributes(data)
     nam <- attrData$names
     attrData$names <- NULL
@@ -1642,8 +1670,16 @@ fitch3 <- function (tree, data, site=FALSE)
     attributes(data) <- d
     fit.fitch(tree, data, FALSE)
 }
-	
-	
+
+old2new.phyDat <- function(data){}
+
+
+new2old.phyDat <- function(data){
+    contrast = attr(data, "contrast")
+    for(i in 1:length(data)) data[[i]] = contrast[data[[i]],,drop=FALSE]
+    data
+    }
+
 prepareDataSankoff <- function(data){
     tf = function(dat) {
         dat[dat == 0] = 1e+06
@@ -1651,6 +1687,9 @@ prepareDataSankoff <- function(data){
         dat
     }   
     attrData <- attributes(data)
+#   needs changing     
+    data = new2old.phyDat(data)
+    
     data <- lapply(data, tf)
     attributes(data) <- attrData 
     data
@@ -1916,24 +1955,24 @@ discrete.gamma <- function (alpha, k)
 
 
 optimQ = function(tree, data, Q=c(1,1,1,1,1,1), trace=0,...){
-	l = length(Q)
-	Q = Q[-l]
-	Q = sqrt(Q)
-	fn = function(Q,tree,data,...){
-	  pml2(tree, data, Q=c(Q^2,1),...)
-	}
-	res = optim(par=Q, fn=fn, gr=NULL, method = "L-BFGS-B", lower=0, upper=Inf, control=list(fnscale=-1, maxit=25, trace=trace),tree=tree, data=data,...)
-	res[[1]] = c(res[[1]]^2,1)	
-	res
-	}	
-		
+    l = length(Q)
+    Q = Q[-l]
+    Q = sqrt(Q)
+    fn = function(Q,tree,data,...){
+        pml2(tree, data, Q=c(Q^2,1),...)
+    }
+    res = optim(par=Q, fn=fn, gr=NULL, method = "L-BFGS-B", lower=0, upper=Inf, control=list(fnscale=-1, maxit=25, trace=trace),tree=tree, data=data,...)
+    res[[1]] = c(res[[1]]^2,1)	
+    res
+    }
+
     
 optimGamma = function(tree, data, shape=1, k=4,...){
-	fn = function(shape, tree, data, k,...)pml2(tree, data, shape=shape, k=k,...)
-	res = optimize(f=fn, interval = c(0,100), lower = 0, upper = 100, maximum = TRUE,
-		 tol = .01, tree=tree, data=data, k=k,...)
-	res
-	}
+    fn = function(shape, tree, data, k,...)pml2(tree, data, shape=shape, k=k,...)
+    res = optimize(f=fn, interval = c(0,100), lower = 0, upper = 100, maximum = TRUE,
+        tol = .01, tree=tree, data=data, k=k,...)
+    res
+    }
     
  
 optimInv = function(tree, data, inv=0.01, INV=NULL, ll.0=NULL,...){
@@ -1949,7 +1988,7 @@ optimRate <- function(tree, data, rate=1, ...){
     res <- optimize(f = fn, interval = c(0, 100), tree = tree, data = data, ..., 
         lower = 0, upper = 100, maximum = TRUE, tol = 0.01)
     res
-}		
+}
 	
 
 optimBf = function(tree, data, bf=c(.25,.25,.25,.25), trace=0,...){
@@ -1967,9 +2006,9 @@ optimBf = function(tree, data, bf=c(.25,.25,.25,.25), trace=0,...){
 	bf = bf/sum(bf)
 	result = list(bf=bf, loglik = res[[2]])
 	result
-	}	
-	
-	
+	}
+
+
 
 optimW = function(fit,...){
 	w = fit$w
@@ -2010,18 +2049,28 @@ logLik.pml <- function(object,...){
 
 	
 	
-vcov.pml <- function(object, obs=FALSE,...){
-	if(obs) FI = score4(object)[[2]]
-	else FI = score(object,FALSE)[[2]]
-	l = dim(FI)[1]
-	res = try(solve(FI))
-	if(class(res) == "try-error"){
-	    cat("Covariance is ill-conditioned !! \n")
-		res = solve(FI + diag(l)* 1e-8)
-		}
-	res
+#vcov.pml <- function(object, obs=FALSE,...){
+#	if(obs) FI = score4(object)[[2]]
+#	else FI = score(object,FALSE)[[2]]
+#	l = dim(FI)[1]
+#	res = try(solve(FI))
+#	if(class(res) == "try-error"){
+#	    cat("Covariance is ill-conditioned !! \n")
+#		res = solve(FI + diag(l)* 1e-8)
+#		}
+#	res
+#}
+                             
+vcov.pml <- function(object, ...){
+    FI = score(object,FALSE)[[2]]
+    l = dim(FI)[1]
+    res = try(solve(FI))
+    if(class(res) == "try-error"){
+        cat("Covariance is ill-conditioned !! \n")
+        res = solve(FI + diag(l)* 1e-8)
+        }
+    res
 }
-		
 
 
 getd2P <- function(el, eig=edQt(), g=1.0){
@@ -2029,8 +2078,9 @@ getd2P <- function(el, eig=edQt(), g=1.0){
 	res <- .Call("getd2PM",eig,as.integer(n),as.double(el),as.double(g), PACKAGE = "phangorn")
     attr(res,"dim") <- c(length(g),length(el))
 	res
-}	
-	
+}
+
+
 getdP <- function(el, eig=edQt(), g=1.0){
 	n <- length(eig$values)	
 	res <- .Call("getdPM",eig,as.integer(n),as.double(el),as.double(g), PACKAGE = "phangorn")
@@ -2039,7 +2089,7 @@ getdP <- function(el, eig=edQt(), g=1.0){
 }
 
 
-# version without transformation 
+# version without transformation (used for vcov)
 getdP2 <- function(el, eig=edQt(), g=1.0){
 	n <- length(eig$values)	
 	res <- .Call("getdPM2",eig,as.integer(n),as.double(el),as.double(g), PACKAGE = "phangorn")
@@ -2066,16 +2116,27 @@ getP <- function(el, eig=edQt(), g=1.0){
 }
 
 
+#lli <- function (data, tree, ...) 
+#{
+#    nr = attr(data, "nr")
+#    nc = attr(data, "nc")
+#    dat = data[tree$tip.label]
+#    m = length(dat)
+#    res <- matrix(1, nr, nc)
+#    for (i in 1:m) res = res * dat[[i]]
+#    res
+#}
 
 
 lli <- function (data, tree, ...) 
 {
+    AC = attr(data, "contrast")  
     nr = attr(data, "nr")
     nc = attr(data, "nc")
     dat = data[tree$tip.label]
     m = length(dat)
     res <- matrix(1, nr, nc)
-    for (i in 1:m) res = res * dat[[i]]
+    for (i in 1:m) res = res * AC[dat[[i]],]
     res
 }
 
@@ -2143,16 +2204,17 @@ pml3 <- function (object,...)
 }
 
 
+
 ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1, 
     Q = c(1, 1, 1, 1, 1, 1), eig = NULL, assign.dat = FALSE, ...) 
 {
-	if(is.null(attr(tree,"order")) || attr(tree,"order")=="cladewise")tree <- reorderPruning(tree)
+    if(is.null(attr(tree,"order")) || attr(tree,"order")=="cladewise")tree <- reorderPruning(tree)
     q = length(tree$tip.label) 
     node <- tree$edge[, 1]
     edge <- tree$edge[, 2]
     m = length(edge) + 1
     dat = vector(mode = "list", length = m)
-    dat[1:q] = dat1[tree$tip.label]
+#    dat[1:q] = dat1[tree$tip.label]
     if (is.null(eig)) eig = edQt(bf = bf, Q = Q)
     el <- tree$edge.length
     P <- getP(el, eig, g)  
@@ -2162,17 +2224,58 @@ ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
     edge = as.integer(edge-1)
     nTips = as.integer(length(tree$tip))
     mNodes = as.integer(max(node)+1)
-        
-    res <- .Call("LogLik", dat[1:q], P, nr, nc, node, edge, nTips, mNodes, PACKAGE = "phangorn")
+    contrast = attr(dat1, "contrast")
+    nco = as.integer(dim(contrast)[1])
+    res <- .Call("LogLik2", dat1[tree$tip.label], P, nr, nc, node, edge, nTips, mNodes, contrast, nco, PACKAGE = "phangorn")
 
     result = res[[1]] %*% bf  
     if (assign.dat){
-    	dat[(q+1):m] <- res
+        dat[(q+1):m] <- res
         attr(dat, "names") = c(tree$tip.label, as.character((q + 1):m))
         assign("asdf", dat, env = parent.frame(n = 1))
         }
     result
 }
+
+
+# scaled version (ca. 3* slower)  
+ll3 <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1, 
+    Q = c(1, 1, 1, 1, 1, 1), eig = NULL, assign.dat = FALSE, 
+    ...) 
+{
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorderPruning(tree)
+    q = length(tree$tip.label)
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+    m = length(edge) + 1
+    dat = vector(mode = "list", length = m)
+    dat[1:q] = dat1[tree$tip.label]
+    if (is.null(eig)) 
+        eig = edQt(bf = bf, Q = Q)
+    el <- tree$edge.length
+    P <- getP(el, eig, g)
+    nr <- as.integer(attr(dat1, "nr"))
+    nc <- as.integer(attr(dat1, "nc"))
+    node = as.integer(node - min(node))
+    edge = as.integer(edge - 1)
+    nTips = as.integer(length(tree$tip))
+    mNodes = as.integer(max(node) + 1)
+    contrast = attr(dat1, "contrast")
+    nco = as.integer(dim(contrast)[1])
+    res <- .Call("LogLik4", dat[1:q], P, nr, nc, node, edge, 
+        nTips, mNodes, contrast, nco, PACKAGE = "phangorn")
+    result = res[[2]][[1]] + log(res[[1]][[1]] %*% bf)     
+    if (assign.dat) {
+        dat[(q + 1):m] <- res
+        attr(dat, "names") = c(tree$tip.label, as.character((q + 
+            1):m))
+        assign("asdf", dat, env = parent.frame(n = 1))
+    }
+    result
+}
+
 
 
 fs <- function (old.el, eig, parent.dat, child.dat, weight, g=g, 
@@ -2197,7 +2300,7 @@ fs <- function (old.el, eig, parent.dat, child.dat, weight, g=g,
 
 
 fn.quartet <- function(old.el, eig, bf, dat,  g=1, w=1, weight, ll.0) {
-	l= length(dat[,1]) 
+    l= length(dat[,1]) 
     ll = ll.0
     res = vector("list", 2*l)
     tmp1 = NULL
@@ -2205,17 +2308,37 @@ fn.quartet <- function(old.el, eig, bf, dat,  g=1, w=1, weight, ll.0) {
     attr(res,"dim") = c(l,2)
     
     for(j in 1:l){
-    		P = getP(old.el, eig, g[j])
-    		tmp1 = (dat[[j,1]] %*% P[[1]]) *(dat[[j,2]] %*% P[[2]])
-    		tmp2 = (dat[[j,3]] %*% P[[3]]) * (dat[[j,4]] %*% P[[4]])
-    		res[[j,1]] = tmp1 * (tmp2 %*% P[[5]])
-    		res[[j,2]] = tmp2
-      		ll = ll +  res[[j,1]] %*% (w[j]*bf)
+            P = getP(old.el, eig, g[j])
+            tmp1 = (dat[[j,1]] %*% P[[1]]) *(dat[[j,2]] %*% P[[2]])
+            tmp2 = (dat[[j,3]] %*% P[[3]]) * (dat[[j,4]] %*% P[[4]])
+            res[[j,1]] = tmp1 * (tmp2 %*% P[[5]])
+            res[[j,2]] = tmp2
+            ll = ll +  res[[j,1]] %*% (w[j]*bf)
         } 
- 	l0 = sum(weight * log(ll))
- 	list(ll=l0,res=res)
+    l0 = sum(weight * log(ll))
+    list(ll=l0,res=res)
 }
 
+
+
+fn.quartet2 <- function(old.el, eig, bf, dat1, dat2, dat3, dat4, g=1, w=1, weight, ll.0) {
+    l= length(dat1[,1]) 
+    ll = ll.0
+    res = vector("list", 2*l)
+    tmp1 = NULL
+    tmp2 = NULL
+    attr(res,"dim") = c(l,2)
+    for(j in 1:l){
+        P = getP(old.el, eig, g[j])
+        tmp1 = (dat1[[j]] %*% P[[1]]) *(dat2[[j]] %*% P[[2]])
+        tmp2 = (dat3[[j]] %*% P[[3]]) * (dat4[[j]] %*% P[[4]])
+        res[[j,1]] = tmp1 * (tmp2 %*% P[[5]])
+        res[[j,2]] = tmp2
+        ll = ll +  res[[j,1]] %*% (w[j]*bf)
+        } 
+    l0 = sum(weight * log(ll))
+    list(ll=l0,res=res)
+}
 
 
 pml.nni = function (fit, ...) 
@@ -2234,6 +2357,8 @@ pml.nni = function (fit, ...)
     parent = tree$edge[,1]
     child = tree$edge[,2]
     datp = rnodes(fit)
+    
+
     evector <- numeric(max(parent)) 
     evector[child] <- tree$edge.length
     m <- dim(INDEX)[1]
@@ -2285,40 +2410,67 @@ pml.nni = function (fit, ...)
 }
 
 
-rnodes <- function (fit, external = TRUE) 
+
+rnodes <- function (fit, i=1, transform=transform) # i = weights
 {
-    dat <- NULL
-    logLik <- pml5(fit)
-    tree = fit$tree
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise") 
+    tree = fit$tree 
+    data = getCols(fit$data, tree$tip) 
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
         tree <- reorderPruning(tree)
+    q = length(tree$tip.label)
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+    m = length(edge) + 1  # max(edge)
+    w = fit$w
+    g = fit$g
+    l = length(w)        
+    dat = vector(mode = "list", length = m*l)
+    dim(dat) <- c(l,m)
+    
+#    data = fit$data
+    tmp = length(data)
+    for(i in 1:length(w))dat[i,1:tmp]=new2old.phyDat(data)
+    
+    
     eig = fit$eig
-    l = dim(dat)[1]
+
+    bf = fit$bf
+    el <- tree$edge.length
+    P <- phangorn:::getP(el, eig, g)
+    nr <- as.integer(attr(data, "nr"))
+    nc <- as.integer(attr(data, "nc"))
+    node = as.integer(node - min(node))
+    edge = as.integer(edge - 1)
+    nTips = as.integer(length(tree$tip))
+    mNodes = as.integer(max(node) + 1)
+    contrast = attr(data, "contrast")
+    nco = as.integer(dim(contrast)[1])
+#browser()
+    for(i in 1:l)dat[i,(q + 1):m] <- .Call("LogLik2", data, P[i,], nr, nc, node, edge, nTips, mNodes, contrast, nco, PACKAGE = "phangorn")
+
     parent <- tree$edge[, 1]
     child <- tree$edge[, 2]
     nTips = min(parent) - 1
-    pl = length(parent) + 1
-    datp = vector("list", pl * l)
-    attr(datp, "dim") = c(l, pl)
-    dat2 = vector("list", pl * l)
-    attr(dat2, "dim") = c(l, pl)
-    el = tree$edge.length
-    gs = fit$g
-    datp[, (nTips + 1)] = dat[, (nTips + 1)]
-    for (j in (pl - 1):1) {
-        blub=TRUE
-        isParent = (child[j] > nTips)
-        if(!external & !isParent) blub=FALSE 
-        if(blub){
-            elx = el[j]
-            P = getP(elx, eig, gs)
-            for (i in 1:l) {
-                tmp2 = (datp[[i, parent[j]]]/(dat[[i, child[j]]] %*% P[[i]]))
-                dat2[[i, child[j]]] = tmp2
-                if (isParent) 
-                    datp[[i, child[j]]] = (tmp2 %*% P[[i]]) * dat[[i, child[j]]]
-            }
-        } 
+    datp = vector("list", m * l)   
+    dat2 = vector("list", m * l)
+    dim(datp) <- c(l,m)
+    dim(dat2) <- c(l,m)
+
+    datp[,(nTips + 1)] = dat[,(nTips + 1)]
+
+    for (j in (m - 1):1) {
+      for(i in 1:l){
+        # tips have factor format, internal edges are matrices
+        if (child[j] > nTips){
+             tmp2 = (datp[[i,parent[j]]]/(dat[[i,child[j]]] %*% P[[i,j]]))
+             datp[[i,child[j]]] = (tmp2 %*% P[[i,j]]) * dat[[i,child[j]]]  
+             dat2[[i, child[j]]] = tmp2
+             }
+#        else{
+#             tmp2 = (datp[[parent[j]]]/((contrast %*% P[[j]])[data[[child[j]]],] ))
+#             }
+       }
     }
     assign(".dat", dat, env = parent.frame(n = 1))
     dat2
@@ -2380,6 +2532,41 @@ optim.quartet <- function (old.el, eig, bf, dat, g = 1, w = 1, weight, ll.0 = we
     list(old.el, ll)
 }
 
+
+optim.quartet2 <- function (old.el, eig, bf, dat1, dat2, dat3, dat4, g = 1, w = 1, weight, 
+    ll.0 = weight * 0, control = list(eps = 1e-04, maxit = 5, trace = 0), llcomp=-Inf) 
+{
+    tmp <- fn.quartet2(old.el = old.el, eig = eig, bf = bf, 
+             dat1=dat1, dat2=dat2, dat3=dat3, dat4=dat4, g = g, w = w, weight = weight, ll.0 = ll.0)
+    old.ll = tmp$ll
+    eps = 1
+    iter = 0
+    while (eps > control$eps && iter < control$maxit) {
+        el1 <- fs(old.el[1], eig, tmp$res[, 1], dat1, weight, 
+            g = g, w = w, bf = bf, ll.0 = ll.0)
+        el2 <- fs(old.el[2], eig, el1[[2]], dat2, weight, 
+            g = g, w = w, bf = bf, ll.0 = ll.0)
+        el5 <- fs(old.el[5], eig, el2[[2]], tmp$res[, 2], weight, 
+            g = g, w = w, bf = bf, ll.0 = ll.0)
+        el3 <- fs(old.el[3], eig, el5[[3]], dat3, weight, 
+            g = g, w = w, bf = bf, ll.0 = ll.0)
+        el4 <- fs(old.el[4], eig, el3[[2]], dat4, weight, 
+            g = g, w = w, bf = bf, ll.0 = ll.0)
+        old.el[1] = el1[[1]]
+        old.el[2] = el2[[1]]
+        old.el[3] = el3[[1]]
+        old.el[4] = el4[[1]]
+        old.el[5] = el5[[1]]
+        iter = iter + 1
+        tmp <- fn.quartet2(old.el = old.el, eig = eig, bf = bf, 
+             dat1=dat1, dat2=dat2, dat3=dat3, dat4=dat4, g = g, w = w, weight = weight, ll.0 = ll.0)
+        ll = tmp[[1]]
+        eps = ll - old.ll
+        if(ll<llcomp)return(list(old.el, ll))  
+        old.ll = ll
+    }
+    list(old.el, ll)
+}
 
 
 plot.pml<-function(x,...)plot.phylo(x$tree,...)
@@ -2622,11 +2809,13 @@ optimEdge <- function (fit, control = list(eps = 1e-08, maxit = 20, trace = 0),
     tree$edge.length[el < 0] <- 1e-08
     dat <- NULL    
     rate <- fit$rate 
+#    browser()
     old.ll <- pml5(fit)
+    
+#    contrast <- attr(data, "contrast")
     eig <- fit$eig
     w <- fit$w
     g <- fit$g
-
     bf <- fit$bf
     weight <- attr(fit$data, "weight")
     ll.0 <- fit$ll.0
@@ -2636,9 +2825,22 @@ optimEdge <- function (fit, control = list(eps = 1e-08, maxit = 20, trace = 0),
     parent = tree$edge[, 1]
     nTips = min(parent) - 1
     n = length(tree$edge.length)
+    k = length(w)
+    data <- new2old.phyDat(fit$data)
+#    lt = length(tree$tip)
+#    for(i in 1:k)dat[i, 1:lt]=data
+    
+    
+    child.dat = vector("list", k)
     while (eps > control$eps && iter < control$maxit) {
         for (j in n:1) {
-            child.dat = dat[, child[j]]
+#        browser()
+            if (child[j] > nTips) 
+               child.dat = dat[, child[j]]
+            else{
+#                for(i in 1:k)child.dat[[i]] = contrast[data[[ child[j] ]], , drop=FALSE]
+                child.dat[] = data[ child[j] ]
+                }
             parent.dat = dat[, parent[j]]
             old.el = tree$edge.length[j]
             newEL <- fs(old.el, eig, parent.dat, child.dat, weight, 
@@ -2663,7 +2865,7 @@ optimEdge <- function (fit, control = list(eps = 1e-08, maxit = 20, trace = 0),
 }
 
 
-pml5<-function (object, ...) 
+pml5 <- function (object, ...) 
 {
     tree = object$tree
     Q = object$Q
@@ -2672,10 +2874,9 @@ pml5<-function (object, ...)
     w = object$w
     g = object$g
     data = object$data
-    ll0 <- object$logLik
-    ll.0 <- object$ll.0
+#    ll0 <- object$logLik
+    lll <- object$ll.0
     weight = attr(data, "weight")
-    lll = ll.0
     m = 1
     p = length(g)
     q = length(tree$edge[, 1]) + 1
@@ -2780,36 +2981,75 @@ optimPartGamma <- function (object, shape = 1, ...)
 
 
 
-dl <- function (fit, transform=TRUE) 
+dltmp <- function (fit, i=1, transform=transform) # i = weights
 {
-    tree = fit$tree
+    tree = fit$tree 
+    data = getCols(fit$data, tree$tip) 
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorderPruning(tree)
+    q = length(tree$tip.label)
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+    m = length(edge) + 1  # max(edge)
+    dat = vector(mode = "list", length = m)
     eig = fit$eig
-    .dat <- NULL
-    datp = rnodes(fit, TRUE)
-    m = dim(.dat)[1]
-    g = fit$g
+    w = fit$w[i]
+    g = fit$g[i]
     bf = fit$bf
-    w = fit$w
+    el <- tree$edge.length
+    P <- getP(el, eig, g)
+    nr <- as.integer(attr(data, "nr"))
+    nc <- as.integer(attr(data, "nc"))
+    node = as.integer(node - min(node))
+    edge = as.integer(edge - 1)
+    nTips = as.integer(length(tree$tip))
+    mNodes = as.integer(max(node) + 1)
+    contrast = attr(data, "contrast")
+    nco = as.integer(dim(contrast)[1])
+    dat[(q + 1):m] <- .Call("LogLik2", data, P, nr, nc, node, edge, nTips, mNodes, contrast, nco, PACKAGE = "phangorn")
+    result = dat[[q+1]] %*% (bf * w)
+
     parent <- tree$edge[, 1]
     child <- tree$edge[, 2]
     nTips = min(parent) - 1
-    l = length(child)
-    sc = numeric(l)
-    weight = fit$weight
-    dl = matrix(0, length(weight), l)
-    ff0 = numeric(length(weight))
-    if(transform) dP = getdP(tree$edge.length, eig, g)
+    datp = vector("list", m)
+    el = tree$edge.length 
+    if (transform) dP = getdP(tree$edge.length, eig, g)
     else dP = getdP2(tree$edge.length, eig, g)
-    for (i in 1:l) {
-        ff = ff0 
-        for (j in 1:m) {
-            ff = ff + (datp[[j, child[i]]] * (.dat[[j, child[i]]] %*% 
-                dP[[j,i]])) %*% (w[j] * bf)
-        }
-        dl[, i] = ff
+   
+    datp[(nTips + 1)] = dat[(nTips + 1)]
+    l = length(child)
+    dl = matrix(0, nr, l)
+    for (j in (m - 1):1) {
+        # tips have factor format, internal edges are matrices
+        if (child[j] > nTips){
+             tmp2 = (datp[[parent[j]]]/(dat[[child[j]]] %*% P[[j]]))
+             dl[, j] = (tmp2 * (dat[[child[j]]] %*% dP[[j]])) %*% (w * bf)
+             datp[[child[j]]] = (tmp2 %*% P[[j]]) * dat[[child[j]]]  
+             }
+        else{
+             tmp2 = (datp[[parent[j]]]/((contrast %*% P[[j]])[data[[child[j]]],] ))
+             dl[, j] = (tmp2 * ((contrast %*% dP[[j]])[data[[child[j]]],]) ) %*% (w * bf)    
+             }
     }
+    #list(dl, result)
     dl
 }
+
+
+dl <- function(x, transform = TRUE){
+  w = x$w 
+  l=length(x$w)
+  dl = dltmp(x, 1, transform)
+  i=2
+  while(i < (l+1)){
+    dl = dl + dltmp(x, i, transform)
+    i = i + 1
+  } 
+  dl
+}
+
 
 
 optimPartEdge <- function (object, ...) 
@@ -3152,18 +3392,7 @@ bipartitionList <- function(tree)
     res
 }
 
-# new
-# todo: als sparse Matrix speichern 
-#designUltra <- function(tree){
-#    tree = reorderPruning(tree)
-#    leri = lr(tree)
-#    bip = bipartitionList(tree)
-#    n = length(tree$tip)
-#    l = tree$Nnode
-#    X = matrix(0L, n*(n-1)/2,l)
-#    for(i in 1:l)X[getIndex(bip[[leri[i,1]]], bip[[leri[i,2]]], n),i] = 2L
-#    X
-#}
+
 
 designUltra <- function (tree) 
 {
@@ -3383,19 +3612,22 @@ ancestors <- function (x, node, which = c("all", "parent"))
 }
 
 # works very well (and is simpler and faster)
-reroot <- function(tree, node){
+reroot <-  function (tree, node) 
+{
     anc = ancestors(tree, node, "all")
     l = length(anc)
-    ind = match(c(node, anc[-l]), tree$edge[,2])
-    tree$edge[ind,c(1,2)] = tree$edge[ind,c(2,1)]
+    if(is.na(match(node,tree$edge[,1])))stop("node not in tree")
+    if(l==0)return(tree)
+    ind = match(c(node, anc[-l]), tree$edge[, 2])
+    tree$edge[ind, c(1, 2)] = tree$edge[ind, c(2, 1)]
     root = anc[l]
 # root is often assumed to be nTips +1    
-    tree$edge[tree$edge==root] = 0L
-    tree$edge[tree$edge==node] = root
-    tree$edge[tree$edge==0L] = node
-# needed for unrooted trees
+    tree$edge[tree$edge == root] = 0L
+    tree$edge[tree$edge == node] = root
+    tree$edge[tree$edge == 0L] = node
+# needed for unrooted trees    
     tree <- collapse.singles(tree)
-    tree    
+    reorderPruning(tree)
 }
 
 
@@ -3411,8 +3643,9 @@ getIndex = function(left, right, n){
 
 
 
-# updating best
-pmlCluster2 <- function (formula, fit, weight, p = 4, part = NULL, ...) 
+
+# updating All
+pmlCluster <- function (formula, fit, weight, p = 4, part = NULL, ...) 
 {
     call <- match.call()
     form <- phangornParseFormula(formula)
@@ -3434,8 +3667,10 @@ pmlCluster2 <- function (formula, fit, weight, p = 4, part = NULL, ...)
     PartRate <- !is.na(optPart[7])
     nrw <- dim(weight)[1]
     ncw <- dim(weight)[2]
-    if (is.null(part)) 
-        part = sample(rep(1:p, length = ncw))
+    if (is.null(part)){ 
+        part = rep(1:p, length=ncw)
+        part = sample(part)
+        }
     Part = part
     Gtrees = vector("list", p)
     dat <- fit$data
@@ -3447,32 +3682,29 @@ pmlCluster2 <- function (formula, fit, weight, p = 4, part = NULL, ...)
     m = 1
     logLik = fit$log
     trees = list()
-    oldpart <- rep(0, ncw)
-    weights = vector("list", p)
-    for (i in 1:p) {
-        weights[[i]] = rowSums(matrix(weight[, which(part == i)], nrow = nrw))
-    }
-    lls = vector("list", p)
-    loli = 0
-    for (i in 1:p) {
-        if (!identical(part == i, oldpart == i)) {
-            ind <- which(weights[[i]] > 0)
+    weights = matrix(0, nrw, p)
+     lls = matrix(0, nrw, p)
+
+    loli = fit$log
+    oldpart = part
+    eps2 = 100
+    iter = 0
+    swap = 1
+    while (eps < ncw || abs(eps2) > 0.01) {
+        df2 = 0
+        for (i in 1:p) {
+            weights[, i] = rowSums(weight[, which(part == i), 
+                drop = FALSE])
+            ind <- which(weights[, i] > 0)
             dat2 <- getRows(dat, ind)
-            attr(dat2, "weight") <- weights[[i]][ind]
+            attr(dat2, "weight") <- weights[ind, i]
             fits[[i]] <- update(fits[[i]], data = dat2)
             fits[[i]] = optim.pml(fits[[i]], PartNni, PartBf, 
                 PartQ, PartInv, PartGamma, PartEdge, PartRate, 
                 control = list(maxit = 3, eps = 0.001))
+            lls[, i] = update(fits[[i]], data = dat)$site
+            Gtrees[[i]] = fits[[i]]$tree
         }
-        lls[[i]] = update(fits[[i]], data = dat)$site
-        loli = loli + fits[[i]]$log
-        cat(i, ":", loli, "\n")
-        Gtrees[[i]] = fits[[i]]$tree
-    }
-    logLik = c(logLik, loli)
-    eps2 = 100
-    while (eps < ncw || abs(eps2) > 0.01) {
-        df2 = 0
         if (AllQ) {
             newQ <- optimPartQ(fits)[[1]]
             for (i in 1:p) fits[[i]] <- update(fits[[i]], Q = newQ)
@@ -3496,237 +3728,47 @@ pmlCluster2 <- function (formula, fit, weight, p = 4, part = NULL, ...)
         if (AllNNI) {
             fits <- optimPartNNI(fits, AllEdge)
             cat(attr(fits, "swap"), " NNI operations performed")
+            swap <- attr(fits, "swap")
         }
         if (AllEdge) {
             fits <- optimPartEdge(fits)
             df2 = df2 + length(fits[[1]]$tree$edge.length)
         }
-        for (i in 1:p) lls[[i]] = update(fits[[i]], data = dat)$site
-        trees[[m]] = Gtrees
-        LL = matrix(0, ncw, p)
-        for (j in 1:p) {
-            LL[, j] = t(weight) %*% lls[[j]]
-        }
-        oldpart = part
-        part = apply(LL, 1, which.max)
-        oldll <- LL[1:ncw + (oldpart-1)*ncw]
-        newll <- LL[1:ncw + (part-1)*ncw] 
-        eps = sum(diag(table(part, oldpart)))
-        i=1
-        while(i<25) {
-
-            part = apply(LL, 1, which.max)
-            print(sum(diag(table(part, oldpart))))
-
-            oldll <- LL[1:ncw + (oldpart-1)*ncw]
-            newll <- LL[1:ncw + (part-1)*ncw]  
-            if(identical(part,oldpart))break
-            m = which.max(newll-oldll)   
-            a = part[m]
-            b = oldpart[m]
-
-            part = oldpart
-            part[m] = a
-
-                for (j in c(a, b)) {
-                  weights[[j]] = rowSums(matrix(weight[, which(part == 
-                    j)], nrow = nrw))
-                  ind <- which(weights[[j]] > 0)
-                  dat2 <- getRows(dat, ind)
-                  attr(dat2, "weight") <- weights[[j]][ind]
-                  fits[[j]] <- update(fits[[j]], data = dat2)
-                  fits[[j]] = optim.pml(fits[[j]], PartNni, PartBf, 
-                    PartQ, PartInv, PartGamma, PartEdge, PartRate, 
-                    control = list(maxit = 3, eps = 0.001))
-                  lls[[j]] = update(fits[[j]], data = dat)$site
-                }
-                LL = matrix(0, ncw, p)
-                for (v in 1:p) {
-                  LL[, v] = t(weight) %*% lls[[v]]
-                
-                oldpart = part
+        if (PartRate) {
+            tree = fits[[1]]$tree
+            rate = numeric(p)
+            wp = numeric(p)
+            for (i in 1:p) {
+                wp[i] = sum(fits[[i]]$weight)
+                rate[i] <- fits[[i]]$rate
             }
-            i=i+1
-        }
-        if (PartRate){
-            tree = fits[[1]]$tree
-            rate=numeric(p)
-            wp =numeric(p) 
-            for(i in 1:p){
-                wp[i]=sum(fits[[i]]$weight)
-                rate[i] <- fits[[i]]$rate
-                }          
-            ratemult = sum(wp) / sum(wp*rate)
-            tree$edge.length = tree$edge.length/ratemult  
-            for(i in 1:p)fits[[i]] = update(fits[[i]], tree=tree, rate=rate[i]*ratemult)   
-        }
-        
-        eps = sum(diag(table(apply(LL, 1, which.max), oldpart)))
-        eps2 = loli
-        loli = sum(apply(LL, 1, max))
-        eps2 = eps2 - loli
-        logLik = c(logLik, loli)
-        print(logLik)
-        Part = cbind(Part, part)
-        df2 = df2 + df2
-        m = m + 1
-    }
-    df <- matrix(1, 6, 2)
-    colnames(df) <- c("#df", "group")
-    rownames(df) <- c("Edge", "Shape", "Inv", "Bf", "Q", "Rate")
-    df[1, 1] <- length(fits[[1]]$tree$edge.length)
-    df[2, 1] <- fits[[1]]$k - 1
-    df[3, 1] <- fits[[1]]$inv > 0
-    df[4, 1] <- length(unique(fits[[1]]$bf)) - 1
-    df[5, 1] <- length(unique(fits[[1]]$Q)) - 1
-    df[6, 1] <- 0
-    if (PartEdge) 
-        df[1, 2] = p
-    if (PartGamma) 
-        df[2, 2] = p
-    if (PartInv) 
-        df[3, 2] = p
-    if (PartBf) 
-        df[4, 2] = p
-    if (PartQ) 
-        df[5, 2] = p
-    if (PartRate) 
-        df[6, 1] = p - 1
-    attr(logLik, "df") = sum(df[, 1] * df[, 2])
-    res = list(logLik = logLik, Partition = Part, trees = trees)
-    result <- list(logLik = loli, fits = fits, Partition = part, 
-        df = df, res = res, call = call)
-    class(result) <- "pmlPart"
-    result
-}
-
-
-
-# updating all
-pmlCluster <- function (formula, fit, weight, p = 4, part = NULL, ...) 
-{
-    call <- match.call()
-    form <- phangorn:::phangornParseFormula(formula)
-    opt <- c("nni", "bf", "Q", "inv", "shape", "edge", "rate")
-    optAll <- match(opt, form$left)
-    optPart <- match(opt, form$right)
-    AllNNI <- !is.na(optAll[1])
-    AllBf <- !is.na(optAll[2])
-    AllQ <- !is.na(optAll[3])
-    AllInv <- !is.na(optAll[4])
-    AllGamma <- !is.na(optAll[5])
-    AllEdge <- !is.na(optAll[6])
-    PartNni <- !is.na(optPart[1])
-    PartBf <- !is.na(optPart[2])
-    PartQ <- !is.na(optPart[3])
-    PartInv <- !is.na(optPart[4])
-    PartGamma <- !is.na(optPart[5])
-    PartEdge <- !is.na(optPart[6])
-    PartRate <- !is.na(optPart[7])
-    nrw <- dim(weight)[1]
-    ncw <- dim(weight)[2]
-    if (is.null(part)) {
-        ind = sample(1:ncw, p)
-        part = numeric(ncw)
-        part[ind] = 1:p
-    }
-    Part = part
-    Gtrees = vector("list", p)
-    dat <- fit$data
-    attr(fit$orig.data, "index") <- attr(dat, "index") <- NULL
-    for (i in 1:p) Gtrees[[i]] = fit$tree
-    fits = vector("list", p)
-    for (i in 1:p) fits[[i]] = fit
-    eps = 0
-    m = 1
-    logLik = fit$log
-    trees = list()
-    oldpart <- rep(0, ncw)
-#browser()
-    weights = matrix(0, nrw, p)
-    for (i in 1:p) {
-        weights[,i] = rowSums(weight[, which(part == i), drop=FALSE])
-    }
-    lls = matrix(0, nrw, p)
-    for (i in 1:p) {
-        ind <- which(weights[,i] > 0)
-        dat2 <- phangorn:::getRows(dat, ind)
-        attr(dat2, "weight") <- weights[ind,i]
-        fits[[i]] <- update(fits[[i]], data = dat2)
-        fits[[i]] = optim.pml(fits[[i]], FALSE, PartBf, 
-            PartQ, PartInv, PartGamma, PartEdge, PartRate, 
-            control = list(maxit = 3, eps = 0.001))
-        lls[, i] = update(fits[[i]], data = dat)$site
-        }
-    LL = t(weight) %*% lls
-    part = apply(LL, 1, which.max)
-    Part = cbind(Part, part)
-
-    loli = fit$log
-    oldpart = part
-    eps2 = 100
-    iter=0
-    swap=1
-    while (eps < ncw || abs(eps2) > 0.01) {
-        df2 = 0
-        for (i in 1:p) {
-            weights[,i] = rowSums(weight[, which(part == i), drop=FALSE])  
-            ind <- which(weights[,i] > 0)
-            dat2 <- phangorn:::getRows(dat, ind)
-            attr(dat2, "weight") <- weights[ind,i]
-            fits[[i]] <- update(fits[[i]], data = dat2)
-            fits[[i]] = optim.pml(fits[[i]], PartNni, PartBf, 
-                PartQ, PartInv, PartGamma, PartEdge, PartRate, 
-                control = list(maxit = 3, eps = 0.001))
-            lls[, i] = update(fits[[i]], data = dat)$site
-            Gtrees[[i]] = fits[[i]]$tree
-        }
-        if (AllQ) {
-            newQ <- phangorn:::optimPartQ(fits)[[1]]
-            for (i in 1:p) fits[[i]] <- update(fits[[i]], Q = newQ)
-            df2 = df2 + length(unique(newQ)) - 1
-        }
-        if (AllBf) {
-            newBf <- phangorn:::optimPartBf(fits)
-            for (i in 1:p) fits[[i]] <- update(fits[[i]], bf = newBf)
-            df2 = df2 + length(unique(newBf)) - 1
-        }
-        if (AllInv) {
-            newInv <- phangorn:::optimPartInv(fits)
-            for (i in 1:p) fits[[i]] <- update(fits[[i]], Inv = newInv)
-            df2 = df2 + 1
-        }
-        if (AllGamma) {
-            newGamma <- phangorn:::optimPartGamma(fits)[[1]]
-            for (i in 1:p) fits[[i]] <- update(fits[[i]], shape = newGamma)
-            df2 = df2 + 1
-        }
-        if (AllNNI) {
-            fits <- phangorn:::optimPartNNI(fits, AllEdge)
-            cat(attr(fits, "swap"), " NNI operations performed")
-            swap <- attr(fits, "swap")
-        }
-        if (AllEdge) {
-            fits <- phangorn:::optimPartEdge(fits)
-            df2 = df2 + length(fits[[1]]$tree$edge.length)
-        }
-        if (PartRate){
-            tree = fits[[1]]$tree
-            rate=numeric(p)
-            wp =numeric(p) 
-            for(i in 1:p){
-                wp[i]=sum(fits[[i]]$weight)
-                rate[i] <- fits[[i]]$rate
-                }          
-            ratemult = sum(wp) / sum(wp*rate)
-            tree$edge.length = tree$edge.length/ratemult  
-            for(i in 1:p)fits[[i]] = update(fits[[i]], tree=tree, rate=rate[i]*ratemult)   
+            ratemult = sum(wp)/sum(wp * rate)
+            tree$edge.length = tree$edge.length/ratemult
+            for (i in 1:p) fits[[i]] = update(fits[[i]], tree = tree, 
+                rate = rate[i] * ratemult)
         }
         for (i in 1:p) lls[, i] = update(fits[[i]], data = dat)$site
         trees[[m]] = Gtrees
         LL = t(weight) %*% lls
+        
+# choose partitions which change        
+        tmp =(LL[cbind(1:ncw,part)] - apply(LL, 1, max))/colSums(weight)
+        fixi = numeric(p)
+        for(i in 1:p){
+            tmpi = which(part == i)
+            fixi[i] = tmpi[which.max(tmp[tmpi])]     
+            }
         oldpart = part
-        part = apply(LL, 1, which.max)
+# restrict the number of elements changing groups 
+# If more than 25% would change, only the 25% with the highest increase change       
+        if( sum(tmp==0)/length(tmp) < .75){
+           medtmp = quantile(tmp, .25)
+           medind = which(tmp<=medtmp)
+           part[medind] = apply(LL[medind,], 1, which.max)
+           }
+        else part = apply(LL, 1, which.max)
+# force groups to have at least one member
+        part[fixi] = 1:p
         Part = cbind(Part, part)
         eps = sum(diag(table(part, oldpart)))
         eps2 = loli
@@ -3736,10 +3778,13 @@ pmlCluster <- function (formula, fit, weight, p = 4, part = NULL, ...)
         print(logLik)
         Part = cbind(Part, part)
         df2 = df2 + df2
-        if(eps == ncw & swap==0) AllNNI=FALSE
+        if (eps == ncw & swap == 0) 
+            AllNNI = FALSE
         m = m + 1
-        if(eps == ncw) iter=iter+1
-        if(iter==3)break
+        if (eps == ncw) 
+            iter = iter + 1
+        if (iter == 3) 
+            break
     }
     df <- matrix(1, 6, 2)
     colnames(df) <- c("#df", "group")
@@ -3788,6 +3833,7 @@ readAArate <- function(file){
 #.Dayhoff <- readAArate("dayhoff-dcmut.dat")
 #.JTT <- readAArate("jtt-dcmut.dat")
 # save(.LG,.WAG,.Dayhoff,.JTT, file = "sysdata.rda")
+
 
 
 pml <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1, 
@@ -3861,7 +3907,7 @@ pml <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1,
 
 
 print.pml = function(x,...){
-	cat("\n loglikelihood:", x$logLik, "\n")
+    cat("\n loglikelihood:", x$logLik, "\n")
     w <- x$weight
     w <- w[w>0]	
     type <- attr(x$data, "type")
@@ -3869,13 +3915,13 @@ print.pml = function(x,...){
     nc <- attr(x$data, "nc")
     ll0 = sum(w*log(w/sum(w)))
     cat("\nunconstrained loglikelihood:", ll0, "\n")
-	if(x$inv > 0)cat("Proportion of invariant sites:",x$inv,"\n")
-	if(x$k >1){
-		cat("Discrete gamma model\n")
-		cat("Number of rate categories:",x$k,"\n")		
-		cat("Shape parameter:",x$shape,"\n")
-		}
-	if(type=="AA") cat("Rate matrix:",x$model, "\n")	
+    if(x$inv > 0)cat("Proportion of invariant sites:",x$inv,"\n")
+    if(x$k >1){
+        cat("Discrete gamma model\n")
+        cat("Number of rate categories:",x$k,"\n")		
+        cat("Shape parameter:",x$shape,"\n")
+        }
+    if(type=="AA") cat("Rate matrix:",x$model, "\n")	
     if(type=="DNA"){
         cat("\nRate matrix:\n")	
         QM = matrix(0, nc, nc, dimnames = list(levels,levels))	
@@ -3898,7 +3944,7 @@ print.pml = function(x,...){
         names(bf) = levels 
         cat(bf, "\n")
     }        
-}	
+}
 
 
 
@@ -3935,12 +3981,9 @@ update.pml <- function (object, ...)
         "rate", "model", "wMix", "llMix", "...") 
     names(extras) <- pmla[pmatch(names(extras), pmla[-length(pmla)])]
     existing <- match(pmla, names(extras))
-
     updateRates <- FALSE
-
     if (is.na(existing[1])) tree <- object$tree
     else tree <- eval(extras[[existing[1]]], parent.frame())
-
     if (is.na(existing[2])){
         data <- object$data
         INV <- object$INV
@@ -3950,14 +3993,11 @@ update.pml <- function (object, ...)
         ll.0 <- numeric(attr(data,"nr"))
         INV <- lli(data, tree)
     }
-    nr <- attr(data, "nr")
-    
+    nr <- attr(data, "nr")  
     if (is.na(existing[3])) bf <- object$bf
     else bf <- eval(extras[[existing[3]]], parent.frame())
-
     if (is.na(existing[4])) Q <- object$Q
     else Q <- eval(extras[[existing[4]]], parent.frame())
-
     model <- object$model
     type <- attr(object$data, "type")
     if (!is.na(existing[9]) & type == "AA") {
@@ -3979,44 +4019,33 @@ update.pml <- function (object, ...)
             if (is.na(existing[3])) bf <- .Dayhoff$bf
         }
     }
-    
     if(is.na(existing[5])) inv <- object$inv
     else{
         inv <- eval(extras[[existing[5]]], parent.frame())
         updateRates <- TRUE
     }
-
     if(is.na(existing[6])) k <- object$k
     else{
         k <- eval(extras[[existing[6]]], parent.frame())
         updateRates <- TRUE
     }
-    
     if(is.na(existing[7])) shape <- object$shape
     else{
         shape <- eval(extras[[existing[7]]], parent.frame())
         updateRates <- TRUE
     }
-
     rate <- ifelse(is.na(existing[8]), object$rate, eval(extras[[existing[8]]], parent.frame()))
-    
     wMix <- ifelse(is.na(existing[10]), object$wMix, eval(extras[[existing[10]]], parent.frame()))
-    
     if(is.na(existing[11])) llMix <- object$llMix
     else llMix <- eval(extras[[existing[11]]], parent.frame())
-                
     levels <- attr(data, "levels")
     weight <- attr(data, "weight")
-    
     eig <- edQt(bf = bf, Q = Q)
     g <- discrete.gamma(shape, k)
     g <- rate * g 
-    
     if (inv > 0) g <- g/(1 - inv)
-    
     ll.0 <- INV %*% (bf * inv)
     if(wMix>0) ll.0 <- ll.0 + llMix
-
     w = rep(1/k, k)
     if (inv > 0) 
         w <- (1 - inv) * w
@@ -4024,11 +4053,11 @@ update.pml <- function (object, ...)
         w <- wMix * w                  
     m <- 1
     resll <- matrix(0, nr, k)
+    
     while (m <= k) {
         resll[,m] = ll(data, tree, bf, g[m], Q, eig, assign.dat = FALSE)
         m = m + 1
     }
-
     lll = resll %*% w
     siteLik = log(lll + ll.0)
     loglik = sum(weight * siteLik)
@@ -4149,8 +4178,7 @@ pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)),
     nr <- attr(data, "nr")    
     resll <- matrix(0, nr, k)
     while (m <= k) {
-        resll[,m] = ll(data, tree, bf = bf, g = g[m], Q = Q, 
-            eig = eig, assign.dat = FALSE, ...)
+        resll[,m] = ll(data, tree, bf = bf, g = g[m], Q = Q, eig = eig, assign.dat = FALSE, ...)
         m = m + 1
     }
     lll <- resll %*% w         
@@ -4159,8 +4187,6 @@ pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)),
     siteLik = log(siteLik)
     sum(weight * siteLik)
 }
-
-	
 
 
 
@@ -4721,101 +4747,6 @@ optWPen = function (ll, weight, omega, pen, ...)
 	
 
 
-
-score4 <- function (fit, trans = FALSE) 
-{
-    tree = fit$tree
-    eig = fit$eig
-    .dat <- NULL
-    datp = rnodes(fit, TRUE)
-    m = dim(.dat)[1]
-    g = fit$g
-    bf = fit$bf
-    w = fit$w
-    parent <- tree$edge[, 1]
-    child <- tree$edge[, 2]
-    nTips = min(parent) - 1
-    l = length(child)
-    sc = numeric(l)
-    weight = fit$weight
-    f <- fit$ll.0
-    for (j in 1:m) f = f + (w[j] * .dat[[j, (nTips + 1)]]) %*% 
-        bf
-    d2l = score3(fit)
-    dl = matrix(0, length(weight), l)
-    ff0 = numeric(length(weight))
-    for (i in 1:l) {
-        elx = tree$edge.length[i]
-        ff = ff0
-        dP = getdP2(elx, eig, g)
-        for (j in 1:m) {
-            ff = ff + (datp[[j, child[i]]] * (.dat[[j, child[i]]] %*% 
-                dP[[j]])) %*% (w[j] * bf)
-        }
-        dl[, i] = ff
-        sc[i] = sum(weight * dl[, i]/f)
-    }
-    F = matrix(0, l, l)
-    for (i in 1:l) {
-        for (j in i:l) {
-            F[i, j] = sum(weight * (f * d2l[[i, j]] - (dl[, 
-                i] * dl[, j]))/(f * f))
-        }
-    }
-    d = diag(F)
-    F = F + t(F)
-    diag(F) = d
-    names(sc) = child
-    dimnames(F) = list(child, child)
-    result = list(sc = sc, F = -F, el = tree$edge.length, d2l=d2l)
-    result
-}
-
-
-score3 = function (fit, ...) 
-{
-    tree = fit$tree
-    eig = fit$eig
-    dat = fit$data[tree$tip.label]
-    g = fit$g
-    bf = fit$bf
-    w = fit$w
-    q = length(tree$tip.label)
-    node <- tree$edge[, 1]
-    edge <- tree$edge[, 2]
-    m = length(edge) + 1
-    el <- tree$edge.length
-    l <- length(tree$edge.length)
-    P <- getP(el, eig, g)
-    dP <- getdP2(el, eig, g)
-    d2P <- getd2P2(el, eig, g)
-    nr <- as.integer(attr(fit$dat, "nr"))
-    nc <- as.integer(attr(fit$dat, "nc"))
-    node = as.integer(node - min(node))
-    edge = as.integer(edge - 1)
-    nTips = as.integer(length(tree$tip))
-    mNodes = as.integer(max(node) + 1)
-    res <- vector("list", l*l)
-    attr(res,"dim") <- c(l,l)
-    for(i in 1:l){
-        for(j in i:l){         
-        Ptmp=P
-        Ptmp[,i] <- dP[,i]
-        Ptmp[,j] <- dP[,j]
-        if(j==i)Ptmp[,i] = d2P[,i]
-        tmp=numeric(nr) 
-        for(k in 1:length(w)){ 
-         
-        tmp = tmp+ drop(.Call("LogLik", dat[1:q], Ptmp[k,], nr, nc, node, edge, nTips, 
-            mNodes, PACKAGE = "phangorn")[[1]] %*% (w[k]*bf))
-        }
-        res[[i,j]] <- tmp
-       }
-    }
-    res 
-}
-
-
 optNNI <- function(fit, INDEX){    
        tree = fit$tree
        ll.0 <- fit$ll.0
@@ -4983,17 +4914,16 @@ simSeq = function(tree, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type = "DNA", mod
 	for(i in 1:length(tl)){
 		from = parent[i] 
 		to = child[i]
-		P = getP(tl[i], eig, rate)[[1]]
-		for(j in 1:m){
-		    ind = res[,from]==levels[j]
-		    res[ind,to] = sample(levels,sum(ind),replace=TRUE, p=P[,j])
-		}
-		
-	}	
-	k = length(tree$tip)
-	label = c(tree$tip, as.character((k+1):nNodes))
-	colnames(res)=label 
-	if(!ancestral)res = res[, tree$tip, drop=FALSE]
+        P = getP(tl[i], eig, rate)[[1]]
+        for(j in 1:m){
+            ind = res[,from]==levels[j]
+            res[ind,to] = sample(levels,sum(ind),replace=TRUE, p=P[,j])
+        }
+    }
+    k = length(tree$tip)
+    label = c(tree$tip, as.character((k+1):nNodes))
+    colnames(res)=label 
+    if(!ancestral)res = res[, tree$tip, drop=FALSE]
     if(pt=="DNA") return(phyDat.DNA(as.data.frame(res), return.index=TRUE))
     if(pt=="AA") return(phyDat.AA(as.data.frame(res), return.index=TRUE))
     if(pt=="USER") return(phyDat.default(as.data.frame(res), levels = levels, return.index=TRUE))

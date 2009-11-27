@@ -1,6 +1,22 @@
+        CHANGES IN PHANGORN VERSION 0.99-4
+        
+NEW FEATURES
+
+    o new generic function unique.phyDat
+           
+OTHER CHANGES
+
+    o internal data format phyDat changed 
+    
+      and data are stores more memory efficient
+      
+      (optim.pml and friends use less memory and may be be faster) 
+    
+        
+
 		CHANGES IN PHANGORN VERSION 0.99-3
 
-		
+
 BUG FIXES
 
     o RF.dist sometimes returned wrong distances
