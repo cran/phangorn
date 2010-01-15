@@ -11,12 +11,14 @@ export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ,
     dist.logDet, dist.hamming, dist.ml, upgma, write.nexus.splits, 
     pmlPart, pmlCluster, pmlMix, pmlPen, read.aa, allTrees,
     designTree, designSplits, splitsNetwork, simSeq, SH.test, bootstrap.pml,
-    bootstrap.phyDat, RF.dist, rNNI, rSPR) 
+    bootstrap.phyDat, RF.dist, rNNI, rSPR, plotBS, Ancestors, Descendants,
+    Children, Siblings) 
 
 # sankoff.nni
 #S3method('[', phyDat)          
 S3method(as.character, phyDat)
 #S3method(as.data.frame, phyDat)
+S3method(anova, pml)
 S3method(c, phyDat)
 S3method(unique, phyDat) 
 #S3method(as.phylo, phyloNode)

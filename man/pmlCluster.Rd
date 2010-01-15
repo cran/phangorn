@@ -1,6 +1,6 @@
 \name{pmlCluster}
 \alias{pmlCluster}
-\alias{pmlCluster2}
+%\alias{pmlCluster2}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Stochastic Partitioning }
 \description{
