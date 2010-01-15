@@ -1,4 +1,38 @@
+        CHANGES IN PHANGORN VERSION 0.99-5
+
+        
+NEW FEATURES
+
+    o parallel computing via multicore 
+
+      (so far bootstrap.pml, bootstrap.pml profit under linux)
+
+    o compute edge weights for parsimony trees
+
+BUG FIXES
+
+    o optim.pml had problems when 
+    
+    o as.character converted ?,- wrongly to NA
+
+    o fitch needed binary trees as input, otherwise pscore is
+
+      likely to be wrong (returns now a warning)
+      
+    o optim.pml had a problem with identical sequences  
+           
+OTHER CHANGES
+
+    o optim.parsimony returns now a tree with edge weights 
+    
+    o vignette is enhanced, I fixed some spelling mistakes and added 
+  
+      some more examples.
+
+
+
         CHANGES IN PHANGORN VERSION 0.99-4
+
         
 NEW FEATURES
 
@@ -8,9 +42,9 @@ OTHER CHANGES
 
     o internal data format phyDat changed 
     
-      and data are stores more memory efficient
+      and data are stored more memory efficient
       
-      (optim.pml and friends use less memory and may be be faster) 
+      (optim.pml and friends use less memory and may be faster) 
     
         
 

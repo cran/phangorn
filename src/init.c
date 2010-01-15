@@ -13,6 +13,7 @@ R_CallMethodDef callMethods[] = {
 {"rowMax", (DL_FUNC) &rowMax, 3},
 {"matpro", (DL_FUNC) &matpro, 6},
 {"LogLik2", (DL_FUNC) &LogLik2, 10},
+{"LogLik4", (DL_FUNC) &LogLik2, 10},
 {"getPM", (DL_FUNC) &getPM, 4},
 {"getdPM", (DL_FUNC) &getdPM, 4},
 {"getdPM2", (DL_FUNC) &getdPM2, 4},
@@ -20,6 +21,7 @@ R_CallMethodDef callMethods[] = {
 {"getd2PM2", (DL_FUNC) &getd2PM, 4},
 {"getM3", (DL_FUNC) &getM3, 5},
 {"FS", (DL_FUNC) &FS, 14},
+{"invSites", (DL_FUNC) &invSites, 5},
 {NULL, NULL, 0}
 };
 
