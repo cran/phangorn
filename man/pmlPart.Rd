@@ -16,10 +16,10 @@ pmlPart(formula, object, ...)
 }
 \details{
     The \code{formula} object allows to specify which parameter get     
-    optimised. The formula is generally of the form \code{edge + bf + Q 
+    optimized. The formula is generally of the form \code{edge + bf + Q 
     ~ rate + shape + \dots}, on the left side are the parameters which 
-    get optimised over all partitions, on the right the parameter which
-    are optimised specific to each partition. The parameters available 
+    get optimized over all partitions, on the right the parameter which
+    are optimized specific to each partition. The parameters available 
     are \code{"nni", "bf", "Q", "inv", "shape", "edge", "rate"}.
     Each parameters can be used only once in the formula. 
     \code{"rate"} and \code{"nni"} are only available for the right side
@@ -31,7 +31,7 @@ pmlPart(formula, object, ...)
 \value{
   \code{kcluster} returns a list with elements
   \item{logLik}{log-likelihood of the fit}
-  \item{trees}{a list of all trees during the optimisation.} 
+  \item{trees}{a list of all trees during the optimization.} 
   \item{object}{an object of class \code{"pml"} or \code{"pmlPart"}}
 }
 %\references{ ~put references to the literature/web site here ~ }

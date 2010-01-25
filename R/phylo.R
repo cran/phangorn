@@ -6,17 +6,18 @@
     require(ape)
 }
 
-
 dec2bin <- function(x){
-    res=" "
+    res=NULL
     i = 1L
     while(x>0){
-        if(x %% 2L) res = paste(res, as.character(i))
-            x = x %/% 2L 
-            i=i+1L
-        }
-        res
-    }  
+        if(x %% 2L) res = c(res, 1L)
+        else  res = c(res, 0L)
+        x = x %/% 2L 
+        i=i+1L
+    }
+    res
+}
+  
 
 
 
@@ -1569,6 +1570,23 @@ parsimony <- function(tree, data, method='sankoff',...){
 }
 
 
+pace <- function(tree, data, ...){
+    if(is.rooted(tree))tree <- unroot(tree)
+    nTips = length(tree$tip)
+    if(is.null(attr(tree,"order")) || attr(tree, "order")=="cladewise") tree <- reorderPruning(tree)  
+    
+    result <- sankoff(tree, data, site=TRUE, ...)[[2]][[nTips+1]]
+    rowmin = apply(result,1,min)
+    result = (result == rowmin)        
+    if (is.null(attr(data, "index"))) 
+        index = rep(1:nr, attr(data, "weight"))
+    else 
+        index = attr(data, "index")     
+    colnames(result) = attr(data,"levels") 
+    result[index,] 
+}
+
+
 prepareDataFitch <- function (data) 
 {
     lev <- attr(data, "levels")
@@ -1586,8 +1604,6 @@ prepareDataFitch <- function (data)
     dimnames(X) <- list(NULL, nam)
     X
 }
-
-
 
 
 fit.fitch <- function (tree, data, returnData = FALSE){
@@ -1624,7 +1640,7 @@ fitch3 <- function (tree, data, site=FALSE)
     d = attributes(data)
     data <- as.integer(data)
     attributes(data) <- d
-    fit.fitch(tree, data, FALSE)
+    fit.fitch(tree, data, site)
 }
 
 
@@ -1656,9 +1672,12 @@ fitch <- function (tree, data, site = FALSE)
     result <- .C("fitch5", dat, as.integer(p), as.integer(m), 
         as.integer(pars), as.integer(node), as.integer(edge), 
         as.integer(length(edge)), PACKAGE = "phangorn")
+    pscore = sum(weight * result[[4]]) 
     if (site) 
-        return(result[[4]][attr(data, "index")])
-    sum(weight * result[[4]])
+#        return(matrix(result[[1]], p, m))
+        return(res <- list(pscore = pscore, dat = matrix(result[[1]], p, m)) )
+#        return(result[[4]][attr(data, "index")])
+    pscore
 }
 
 
@@ -1696,7 +1715,7 @@ prepareDataSankoff <- function(data){
 
 
 
-sankoff <- function (tree, data, cost = NULL) 
+sankoff <- function (tree, data, cost = NULL, site = FALSE) 
 {
     if (class(data) != "phyDat") 
         stop("data must be of class phyDat")
@@ -1713,7 +1732,7 @@ sankoff <- function (tree, data, cost = NULL)
         cost <- cost - diag(l)
     }   
     for (i in 1:length(data)) storage.mode(data[[i]]) = "double"
-    fit.sankoff(tree, data, cost, FALSE)
+    fit.sankoff(tree, data, cost, site)
 }
 
 
@@ -1742,8 +1761,13 @@ fit.sankoff <- function (tree, data, cost, returnData = FALSE)
     erg <- .Call("rowMin", res[[root]], as.integer(nr), as.integer(nc), PACKAGE = "phangorn")
     pscore <- sum(weight * erg)
     result = pscore
-    if (returnData) 
+    if (returnData){ 
+        #if (is.null(attr(data, "index"))) 
+        #    index = rep(1:nr, attr(data, "weight"))
+        #else index = attr(data, "index")
+        #    result <- res[[root]][index,]#
         result <- list(pscore = pscore, dat = res)
+        }
     result
 }
 
@@ -5078,8 +5102,7 @@ SH.test <- function (..., B = 10000, data = NULL)
        wvec <- rep(1L:lw, weight)
        size = length(wvec)
        for (i in 1:B) {
-           tmp = sample.int(wvec, size, replace = TRUE)
-           boot = tabulate(tmp, nbins = lw)
+           boot = tabulate(sample(wvec, replace=TRUE), nbins=lw)
            M[, i] <- crossprod(siteLik, boot)
        }
        M <- M - rowMeans(M)

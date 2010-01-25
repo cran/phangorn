@@ -11,7 +11,7 @@ dfactorial(x)
 ldfactorial(x)
 }
 \arguments{
-  \item{x}{ a numeric skalar or vector }
+  \item{x}{ a numeric scalar or vector }
 }
 
 \value{

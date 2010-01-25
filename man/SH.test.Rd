@@ -36,7 +36,7 @@ tree1 <- NJ(dm)
 tree2 <- unroot(upgma(dm))
 fit1 <- pml(tree1, Laurasiatherian)
 fit2 <- pml(tree2, Laurasiatherian)
-fit1 <- optim.pml(fit1) # optimise edge weights
+fit1 <- optim.pml(fit1) # optimize edge weights
 fit2 <- optim.pml(fit2)
 SH.test(fit1, fit2)
 \dontrun{

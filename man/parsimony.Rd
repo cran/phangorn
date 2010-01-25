@@ -4,18 +4,21 @@
 \alias{sankoff}
 \alias{fitch}
 \alias{PNJ}
+\alias{pace}
 \title{Parsimony tree.}
 \description{
 
 \code{parsimony} returns the parsimony score of a tree.
-\code{optim.parsimony} tries to find the mamximum parsimony tree using NNI 
-rearrangements.  
+\code{optim.parsimony} tries to find the mamimum parsimony tree using NNI 
+rearrangements. \code{pace} returns a (logical) matrix of the ancestral states
+of the root node.  
 }
 \usage{
 parsimony(tree, data, method="sankoff", ...)
 optim.parsimony(tree, data, cost=NULL, ...)
 fitch(tree, data, site = FALSE)
-sankoff(tree, data, cost = NULL)
+sankoff(tree, data, cost = NULL, site = FALSE)
+pace(tree, data, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

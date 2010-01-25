@@ -12,7 +12,7 @@ export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ,
     pmlPart, pmlCluster, pmlMix, pmlPen, read.aa, allTrees,
     designTree, designSplits, splitsNetwork, simSeq, SH.test, bootstrap.pml,
     bootstrap.phyDat, RF.dist, rNNI, rSPR, plotBS, Ancestors, Descendants,
-    Children, Siblings) 
+    Children, Siblings, pace) 
 
 # sankoff.nni
 #S3method('[', phyDat)          
