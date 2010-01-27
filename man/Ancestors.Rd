@@ -23,7 +23,7 @@ Descendants(x, node, type=c("tips","children","all"))
 }
 
 \value{
-   a vecor recontaining the indices of the nodes. 
+   a vector containing the indices of the nodes. 
 }
 \seealso{these functions are inspired by \code{treewalk} in phylobase package}
 \examples{

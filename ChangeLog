@@ -1,3 +1,24 @@
+        CHANGES IN PHANGORN VERSION 0.99-6
+
+        
+NEW FEATURES
+
+    o pace, extracts the ancestral states of the root of a tree  
+  
+      using the sankoff algorithm
+
+BUG FIXES
+
+    o fixed a bug in dist.ml (thanks to Emmanuel)
+
+    o fixed a bug introduced to SH.test in 0.99-5
+           
+OTHER CHANGES
+
+    o fixed several spelling mistakes in the documentation
+
+
+
         CHANGES IN PHANGORN VERSION 0.99-5
 
         

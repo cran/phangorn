@@ -13,8 +13,7 @@ simSeq(tree, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type="DNA",
 \item{tree}{ a phylogenetic tree \code{tree}, an object of class \code{phylo}. }
 \item{l}{  length of the sequence to simulate. }
 \item{Q}{ the rate matrix.  }
-\item{bf}{ base frequences. }
-%  \item{ancestral}{ write out the ancestral \code{ancestral} sequnces? }
+\item{bf}{ base frequencies. }
 \item{rootseq}{a vector of length l containing the root sequence, 
 other root sequence is randomly generated.}
 \item{type}{Type of sequences ("DNA", "AA" or "USER").}
@@ -25,13 +24,10 @@ default is for nucleotide sequences, only used when type = "USER".}
 \item{ancestral}{Return ancestral sequences?}
 }
 \details{
-\code{simSeq} simulates sequence alingments. So far rate variation 
+\code{simSeq} simulates sequence alignments. So far rate variation 
 is not yet implemented, but one can combine different alignments 
 having their own rate.  
 In fact it is possible to generate DNA, RNA, amino acid, or 0/1. 
-% It models using a nonhomogeneous markov process.   
-% It is possible to generate sequences with changin base composition 
-% Barry and Hartigan to model complicated models (e.g. covarion). 
 }
 \value{
 \code{simSeq} returns an object of class phyDat.

@@ -9,7 +9,7 @@
 \alias{allSitePattern}
 \alias{as.phyDat}
 \alias{[.phyDat}
-\title{Conversion amoung Sequence Formats}
+\title{Conversion among Sequence Formats}
 \description{
 These functions transform several DNA formats into the \code{phyDat} format. 
 \code{allSitePattern} generates an alignment of all possible site patterns.
@@ -29,7 +29,7 @@ allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
   \item{data}{An object containing sequences.}
   \item{x}{An object containing sequences.}
   \item{type}{Type of sequences ("DNA", "AA" or "USER").}
-  \item{levels}{Level atttributes.}
+  \item{levels}{Level attributes.}
   \item{return.index}{If TRUE returns a index of the site patterns.}
   \item{file}{A file name.}
   \item{format}{File format of the sequence alignment (see details).}
@@ -42,7 +42,7 @@ If \code{type} "USER" a vector has to be give to \code{levels}.
 For example c("a", "c", "g", "t", "-") would create a data object that  
 can be used in phylogenetic analysis with gaps as fifth state.  
 \code{allSitePattern} returns all possible site patterns and can
-be usefull in simulation studies.  
+be useful in simulation studies.  
 \code{write.phyDat} calls the function write.dna or write.nexus.data and  
 \code{read.phyDat} calls the function read.dna, read.aa or read.nexus.data
 see for more details over there.
@@ -51,7 +51,7 @@ You may import data directly with \code{\link[ape]{read.dna}} or \code{\link[ape
 and convert the data to class phyDat. 
 
 The generic function 'c' can be used to to combine sequences and unique to get 
-all unique sequences or haplotides. 
+all unique sequences or haplotypes. 
 }
 \value{
 The functions return an object of class \code{phyDat}. 

@@ -19,7 +19,7 @@ optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
   \item{bf}{Base frequencies.}
   \item{Q}{A vector containing the lower triangular part of the rate matrix.}
   \item{inv}{Proportion of invariable sites.}
-  \item{k}{Number of intervalls of the discrete gamma distribution.}
+  \item{k}{Number of intervals of the discrete gamma distribution.}
   \item{shape}{Shape parameter of the gamma distribution.}
   \item{rate}{Rate.}
   \item{model}{Amino acid models: one of "WAG", "JTT", "Dayhoff" or "LG"}
@@ -35,8 +35,8 @@ optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
   \item{\dots}{Further arguments passed to or from other methods.}
 }
 \details{
-The topology search uses a nearest neighbour interchange (NNI) 
-and the implenatation is similar to phyML. 
+The topology search uses a nearest neighbor interchange (NNI) 
+and the implementation is similar to phyML. 
 The option model is only used for amino acid models. 
 Here is a overview how to estimate different phylogenetic models 
 with \code{pml}:  
@@ -72,13 +72,13 @@ Le, S.Q. and Gascuel, O. (2008) LG: An Improved, General
 Amino-Acid Replacement Matrix \emph{Molecular Biology and Evolution} \bold{25(7)}, 1307--1320
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
-% \note{For small trees the likelihood seems to be similar to Paup* or PhyML.}
+% \note{For small trees the likelihood seems to be very similar to Paup* or PhyML.}
 % \seealso{ For a different implementation see \code{\link[ape]{mlphylo}}.} 
 \examples{
   example(NJ)
 # Jukes-Cantor (starting tree from NJ)  
   fitJC <- pml(tree, Laurasiatherian)  
-# optimise edge length parameter     
+# optimize edge length parameter     
   fitJC <- optim.pml(fitJC)
   fitJC 
   
@@ -90,7 +90,7 @@ Amino-Acid Replacement Matrix \emph{Molecular Biology and Evolution} \bold{25(7)
 
 # JC + Gamma + I - model
   fitJC_GI <- update(fitJC, k=4, inv=.2)
-# optimise shape parameter + proportion of invariant sites     
+# optimize shape parameter + proportion of invariant sites     
   fitJC_GI <- optim.pml(fitJC_GI, optGamma=TRUE, optInv=TRUE)
 # GTR + Gamma + I - model
   fitGTR <- optim.pml(fitJC_GI, optNni=TRUE, optGamma=TRUE, optInv=TRUE, optBf=TRUE, optQ=TRUE) 

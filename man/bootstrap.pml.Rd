@@ -39,7 +39,7 @@ a list of trees (object of class "multiPhylo").
 the type of tree.
 }
   \item{bs.col}{ 
-color of bootstrap supprt labels.
+color of bootstrap support labels.
 }
   \item{bs.adj}{ 
 one or two numeric values specifying the horizontal and vertical justification of the bootstrap labels.
