@@ -1,3 +1,38 @@
+        CHANGES IN PHANGORN VERSION 1.0-0
+
+        
+NEW FEATURES
+
+    o implementation of many nucleotide substitution models 
+
+      (additional general transition models can be defined)
+
+    o new function modelTest, comparison of different phylogenetic model
+
+      with AIC or BIC 
+
+    o Lento plot
+
+    o subset functions for phyDat objects
+
+BUG FIXES
+
+    o an error in pace is fixed 
+           
+OTHER CHANGES
+
+    o parsimony (fitch and sankoff) can now handle multiPhylo objects
+
+    o splits structure (which is a list of bipartitions), used by lento
+    
+      and hadamard conjugation  
+
+    o phyDat objects can be more general generated using a contrast
+    
+      matrix
+    
+
+
         CHANGES IN PHANGORN VERSION 0.99-6
 
         

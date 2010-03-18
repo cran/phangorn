@@ -37,7 +37,7 @@ pmlPart(formula, object, ...)
 %\references{ ~put references to the literature/web site here ~ }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
-\seealso{  \code{\link{pml}},\code{\link{pmlCluster}},\code{\link{pmlMix}} }
+\seealso{  \code{\link{pml}},\code{\link{pmlCluster}},\code{\link{pmlMix}},\code{\link{SH.test}} }
 \examples{
 data(yeast)
 dm <- dist.logDet(yeast)
