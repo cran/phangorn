@@ -5,19 +5,18 @@ import(ape)
 importFrom(stats, AIC, logLik)  
 
 export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ, 
-    phyDat, read.phyDat, write.phyDat, as.phyDat,
+    phyDat, read.phyDat, write.phyDat, as.phyDat, as.splits, 
     dfactorial, ldfactorial, hadamard, nni, allSitePattern,
     fhm, distanceHadamard, treedist, sankoff, fitch, h2st, h4st,
     dist.logDet, dist.hamming, dist.ml, upgma, write.nexus.splits, 
     pmlPart, pmlCluster, pmlMix, pmlPen, read.aa, allTrees,
     designTree, designSplits, splitsNetwork, simSeq, SH.test, bootstrap.pml,
     bootstrap.phyDat, RF.dist, rNNI, rSPR, plotBS, Ancestors, Descendants,
-    Children, Siblings, pace) 
+    Children, Siblings, pace, modelTest, lento) 
 
-# sankoff.nni
 #S3method('[', phyDat)          
 S3method(as.character, phyDat)
-#S3method(as.data.frame, phyDat)
+S3method(as.data.frame, phyDat)
 S3method(anova, pml)
 S3method(c, phyDat)
 S3method(unique, phyDat) 
@@ -28,6 +27,8 @@ S3method(as.phyDat, alignment)
 S3method(as.phyDat, data.frame)
 S3method(as.phyDat, matrix)
 S3method(as.DNAbin, phyDat)
+S3method(as.splits, phylo)
+S3method(as.splits, multiPhylo)
 S3method(logLik, pml)
 S3method(logLik, pmlPart)
 S3method(logLik, pmlMix)
@@ -37,6 +38,7 @@ S3method(print, pml)
 S3method(print, pmlMix)
 S3method(print, pmlPart)
 #S3method(print, treedist)
+S3method(subset, phyDat)
 S3method(update, pml)
 S3method(vcov, pml)
 

@@ -12,16 +12,18 @@ A collection of functions to perform Hadamard conjugation.
 \usage{
 hadamard(x)
 fhm(v)
-h2st(obj, levels=c("r","y"))
+h2st(obj, eps=0.001)
 h4st(obj, levels = c("a","c","g","t"))
-write.nexus.splits(obj, file="")
+write.nexus.splits(obj, file="", weights=NULL)
 }
 \arguments{
   \item{x}{ a vector of length \eqn{2^n}, where n is an integer. }
   \item{v}{ a vector of length \eqn{2^n}, where n is an integer. }
   \item{obj}{ a data.frame or character matrix, typical a sequence alignment.}
+  \item{eps}{Threshold value for splits.}
   \item{levels}{ levels of the sequences.}
   \item{file}{ a file name.}
+  \item{weights}{ Edge weights.}
 }
 
 \details{
@@ -49,28 +51,23 @@ Waddell P. J. (1995). Statistical methods of phylogenetic analysis: Including ha
 LogDet transforms, and maximum likelihood. \emph{PhD thesis}.
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
-\seealso{\code{\link[phangorn]{distanceHadamard}}}
+\seealso{\code{\link{distanceHadamard}}, \code{\link{lento}}}
 
 \examples{
 H = hadamard(3)
 v = 1:8
 H%*%v
 fhm(v)
-\dontrun{
-data(Laurasiatherian)
-dat = as.character(Laurasiatherian)[1:10,]
+
+data(yeast)
+dat = as.character(yeast)
 # RY-coding
-dat[dat=="a"] = "r"
-dat[dat=="g"] = "r"
-dat[dat=="c"] = "y"
-dat[dat=="t"] = "y"
-
+dat[dat=="a" | dat=="g"] = "r"
+dat[dat=="c" | dat=="t"] = "y"
+dat = phyDat(dat, type="USER", levels=c("r","y"))
 fit = h2st(dat)
-write.nexus.splits(fit[fit$edges>1e-4, ][-1,], file = "test.nxs")
+# write.nexus.splits(fit, file = "test.nxs")
 # read this file into Spectronet or Splitstree to show the network
-unlink("test.nxs") 
-}
-
 }
 \keyword{ cluster }% at least one, from doc/KEYWORDS
 

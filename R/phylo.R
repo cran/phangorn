@@ -6,6 +6,7 @@
     require(ape)
 }
 
+
 dec2bin <- function(x){
     res=NULL
     i = 1L
@@ -17,8 +18,7 @@ dec2bin <- function(x){
     }
     res
 }
-  
-
+ 
 
 
 "ldfactorial" <- function(x){
@@ -67,52 +67,81 @@ split2seq = function(q){
 }
 
 
-distanceHadamard <- function (dm) 
+distanceHadamard <- function (dm, eps = 0.001) 
 {
+    dec2Bin = function (x) 
+    {
+        res = NULL
+        i = 1L
+        while (x > 0) {
+            if (x%%2L) 
+                res = c(res, i)
+            x = x%/%2L
+            i = i + 1L
+        }
+        res
+    }
+    
     if (class(dm) == "dist") {
         n <- attr(dm, "Size")
         Labels = attr(dm, "Labels")
     }
     if (class(dm) == "matrix") {
         n <- dim(dm)[1]
-        dm <- dm[lower.tri(dm)]
         Labels <- colnames(dm)
+        dm <- dm[lower.tri(dm)]
     }
     ns <- 2^(n - 1)
     if (n > 23) 
         stop("Hadamard conjugation works only efficient for n < 24")
     result <- .Call("dist2spectra", dm, as.integer(n), as.integer(ns), 
         PACKAGE = "phangorn")
-    res <- data.frame(distance = result, edges = -fhm(result)/2^(n - 
-        2), index = 0:(ns - 1))
-    attr(result, "Labels") <- Labels
+    weights = -fhm(result)/2^(n - 2)    
+    
+    if(eps>0){
+        weights = weights[-1]
+        ind2 = which(weights>eps)
+        n2 = length(ind2)
+        splits = vector("list", n2)
+        for(i in 1:n2)splits[[i]] = dec2Bin(ind2[i])
+        attr(splits, "weights") = weights[ind2]
+        attr(splits, "labels") = Labels
+        attr(splits, 'dm') = dm
+        class(splits)='splits'
+        return(splits)      
+    }  
+    res <- data.frame(distance = result, edges = weights, index = 0:(ns - 1))
+    attr(res, "Labels") <- Labels
     res
 }
 
 
 h4st = function(obj, levels=c('a','c','g','t')){
+    if (is.matrix(obj)) 
+        obj = as.data.frame(t(obj))
+    if (class(obj) == "phyDat") 
+        obj = as.data.frame(t(as.character(obj)))	
 #    if(is.matrix(obj)) obj = as.data.frame(t(obj))
-
 #    DNA = as.data.frame(obj)
-    DNA = t(as.character(obj))
+#    DNA = t(as.character(obj))
 
-    n = dim(DNA)[1]
-    p = dim(DNA)[2]
+    n = dim(obj)[1]
+    p = dim(obj)[2]
 
     if(p>11) stop("4-state Hadamard conjugation works only efficient for n < 12")
 
     DNAX = matrix(0,n,p)
     DNAY = matrix(0,n,p)
 
-    DNAX[DNA==levels[1]]=0
-    DNAX[DNA==levels[2]]=1
-    DNAX[DNA==levels[3]]=1
-    DNAX[DNA==levels[4]]=0
+    DNAX[obj==levels[1]]=0
+    DNAX[obj==levels[2]]=1
+    DNAX[obj==levels[3]]=1
+    DNAX[obj==levels[4]]=0
 
-    DNAY[DNA==levels[1]]=0
-    DNAY[DNA==levels[2]]=1
-    DNAY[DNA==levels[3]]=0
-    DNAY[DNA==levels[4]]=1
+    DNAY[obj==levels[1]]=0
+    DNAY[obj==levels[2]]=1
+    DNAY[obj==levels[3]]=0
+    DNAY[obj==levels[4]]=1
 
     DNAY = DNAY - DNAY[,p]
     DNAX = DNAX - DNAX[,p]
@@ -136,35 +165,56 @@ h4st = function(obj, levels=c('a','c','g','t')){
 }
 
 
-h2st = function (obj, levels = c("r", "y")) 
+
+h2st <- function (obj, eps=0.001) 
 {
-    if (is.matrix(obj)) 
-        obj = as.data.frame(t(obj))
-    #obj = as.data.frame(obj)
-    if(class(obj)=="phyDat")  obj = as.data.frame(t(as.character(obj)))
-    n = dim(obj)[1]
-    p = dim(obj)[2]
+    dec2Bin = function (x) 
+    {
+        res = NULL
+        i = 1L
+        while (x > 0) {
+            if (x%%2L) 
+                res = c(res, i)
+            x = x%/%2L
+            i = i + 1L
+        }
+        res
+    }
+
+    if (class(obj) != "phyDat") stop("Error") 
+    if (attr(obj,"nc") != 2)stop("Error")
+    nr = attr(obj, "nr") #n
+    p = length(obj) #p
+    weight = attr(obj, "weight")
     if (p > 23) 
         stop("Hadamard conjugation works only efficient for n < 24")
-    DNAX = matrix(0, n, p)
-    DNAX[obj == levels[1]] = 0
-    DNAX[obj == levels[2]] = 1
-    DNAX = DNAX - DNAX[, p]
-    DNAX = abs(DNAX[, -p])
-    dx = DNAX %*% (2^(0:(p - 2)))
-    INDEX = dx 
-    blub = table(INDEX)
-    index = as.numeric(rownames(blub)) + 1
+    DNAX = matrix(0, nr, p-1)
+    for(i in 1:(p-1)) DNAX[,i] = obj[[i]]-1
+    DNAX[obj[[p]]==2,] = 1 - DNAX[obj[[p]]==2,]
+
+    index = DNAX %*% (2^(0:(p - 2))) + 1
     sv = numeric(2^(p - 1))
-    sv[index] = blub
-    qv = seq2split(sv)
-    result = data.frame(edges = qv, splits=sv, index = 0:(2^(p-1)-1))
-    attr(result,"Labels") = names(obj)
+    for(i in 1:nr)sv[index[i]] = sv[index[i]]+ weight[i]
+    qv = phangorn:::seq2split(sv)
+    
+    if(eps>0){
+	    qv = qv[-1]
+        ind2 = which(qv>eps)
+        n2 = length(ind2)
+        splits = vector("list", n2)
+        for(i in 1:n2)splits[[i]] = dec2Bin(ind2[i])
+        attr(splits, "weights") = qv[ind2]
+        attr(splits, "labels") = names(obj)
+        class(splits)='splits'
+        return(splits)    
+        }
+    result = data.frame(edges = qv, splits = sv, index = 0:(2^(p - 
+        1) - 1))
+    attr(result, "Labels") = names(obj)
     result
 }
 
-
-write.nexus.splits = function (obj, file = "") 
+write.nexus.splits2 = function (obj, file = "") 
 {
     dec2bin <- function(x) {
         res = " "
@@ -202,6 +252,9 @@ write.nexus.splits = function (obj, file = "")
         ",\n", file = file, append = TRUE)
     cat("\t;\nEND;\n", file = file, append = TRUE)
 }
+
+
+
 
 
 #
@@ -308,6 +361,7 @@ RF.dist <- function (tree1, tree2, check.labels = TRUE)
        length(tree1$tip.label))
            stop("trees have different labels")
        tree2$tip <- tree2$tip[ind]
+#       tree2$edge[match(ind, tree2$edge[, 2]), 2] <- 1:length(ind)
        ind2 <- match(1:length(ind), tree2$edge[, 2])
        tree2$edge[ind2, 2] <- order(ind)
    }
@@ -317,7 +371,7 @@ RF.dist <- function (tree1, tree2, check.labels = TRUE)
        if(r2) tree2 = unroot(tree2)
        ref1 <- Ancestors(tree1, 1, "parent")
        tree1 <- reroot(tree1, ref1)
-       ref2 <- Ancestors(tree1, 1, "parent")
+       ref2 <- Ancestors(tree2, 1, "parent")
        tree2 <- reroot(tree2, ref2)
    }
    p1 = bipart(tree1)
@@ -600,9 +654,6 @@ dist.logDet = function (x)
 
 
 
-#
-# write new 
-#
 
 #
 # dm, trees or splits or Hadamard
@@ -651,12 +702,25 @@ splitsNetwork <- function(dm, gamma=.1, lambda=1e-6, weight=NULL){
     Amat2 <- diag(n2)
     bvec2 <- rep(0, n2)
     solution2  <- solve.QP(Dmat, dvec, Amat2)$sol
-    result <- data.frame(index=ind2, edges=solution2, pen.edges=solution[ind2], index=ind2)
+    
     RSS1 = sum((y-X[,ind2]%*%solution[ind2])^2)
     RSS2 = sum((y-X[,ind2]%*%solution2)^2)
-    attr(result,"stats") = c(df=n2, RSS_p = RSS1, RSS_u=RSS2)
-    attr(result,"Labels") <- dimnames(dm)[[1]]
-    result
+    
+    
+    splits = vector("list", n2)
+    for(i in ind2)splits[[i]] = which(X2[[2]][ind2[i],]==0)
+    attr(splits, "weights") = solution[ind2]
+    attr(splits, "unrestricted") = solution2
+    attr(splits, "stats") = c(df=n2, RSS_p = RSS1, RSS_u=RSS2)
+    attr(splits,"labels") =dimnames(dm)[[1]]
+    class(splits)='splits'
+    return(splits)
+              
+#    result <- data.frame(index=ind2, edges=solution2, pen.edges=solution[ind2]) #, index=ind2
+
+#    attr(result,"stats") = c(df=n2, RSS_p = RSS1, RSS_u=RSS2)
+#    attr(result,"Labels") <- dimnames(dm)[[1]]
+#    result
 }
 
 
@@ -729,6 +793,7 @@ phyDat.DNA = function (data, return.index = TRUE)
     weight = ddd$weight[rn]
     p = dim(data)[1]
     names(data) = nam
+    attr(data, "row.names") = NULL 
     attr(data, "weight") = weight
     attr(data, "nr") = p
     attr(data, "nc") = 4
@@ -740,6 +805,7 @@ phyDat.DNA = function (data, return.index = TRUE)
     class(data) = "phyDat"
     data
 }
+
 
 phyDat.AA <- function (data, return.index = TRUE) 
 {
@@ -792,6 +858,7 @@ phyDat.AA <- function (data, return.index = TRUE)
 #    dat = vector("list", q) 
 #    for (i in 1:q) dat[[i]] = data[[i]]
     names(data) = nam
+    attr(data, "row.names") = NULL
     attr(data, "weight") = weight
     attr(data, "nr") = p
     attr(data, "nc") = 20
@@ -828,22 +895,6 @@ as.phyDat.alignment <- function (x, type="DNA",...)
 }
 
 
-# attention
-#as.data.frame.phyDat <- function(x, ...){
-#        lev = attr(x,"levels")
-#        fn = function(x, levels, y) paste(levels[x*y], collapse="")               
-#        nr = attr(x, "nr")
-#        nc = attr(x, "nc")
-#        y = 1:nc
-#        X = matrix(nrow=nr, ncol=length(x))
-#        for(i in 1:length(x)) X[,i]= apply(x[[i]], 1, fn, lev, y)
-#        if(is.null(attr(x,"index"))) index=rep(1:nr, attr(x,"weight"))
-#        else index = attr(x,"index")
-#        result = X[index, , drop=FALSE]
-#       colnames(result) = names(x)
-#        result = as.data.frame(result, stringsAsFactors = FALSE)
-#        result
-#}
 
 as.phyDat.matrix <- function (x, ...) phyDat(data=x, ...)
 as.phyDat.data.frame <- function (x, ...) phyDat(data=x, ...)
@@ -882,6 +933,11 @@ as.character.phyDat <- function (x, ...)
 }
 
 
+as.data.frame.phyDat <- function(x, ...){
+   res <- data.frame(t(as.character(x)), stringsAsFactors=FALSE)
+}
+
+
 as.DNAbin.phyDat <- function(x,...) {
    if(attr(x, "type")=="DNA") return(as.DNAbin(as.character(x, ...)))
    else stop("x must be a nucleotide sequence")
@@ -899,59 +955,135 @@ phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...)
 }
 
 
-phyDat.default = function(data, levels, return.index=TRUE){
-    if(is.matrix(data)) nam = row.names(data)
-    else nam = names(data)  
-    # new ape format
-    if(class(data)=="DNAbin") data = as.character(data)
-    # old ape format 
-    if(is.matrix(data)) data = as.data.frame(t(data))                                                                   
-    data = as.data.frame(data, stringsAsFactors=FALSE)                                    
-    ddd = fast.table(data)                                                                 
-    data = ddd$data                                                                        
-    weight = ddd$weight  
-    index = ddd$index                                                                
-    q = length(data)                                                                       
+
+phyDat.default <- function (data, levels=NULL, return.index = TRUE, contrast=NULL, ambiguity="?", ...) 
+{
+    if (is.matrix(data)) 
+        nam = row.names(data)
+    else nam = names(data)
+    if (class(data) == "DNAbin") 
+        data = as.character(data)
+    if (is.matrix(data)) 
+        data = as.data.frame(t(data), stringsAsFactors = FALSE)
+    data = as.data.frame(data, stringsAsFactors = FALSE)
+    ddd = phangorn:::fast.table(data)
+    data = ddd$data
+    weight = ddd$weight
+    index = ddd$index
+    q = length(data)
     p = length(data[[1]])
     tmp <- vector("list", q)
-    for (i in 1:q) tmp[[i]] = factor(data[[i]], levels = levels)
+    
+    if(!is.null(contrast)){
+        levels = colnames(contrast)     
+        all.levels = rownames(contrast)  
+        rownames(contrast) = NULL    
+        }
+    else{
+        if(is.null(levels)) stop('Either argument levels or contrast has to be supplied')
+        l = length(levels)
+        contrast = diag(l)       
+        all.levels = levels
+        if(!is.null(ambiguity)){
+            all.levels = c(all.levels, ambiguity)       
+            k = length(ambiguity)
+            if(k>0) contrast = rbind(contrast, matrix(1,k,l))
+        }
+    }
+    
+    for (i in 1:q) tmp[[i]] = factor(data[[i]], levels = c(levels, ambiguity))
     data <- tmp
     for (i in 1:q) class(data[[i]]) = "integer"
-    class(data) <- "data.frame"    
-                                                                       
+    class(data) <- "data.frame"
     row.names(data) = as.character(1:p)
     data = na.omit(data)
     rn = as.numeric(rownames(data))
-    ind = which(!duplicated(c(rn,as.character(unique(index)))))
-    ind = ind-length(rn)
-    ind = ind[ind>0]
-    for(i in 1:length(ind)) index[which(index==ind[i])] = NA
+    ind = which(!duplicated(c(rn, as.character(unique(index)))))
+    ind = ind - length(rn)
+    ind = ind[ind > 0]
+    for (i in 1:length(ind)) index[which(index == ind[i])] = NA
     indextmp = diff(sort(unique(index)))
-    l1 = which(indextmp>1)
+    l1 = which(indextmp > 1)
     d1 = indextmp[l1]
-    if(length(l1)>0){
-        for(i in 1:length(l1)){
-            index[index>l1[i] & !is.na(index)] = index[index>l1[i] & !is.na(index)] - (d1[i]-1)
+    if (length(l1) > 0) {
+        for (i in 1:length(l1)) {
+            index[index > l1[i] & !is.na(index)] = index[index > 
+                l1[i] & !is.na(index)] - (d1[i] - 1)
         }
-    }   
+    }
     weight = ddd$weight[rn]
-                                                               
-    p = dim(data)[1]                                                                     
-#    dat = vector("list", q)                                                                          
-    l = length(levels)                                                                   
-    AACC = diag(l)                                                                       
-#    for (i in 1:q) dat[[i]] = matrix(unlist(AACC[,data[[i]]], TRUE, FALSE), ncol = l, byrow = TRUE)                                                                            
-    names(data) = nam                     
-    attr(data,"weight") = weight  
-    attr(data,"nr") = p
-    attr(data,"nc") = length(levels)
-    if(return.index) attr(data,"index") = index
-    attr(data, "levels") = levels 
-    attr(data, "type") = "USER"                                                            
-    attr(data, "contrast") = AACC    
+    
+    p = dim(data)[1]   
+    names(data) = nam
+    attr(data, "row.names") = NULL
+    attr(data, "weight") = weight
+    attr(data, "nr") = p
+    attr(data, "nc") = length(levels)
+    if (return.index) 
+        attr(data, "index") = index        
+    attr(data, "levels") = levels
+    attr(data, "allLevels") = all.levels
+    attr(data, "type") = "USER"
+    attr(data, "contrast") = contrast
     class(data) = "phyDat"
-    data                                                                        
+    data
 }
+
+# this is the old version
+#phyDat.default = function(data, levels, return.index=TRUE){
+#    if(is.matrix(data)) nam = row.names(data)
+#    else nam = names(data)  
+    # new ape format
+#    if(class(data)=="DNAbin") data = as.character(data)
+    # old ape format 
+#    if(is.matrix(data)) data = as.data.frame(t(data))                                                                   
+#    data = as.data.frame(data, stringsAsFactors=FALSE)                                    
+#    ddd = fast.table(data)                                                                 
+#    data = ddd$data                                                                        
+#    weight = ddd$weight  
+#    index = ddd$index                                                                
+#    q = length(data)                                                                       
+#    p = length(data[[1]])
+#    tmp <- vector("list", q)
+#    for (i in 1:q) tmp[[i]] = factor(data[[i]], levels = levels)
+#    data <- tmp
+#    for (i in 1:q) class(data[[i]]) = "integer"
+#    class(data) <- "data.frame"    
+#                                                                       
+#    row.names(data) = as.character(1:p)
+#    data = na.omit(data)
+#    rn = as.numeric(rownames(data))
+#    ind = which(!duplicated(c(rn,as.character(unique(index)))))
+#    ind = ind-length(rn)
+#    ind = ind[ind>0]
+#    for(i in 1:length(ind)) index[which(index==ind[i])] = NA
+#    indextmp = diff(sort(unique(index)))
+#    l1 = which(indextmp>1)
+#    d1 = indextmp[l1]
+#    if(length(l1)>0){
+#        for(i in 1:length(l1)){
+#            index[index>l1[i] & !is.na(index)] = index[index>l1[i] & !is.na(index)] - (d1[i]-1)
+#        }
+#    }   
+#    weight = ddd$weight[rn]
+#                                                               
+#    p = dim(data)[1]                                                                     
+#    dat = vector("list", q)                                                                          
+#    l = length(levels)                                                                   
+#    AACC = diag(l)                                                                       
+#    for (i in 1:q) dat[[i]] = matrix(unlist(AACC[,data[[i]]], TRUE, FALSE), ncol = l, byrow = TRUE)                                                                            
+#    names(data) = nam   
+#    attr(data, "row.names") = NULL                  
+#    attr(data,"weight") = weight  
+#    attr(data,"nr") = p
+#    attr(data,"nc") = length(levels)
+#    if(return.index) attr(data,"index") = index
+#    attr(data, "levels") = levels 
+#    attr(data, "type") = "USER"                                                            
+#    attr(data, "contrast") = AACC    
+#    class(data) = "phyDat"
+#    data                                                                        
+#}
 
 
 print.phyDat = function (x, ...) 
@@ -1067,33 +1199,15 @@ getRows <- function (data, rows)
     data
 }
 
-#getRows <- function (data, rows, site=TRUE) 
-#{
-#    if(site){
-#        weight = attr(data, "weight")[rows]
-#        for (i in 1:length(data)) data[[i]] = as.matrix(data[[i]])[rows,]
-#        attr(data, "weight") = weight
-#        attr(data, "nr") = length(rows)
-#        attr(data, "index") <- rep(1:length(rows), weight)
-#        }
-#   else{
-#        ind = as.data.frame(attr(data, "index"))[rows, 1]
-#        ind2 = table(ind)
-#        rowInd = sort(unique(ind))
-#        for (i in 1:length(data)) data[[i]] = as.matrix(data[[i]])[rowInd,]
-#        attr(data, "weight") = as.vector(ind2)
-#        attr(data, "nr") = length(ind2)
-#        attr(data, "index") <- rep(1:length(ind2), ind2)
-#    } 
-#    data
-#}
 
-#"[.phyDat" <- function (x, i, j) 
-#{  
-#    if (!missing(i)) x <- getCols(x, i)
-#    if (!missing(j)) x <- getRows(x, j, FALSE)    
-#    x 
-#}
+
+subset.phyDat <- function (x, subset, select, ...) 
+{  
+    if (!missing(subset)) x <- getCols(x, subset)
+    if (!missing(select)) x <- getRows(x, select)    
+    x 
+}
+
 
 
 unique.phyDat <- function(x, incomparables=FALSE, ...) getCols(x, !duplicated(x))
@@ -1562,8 +1676,8 @@ sankoff.quartet <- function (dat, cost, p, l, weight)
 
 
 parsimony <- function(tree, data, method='sankoff',...){
-    if(is.rooted(tree))tree <- unroot(tree)
-    if(is.null(attr(tree,"order")) || attr(tree, "order")=="cladewise") tree <- reorderPruning(tree)  
+#    if(is.rooted(tree))tree <- unroot(tree)
+#    if(is.null(attr(tree,"order")) || attr(tree, "order")=="cladewise") tree <- reorderPruning(tree)  
     if(method=='sankoff') result <- sankoff(tree, data, ...)
     if(method=='fitch') result <- fitch(tree, data, ...)
     result 
@@ -1574,10 +1688,11 @@ pace <- function(tree, data, ...){
     if(is.rooted(tree))tree <- unroot(tree)
     nTips = length(tree$tip)
     if(is.null(attr(tree,"order")) || attr(tree, "order")=="cladewise") tree <- reorderPruning(tree)  
-    
+ 
     result <- sankoff(tree, data, site=TRUE, ...)[[2]][[nTips+1]]
     rowmin = apply(result,1,min)
-    result = (result == rowmin)        
+    result = (result == rowmin)     
+    nr = attr(data, "nr")
     if (is.null(attr(data, "index"))) 
         index = rep(1:nr, attr(data, "weight"))
     else 
@@ -1585,6 +1700,7 @@ pace <- function(tree, data, ...){
     colnames(result) = attr(data,"levels") 
     result[index,] 
 }
+
 
 
 prepareDataFitch <- function (data) 
@@ -1600,13 +1716,32 @@ prepareDataFitch <- function (data)
     nam <- attrData$names
     data = unlist(data, FALSE, FALSE)
     X = tmp[data]  
+    attributes(X) <- attrData
     attr(X, "dim") <- c(nr, nc)
     dimnames(X) <- list(NULL, nam)
     X
 }
+# closest to sankoff!!!    
+fitch <- function (tree, data, site=FALSE) 
+{ 
+    if (class(data) != "phyDat") 
+        stop("data must be of class phyDat")
+    levels <- attr(data, "levels")
+    data <- prepareDataFitch(data)
+    d = attributes(data)
+    data <- as.integer(data)
+    attributes(data) <- d
+    if(class(tree)=="phylo") return(fit.fitch(tree, data, site))
+    if(class(tree)=="multiPhylo")return(sapply(tree, fit.fitch, data, site))
+}
 
 
 fit.fitch <- function (tree, data, returnData = FALSE){
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- phangorn:::reorderPruning(tree)
+    if (!is.binary.tree(tree)) 
+        warning("tree is not binary, parsimony score may be wrong!!!")
     nr = attr(data, "nr")
     node <- tree$edge[, 1]
     edge <- tree$edge[, 2]
@@ -1626,25 +1761,9 @@ fit.fitch <- function (tree, data, returnData = FALSE){
         res <- list(pscore = pscore, dat = result[[1]])
     res
     }
-    
-# closest to sankoff!!!    
-fitch3 <- function (tree, data, site=FALSE) 
-{
-    if (class(data) != "phyDat") 
-        stop("data must be of class phyDat")
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorderPruning(tree)
-    levels <- attr(data, "levels")
-    data <- prepareDataFitch(data)
-    d = attributes(data)
-    data <- as.integer(data)
-    attributes(data) <- d
-    fit.fitch(tree, data, site)
-}
 
 
-fitch <- function (tree, data, site = FALSE) 
+fitch2 <- function (tree, data, site = FALSE) 
 {
     if (class(data) != "phyDat") 
         stop("data must be of class phyDat")
@@ -1690,19 +1809,6 @@ new2old.phyDat <- function(data){
     data
     }
 
-prepareDataSankoffOld <- function(data){
-    tf = function(dat) {
-        dat[dat == 0] = 1e+06
-        dat[dat == 1] <- 0
-        dat
-    }   
-    attrData <- attributes(data)
-#   needs changing     
-    data = new2old.phyDat(data)
-    data <- lapply(data, tf)
-    attributes(data) <- attrData 
-    data
-}
 
 # faster
 prepareDataSankoff <- function(data){
@@ -1714,16 +1820,12 @@ prepareDataSankoff <- function(data){
 }
 
 
-
 sankoff <- function (tree, data, cost = NULL, site = FALSE) 
 {
     if (class(data) != "phyDat") 
         stop("data must be of class phyDat")
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorderPruning(tree)
-    data <- prepareDataSankoff(data)
 
+    data <- phangorn:::prepareDataSankoff(data)
     levels <- attr(data, "levels")
     l = length(levels)  
 
@@ -1732,7 +1834,8 @@ sankoff <- function (tree, data, cost = NULL, site = FALSE)
         cost <- cost - diag(l)
     }   
     for (i in 1:length(data)) storage.mode(data[[i]]) = "double"
-    fit.sankoff(tree, data, cost, site)
+    if(class(tree)=="phylo") return(fit.sankoff(tree, data, cost, site))
+    if(class(tree)=="multiPhylo")return(sapply(tree, fit.sankoff, data, cost, site))
 }
 
 
@@ -2054,7 +2157,6 @@ ptree <- function (tree, data)
             edge.length[i] = sum(weight[ind])  
             if(ei>q){
                 res2[ind,] = res[ind,]
-#                mrow = apply(res2, 1, max) 
                 test = tmp
                 dni = apply(res2,1, fn) 
                 test[cbind(1:p, dni)] = 1
@@ -2088,17 +2190,119 @@ discrete.gamma <- function (alpha, k)
 }
 
 
-optimQ = function(tree, data, Q=c(1,1,1,1,1,1), trace=0,...){
-    l = length(Q)
-    Q = Q[-l]
-    Q = sqrt(Q)
-    fn = function(Q,tree,data,...){
-        pml2(tree, data, Q=c(Q^2,1),...)
+#optimQ = function(tree, data, Q=c(1,1,1,1,1,1), trace=0,...){
+#    l = length(Q)
+#    Q = Q[-l]
+#    Q = sqrt(Q)
+#    fn = function(Q,tree,data,...){
+#        pml2(tree, data, Q=c(Q^2,1),...)
+#    }
+#    res = optim(par=Q, fn=fn, gr=NULL, method = "L-BFGS-B", lower=0, upper=Inf, control=list(fnscale=-1, maxit=25, trace=trace),tree=tree, data=data,...)
+#    res[[1]] = c(res[[1]]^2,1)    
+#    res
+#    }
+
+
+optimQGeneral <- function (tree, data, Q=rep(1,6), subs=rep(1,length(Q)), trace = 0, ...) 
+{
+    m = length(Q)
+    n = max(subs)
+    ab = numeric(n)
+    for(i in 1:n) ab[i]=log(Q[which(subs==i)[1]])
+    fn = function(ab, tree, data, m, n, subs,...) {
+        Q = numeric(m)
+        for(i in 1:n)Q[subs==i] = ab[i]
+        pml2(tree, data, Q = exp(Q),...)# Q^2, ...)
     }
-    res = optim(par=Q, fn=fn, gr=NULL, method = "L-BFGS-B", lower=0, upper=Inf, control=list(fnscale=-1, maxit=25, trace=trace),tree=tree, data=data,...)
-    res[[1]] = c(res[[1]]^2,1)    
+    res = optim(par = ab, fn = fn, gr = NULL, method = "L-BFGS-B", 
+        lower = -Inf, upper = Inf, control = list(fnscale = -1, 
+        maxit = 25, trace = trace), tree = tree, data = data, m=m, n=n, subs=subs,...)
+    Q = rep(1, m)
+    for(i in 1:n) Q[subs==i] = exp(res[[1]][i])
+    res[[1]] = Q
     res
+}    
+
+
+subsChoice <- function(type=c("JC", "F81", "K80", "HKY", "TrNe", "TrN", "TPM1", "K81", "TPM1u", "TPM2", "TPM2u", "TPM3", "TPM3u", "TIM1e", "TIM1", "TIM2e", "TIM2", "TIM3e", "TIM3", "TVMe", "TVM", "SYM", "GTR")){
+    type = match.arg(type)
+    switch(type,
+         JC = list(optQ=FALSE, optBf=FALSE,   subs=c(0, 0, 0, 0, 0, 0)),
+         F81 = list(optQ=FALSE, optBf=TRUE,   subs=c(0, 0, 0, 0, 0, 0)),
+         K80 = list(optQ=TRUE, optBf=FALSE,   subs=c(0, 1, 0, 0, 1, 0)),
+         HKY = list(optQ=TRUE, optBf=TRUE,    subs=c(0, 1, 0, 0, 1, 0)),
+         TrNe = list(optQ=TRUE, optBf=FALSE,  subs=c(0, 1, 0, 0, 2, 0)),
+         TrN = list(optQ=TRUE, optBf=TRUE,    subs=c(0, 1, 0, 0, 2, 0)),
+         TPM1 = list(optQ=TRUE, optBf=FALSE,  subs=c(0, 1, 2, 2, 1, 0)),
+         K81 = list(optQ=TRUE, optBf=FALSE,   subs=c(0, 1, 2, 2, 1, 0)),
+         TPM1u = list(optQ=TRUE, optBf=TRUE,  subs=c(0, 1, 2, 2, 1, 0)),
+         TPM2 = list(optQ=TRUE, optBf=FALSE,  subs=c(1, 2, 1, 0, 2, 0)),
+         TPM2u = list(optQ=TRUE, optBf=TRUE,  subs=c(1, 2, 1, 0, 2, 0)),
+         TPM3 = list(optQ=TRUE, optBf=FALSE,  subs=c(1, 2, 0, 1, 2, 0)),
+         TPM3u = list(optQ=TRUE, optBf=TRUE,  subs=c(1, 2, 0, 1, 2, 0)),
+         TIM1e = list(optQ=TRUE, optBf=FALSE, subs=c(0, 1, 2, 2, 3, 0)),
+         TIM1 = list(optQ=TRUE, optBf=TRUE,   subs=c(0, 1, 2, 2, 3, 0)),
+         TIM2e = list(optQ=TRUE, optBf=FALSE, subs=c(1, 2, 1, 0, 3, 0)),
+         TIM2 = list(optQ=TRUE, optBf=TRUE,   subs=c(1, 2, 1, 0, 3, 0)),
+         TIM3e = list(optQ=TRUE, optBf=FALSE, subs=c(1, 2, 0, 1, 3, 0)),
+         TIM3 = list(optQ=TRUE, optBf=TRUE,   subs=c(1, 2, 0, 1, 3, 0)),
+         TVMe = list(optQ=TRUE, optBf=FALSE,  subs=c(1, 2, 3, 4, 2, 0)),
+         TVM = list(optQ=TRUE, optBf=TRUE,    subs=c(1, 2, 3, 4, 2, 0)),
+         SYM = list(optQ=TRUE, optBf=FALSE,   subs=c(1, 2, 3, 4, 5, 0)),
+         GTR = list(optQ=TRUE, optBf=TRUE,    subs=c(1, 2, 3, 4, 5, 0))
+         )
+}
+
+
+modelTest <- function(tree, data, model=c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G=TRUE, I=TRUE, k=4){
+    type = c("JC", "F81", "K80", "HKY", "TrNe", "TrN", "TPM1", "K81", "TPM1u", "TPM2", "TPM2u", "TPM3", "TPM3u", "TIM1e", "TIM1", "TIM2e", "TIM2", "TIM3e", "TIM3", "TVMe", "TVM", "SYM", "GTR")
+    model = match.arg(model, type, TRUE)
+    fit = pml(tree, data)
+    l = length(model)
+    res = matrix(NA, 4*l, 5)
+    res = as.data.frame(res)
+    colnames(res) = c("Model", "df", "logLik", "AIC", "BIC")
+    nseq = sum(attr(data, "weight"))
+    m=1    
+    for(i in 1:length(model)){
+        fittmp = optim.pml(fit, model=model[i])
+        res[m,1] = model[i]
+        res[m,2] = fittmp$df
+        res[m,3] = fittmp$logLik
+        res[m,4] = AIC(fittmp)
+        res[m,5] = AIC(fittmp, k=log(nseq))
+        m=m+1
+        if(I){
+             fitI = optim.pml(fittmp, model=model[i], optInv=TRUE)
+             res[m,1] = paste(model[i], "+I", sep="")
+             res[m,2] = fitI$df
+             res[m,3] = fitI$logLik
+             res[m,4] = AIC(fitI)
+             res[m,5] = AIC(fitI, k=log(nseq))
+             m=m+1
+             }
+        if(G){
+             fitG = update(fittmp, k=k)
+             fitG = optim.pml(fitG, model=model[i], optGamma=TRUE)
+             res[m,1] = paste(model[i], "+G", sep="")
+             res[m,2] = fitG$df
+             res[m,3] = fitG$logLik
+             res[m,4] = AIC(fitG)
+             res[m,5] = AIC(fitG, k=log(nseq))
+             m=m+1              
+             }
+        if(G & I){
+             fitGI = optim.pml(fitG, model=model[i], optGamma=TRUE, optInv=TRUE)
+             res[m,1] = paste(model[i], "+G+I", sep="")
+             res[m,2] = fitGI$df
+             res[m,3] = fitGI$logLik
+             res[m,4] = AIC(fitGI)
+             res[m,5] = AIC(fitGI, k=log(nseq))
+             m=m+1
+             }    
     }
+    na.omit(res)
+}
 
     
 optimGamma = function(tree, data, shape=1, k=4,...){
@@ -2369,7 +2573,7 @@ ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
 }
 
 
-# scaled version (ca. 3* slower)  
+# scaled version (ca. 3* slower) needs speeding up  
 ll3 <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1, 
     Q = c(1, 1, 1, 1, 1, 1), eig = NULL, assign.dat = FALSE, 
     ...) 
@@ -2714,7 +2918,7 @@ pml.control <- function (epsilon = 1e-06, maxit = 10, trace = FALSE)
 
 optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE, 
     optInv = FALSE, optGamma = FALSE, optEdge = TRUE, optRate = FALSE, 
-    control = pml.control(maxit = 10, eps = 0.001, trace = TRUE), ...) 
+    control = pml.control(maxit = 10, eps = 0.001, trace = TRUE), model=NULL, subs=NULL, ...) 
 {
     extras <- match.call(expand.dots = FALSE)$...
     pmla <- c("wMix", "llMix")
@@ -2752,6 +2956,7 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
     }
     trace <- control$trace
     Q = object$Q
+    subs = c(1:(length(Q)-1), 0)
     bf = object$bf
     eig = object$eig
     inv = object$inv
@@ -2760,6 +2965,15 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
     w = object$w
     g = object$g
     dat = object$data
+    type <- attr(dat,"type")
+    if(type=="DNA" & !is.null(model)){
+        tmp = subsChoice(model)
+        optQ=tmp$optQ
+        if(!optQ) Q=rep(1, 6)
+        optBf=tmp$optBf
+        if(!optBf) bf = c(.25,.25,.25,.25)
+        subs=tmp$subs
+    }
     ll0 <- object$logLik
     INV <- object$INV
     ll.0 <- object$ll.0
@@ -2787,8 +3001,8 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
             ll = res[[2]]
         }
         if (optQ) {
-            res = optimQ(tree, dat, Q=Q, bf=bf, w=w, g=g, 
-                inv=inv, INV=INV, ll.0=ll.0, rate=rate, k=k)
+            res = optimQGeneral(tree, dat, Q=Q, subs=subs, bf=bf, w=w, g=g, 
+                inv=inv, INV=INV, ll.0=ll.0, rate=rate, k=k)            
             Q = res[[1]]
             eig = edQt(Q = Q, bf = bf)
             cat("optimize rate matrix: ", ll, "-->", res[[2]], "\n")
@@ -3019,6 +3233,31 @@ optimPartQ <- function (object, Q = c(1, 1, 1, 1, 1, 1), ...)
     res
 }
 
+optimPartQGeneral <- function (object, Q = c(1, 1, 1, 1, 1, 1), subs=rep(1,length(Q)), ...) 
+{
+    m = length(Q)
+    n = max(subs)
+    ab = numeric(n)
+    for(i in 1:n) ab[i]=log(Q[which(subs==i)[1]])
+    fn = function(ab, object, m, n, subs, ...) {
+        Q = numeric(m)
+        for(i in 1:n)Q[subs==i] = ab[i]
+        Q = exp(Q)
+        result = 0
+        for (i in 1:length(object)) result <- result + update(object[[i]], 
+            Q = Q, ...)$logLik
+        result
+    }
+    res = optim(par = ab, fn = fn, gr = NULL, method = "L-BFGS-B", 
+        lower = -Inf, upper = Inf, control = list(fnscale = -1, 
+            maxit = 25), object = object, m=m, n=n, subs=subs, ...)
+    Q = rep(1, m)
+    for(i in 1:n) Q[subs==i] = exp(res[[1]][i])
+    res[[1]] = Q
+    res
+}
+
+
 
 optimPartBf <- function (object, bf = c(0.25, 0.25, 0.25, 0.25), ...) 
 {
@@ -3041,6 +3280,7 @@ optimPartBf <- function (object, bf = c(0.25, 0.25, 0.25, 0.25), ...)
     bf = exp(c(res[[1]], 0))
     bf = bf/sum(bf)
 }
+
 
 
 optimPartInv <- function (object, inv = 0.01, ...) 
@@ -3243,25 +3483,37 @@ pmlPart <- function (formula, object, ...)
     eps = 10
     while (eps > 0.1 & m < 10) {
         loli = 0
-        for (i in 1:p) {
-            fits[[i]] = optim.pml(fits[[i]], PartNni, PartBf, 
-                PartQ, PartInv, PartGamma, PartEdge, PartRate, 
-                control = list(maxit = 3, eps = 0.001))
-        }
+        if(any(c(PartNni, PartBf, PartInv, PartQ, PartGamma, PartEdge, PartRate))){
+            for (i in 1:p) {
+                fits[[i]] = optim.pml(fits[[i]], PartNni, PartBf, 
+                    PartQ, PartInv, PartGamma, PartEdge, PartRate, 
+                    control = list(maxit = 3, eps = 0.001))
+            }
+        } 
+#        for (i in 1:p) {
+#            fits[[i]] = optim.pml(fits[[i]], PartNni, PartBf, 
+#                PartQ, PartInv, PartGamma, PartEdge, PartRate, 
+#                control = list(maxit = 3, eps = 0.001))
+#        }
         if (AllQ) {
-            newQ <- optimPartQ(fits)[[1]]
-            for (i in 1:p) fits[[i]] <- update(fits[[i]], Q = newQ)
+            Q = fits[[1]]$Q
+            subs = c(1:(length(Q)-1), 0)
+            newQ <- optimPartQGeneral(fits, Q=Q, subs=subs)
+            for (i in 1:p) fits[[i]] <- update(fits[[i]], Q = newQ[[1]])
         }
         if (AllBf) {
-            newBf <- optimPartBf(fits)
+             bf = fits[[1]]$bf
+            newBf <- optimPartBf(fits, bf=bf)
             for (i in 1:p) fits[[i]] <- update(fits[[i]], bf = newBf)
         }
         if (AllInv) {
-            newInv <- optimPartInv(fits)
+            inv = fits[[1]]$inv
+            newInv <- optimPartInv(fits, inv=inv)
             for (i in 1:p) fits[[i]] <- update(fits[[i]], inv = newInv)
         }
         if (AllGamma) {
-            newGamma <- optimPartGamma(fits)[[1]]
+            shape = fits[[1]]$shape
+            newGamma <- optimPartGamma(fits, shape=shape)[[1]]
             for (i in 1:p) fits[[i]] <- update(fits[[i]], shape = newGamma)
         }
         if (AllNNI){
@@ -3529,11 +3781,11 @@ designAll <- function(n){
     for(i in 1:(n-1)){
     for(j in (i+1):n){
           Y[k,c(i,j)]=1L
-          k=k+1
+          k=k+1L
         }
     }
-    m <- n-1
-    X <- matrix(0, m+1, 2^m)
+    m <- n-1L
+    X <- matrix(0L, m+1, 2^m)
     for(i in 1:m)
     X[i, ] <- rep(rep(c(0L,1L), each=2^(i-1)),2^(m-i))
     X <- X[,-1]
@@ -3837,36 +4089,48 @@ pmlCluster <- function (formula, fit, weight, p = 4, part = NULL, ...)
     swap = 1
     while (eps < ncw || abs(eps2) > 0.01) {
         df2 = 0
-        for (i in 1:p) {
-            weights[, i] = rowSums(weight[, which(part == i), 
-                drop = FALSE])
-            ind <- which(weights[, i] > 0)
-            dat2 <- getRows(dat, ind)
-            attr(dat2, "weight") <- weights[ind, i]
-            fits[[i]] <- update(fits[[i]], data = dat2)
-            fits[[i]] = optim.pml(fits[[i]], PartNni, PartBf, 
-                PartQ, PartInv, PartGamma, PartEdge, PartRate, 
-                control = list(maxit = 3, eps = 0.001))
-            lls[, i] = update(fits[[i]], data = dat)$site
-            Gtrees[[i]] = fits[[i]]$tree
+        
+        if(any(c(PartNni, PartBf, PartInv, PartQ, PartGamma, PartEdge, PartRate))){
+            for (i in 1:p) {
+                weights[, i] = rowSums(weight[, which(part == i), 
+                    drop = FALSE])
+                ind <- which(weights[, i] > 0)
+                dat2 <- getRows(dat, ind)
+                attr(dat2, "weight") <- weights[ind, i]
+                fits[[i]] <- update(fits[[i]], data = dat2)
+                fits[[i]] = optim.pml(fits[[i]], PartNni, PartBf, 
+                    PartQ, PartInv, PartGamma, PartEdge, PartRate, 
+                    control = list(maxit = 3, eps = 0.001))
+                lls[, i] = update(fits[[i]], data = dat)$site
+                Gtrees[[i]] = fits[[i]]$tree
+            }
         }
         if (AllQ) {
-            newQ <- optimPartQ(fits)[[1]]
+            Q = fits[[1]]$Q
+            subs = c(1:(length(Q)-1), 0)
+            newQ <- optimPartQGeneral(fits, Q=Q, subs=subs)[[1]]
             for (i in 1:p) fits[[i]] <- update(fits[[i]], Q = newQ)
+#            newQ <- optimPartQ(fits, Q=Q)[[1]]
+#            newQ <- optimPartQ(fits)[[1]]
             df2 = df2 + length(unique(newQ)) - 1
         }
         if (AllBf) {
-            newBf <- optimPartBf(fits)
+	        bf = fits[[1]]$bf
+            newBf <- optimPartBf(fits, bf=bf)
             for (i in 1:p) fits[[i]] <- update(fits[[i]], bf = newBf)
             df2 = df2 + length(unique(newBf)) - 1
         }
         if (AllInv) {
-            newInv <- optimPartInv(fits)
+            inv = fits[[1]]$inv
+            newInv <- optimPartInv(fits, inv=inv)
+#            newInv <- optimPartInv(fits)
             for (i in 1:p) fits[[i]] <- update(fits[[i]], Inv = newInv)
             df2 = df2 + 1
         }
         if (AllGamma) {
-            newGamma <- optimPartGamma(fits)[[1]]
+            shape = fits[[1]]$shape
+            newGamma <- optimPartGamma(fits, shape=shape)[[1]]        
+#            newGamma <- optimPartGamma(fits)[[1]]
             for (i in 1:p) fits[[i]] <- update(fits[[i]], shape = newGamma)
             df2 = df2 + 1
         }
@@ -4649,15 +4913,19 @@ logLik.pmlMix <- function (object, ...)
  
 
 print.pmlPart <- function(x,...){
+    df <- x$df
     nc <- attr(x$fits[[1]]$data, "nc")
     levels <- attr(x$fits[[1]]$data, "levels")
     r <- length(x$fits)   
     nc <- attr(x$fits[[1]]$data, "nc")
     nr <- attr(x$fits[[1]]$data, "nr")
-    bf <- matrix(0,r,nc)
-    dimnames(bf) <- list(1:r, levels)
-    Q <- matrix(0, r, nc*(nc-1)/2)
-    dimnames(Q) <- list(1:r, NULL)
+    
+    lbf=x$df["Bf",2]
+    bf <- matrix(0, lbf, nc)
+    if(lbf>1)dimnames(bf) <- list(1:r, levels)
+    lQ = x$df["Q",2]
+    Q <- matrix(0, lQ, nc*(nc-1)/2)
+    if(lQ>1)dimnames(Q) <- list(1:r, NULL)
     type <- attr(x$fits[[1]]$data, "type")
     
     loli <- numeric(r)
@@ -4668,8 +4936,8 @@ print.pmlPart <- function(x,...){
     inv <- numeric(r)      
     for(i in 1:r){
         loli[i] <- x$fits[[i]]$logLik
-        bf[i, ] <- x$fits[[i]]$bf
-        Q[i, ] <- x$fits[[i]]$Q
+        if(i <= lbf)bf[i, ] <- x$fits[[i]]$bf
+        if(i <= lQ)Q[i, ] <- x$fits[[i]]$Q
         rate[i] <- x$fits[[i]]$rate
         shape[i] <- x$fits[[i]]$shape
         inv[i] <- x$fits[[i]]$inv
@@ -4690,6 +4958,7 @@ print.pmlPart <- function(x,...){
         print(Q)
     }
 }
+
 
 
 logLik.pmlPart <- function (object, ...) 
@@ -5192,6 +5461,142 @@ plotBS = function(tree, BStrees, type="unrooted", bs.col="black", bs.adj=c(0.5, 
     edgelabels(label[ind], frame="none", col=bs.col, adj=bs.adj)
 }
 
+
+#
+# splits format
+#
+
+as.splits <- function (x, ...){
+    if (class(x) == "splits") return(x)
+    UseMethod("as.splits")
+}
+
+
+
+# computes splits from phylo
+as.splits.phylo <- function(x, ...){
+    result = phangorn:::bip(x)
+    edge.weights = numeric(max(x$edge))
+    edge.weights[x$edge[,2]] = x$edge.length
+    attr(result, "weights") = edge.weights
+    attr(result, "labels") <- x$tip
+    class(result) = 'splits'
+    result 
+}
+
+
+
+# computes splits from multiphylo object (e.g. bootstrap, MCMC etc.)
+as.splits.multiPhylo <- function(x, ...){
+    lx = length(x)
+    splits <- prop.part(x)
+    class(splits)='list'
+    weights = attr(splits, 'number')
+    lab = attr(splits,'labels')
+    attr(splits,'labels') <- attr(splits, 'number') <- NULL
+    l = length(lab)
+    splitTips = vector('list', l)
+    for(i in 1:l) splitTips[[i]] = i
+    result = c(splitTips,splits)
+    attr(result, "weights") = c(rep(lx, l), weights)
+    attr(result, "labels") <- lab
+    class(result) = 'splits'
+    result  
+}
+
+
+# computes compatible splits
+compatible <- function(obj){
+    labels = attr(obj, "labels")
+    if(!class(obj)=='splits')stop("obj needs to be of class splits")
+    
+    l = length(labels)
+    n = length(obj)
+    
+    bp = matrix(0L, n, l)
+    for(i in 1:n)bp[i,obj[[i]]] = 1L
+    bp[bp[, 1] == 0L, ] = 1L - bp[bp[, 1] == 0L, ]
+    k=1
+    #res = numeric(n*(n-1)/2)
+    res = matrix(0L, n, n) 
+            
+    tmp1 = tcrossprod(bp) #sum(bp[i,]* bp[j,])
+    tmp2 = tcrossprod(1L - bp) #sum((1L - bp[i,])*(1L - bp[j,]))
+    tmp3 = tcrossprod(bp, 1L - bp) #sum(bp[i,]*(1L - bp[j,]))
+    tmp4 = tcrossprod(1L - bp, bp) #sum((1L - bp[i,])*bp[j,]) 
+    res[(tmp1 * tmp2 * tmp3 * tmp4)>0]=1L
+    k = k+1
+    
+    res = res[lower.tri(res)]
+    attr(res, "Size") <- n
+    attr(res, "Diag") <- FALSE
+    attr(res, "Upper") <- FALSE
+    class(res) <- "dist"
+    return(res)
+    }
+
+
+# lento plot      , support=NULL
+lento <- function(obj, xlim=NULL, ylim=NULL, main='Lento plot', sub=NULL, xlab=NULL, ylab=NULL, ...){
+    if(class(obj)=='phylo') obj = as.splits(obj)
+    labels = attr(obj, "labels")
+    l = length(labels)
+    CM = compatible(obj)
+    support = attr(obj, "weights")
+        
+    if(is.null(support))support = rep(1, length(obj))
+    conflict = - as.matrix(CM) %*% support
+    n = length(support)
+    if(is.null(ylim)){
+        eps = (max(support) - min(conflict)) * 0.05
+        ylim = c(min(conflict)-eps, max(support)+eps)
+    }
+    if(is.null(xlim)){
+        xlim = c(0, n+1) 
+    }
+    ord = order(support, decreasing=TRUE)
+    support = support[ord]
+    conflict = conflict[ord]
+    plot.new()
+    plot.window(xlim, ylim)
+    title(main = main, sub = sub, xlab = xlab, ylab = ylab, ...)
+    segments(0:(n-1),support, y1=conflict,...)
+    segments(1:n,support, y1=conflict,...)
+    segments(0:(n-1),support, x1=1:n,...)
+    segments(0:(n-1),conflict, x1=1:n,...)
+    abline(h=0)
+    axis(2)
+    invisible(cbind(support, conflict)) 
+}
+
+
+
+write.nexus.splits <- function (obj, file = "", weights=NULL) 
+{
+    if(is.null(weights))weight <- attr(obj, "weights")
+    taxa.labels <- attr(obj, "labels")
+    ntaxa = length(taxa.labels)
+    nsplits = length(obj)
+    
+    if (is.null(weight)) 
+        weight = numeric(nsplits) + 100
+    cat("#NEXUS\n\n", file = file)
+    cat("[Splits block for Spectronet]\n", file = file, append = TRUE)
+    cat("[generated by ]\n", file = file, append = TRUE)
+    cat(paste("[", attr(citation("phangorn"), "textVersion"), 
+        "]\n\n", sep = ""), file = file, append = TRUE)
+    cat(paste("BEGIN TAXA;\n\tDIMENSIONS NTAX=", ntaxa, ";\n", 
+        sep = ""), file = file, append = TRUE)
+    cat("\tTAXLABELS", paste(taxa.labels, sep = " "), ";\nEND;\n\n", 
+        file = file, append = TRUE)
+    cat(paste("BEGIN ST_SPLITS;\n\tDIMENSIONS NSPLITS=", nsplits, 
+        ";\n", sep = ""), file = file, append = TRUE)
+    cat("\tFORMAT LABELS WEIGHTS;\n\tMATRIX\n", file = file, 
+        append = TRUE)
+    for (i in 1:nsplits) cat("\t\t", i, weight[i], paste(obj[[i]]), 
+        ",\n", file = file, append = TRUE)
+    cat("\t;\nEND;\n", file = file, append = TRUE)
+}
 
 
 
