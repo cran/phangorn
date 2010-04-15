@@ -9,6 +9,7 @@
 \alias{allSitePattern}
 \alias{as.phyDat}
 \alias{subset.phyDat}
+\alias{acgt2ry}
 \title{Conversion among Sequence Formats}
 \description{
 These functions transform several DNA formats into the \code{phyDat} format. 
@@ -19,7 +20,7 @@ phyDat(data, type = "DNA", levels = NULL, return.index=TRUE, ...)
 read.phyDat(file, format="phylip", type="DNA", ...)
 write.phyDat(x, file, format="phylip",...)
 \method{as.phyDat}{DNAbin}(x, ...)
-\method{as.character}{phyDat}(x, ...)
+\method{as.character}{phyDat}(x, allLevels = TRUE, ...)
 \method{as.data.frame}{phyDat}(x, ...)
 \method{as.DNAbin}{phyDat}(x, ...)
 \method{subset}{phyDat}(x, subset, select, ...)
@@ -38,6 +39,7 @@ allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
   \item{names}{Names of sequences.}
   \item{subset}{a subset of taxa.}
   \item{select}{a subset of characters.}
+  \item{allLevels}{return original data.} 
   \item{...}{further arguments passed to or from other methods.}
 }
 \details{
@@ -53,8 +55,10 @@ see for more details over there.
 You may import data directly with \code{\link[ape]{read.dna}} or \code{\link[ape]{read.nexus.data}}
 and convert the data to class phyDat. 
 
-The generic function 'c' can be used to to combine sequences and unique to get 
-all unique sequences or haplotypes. 
+The generic function \code{c} can be used to to combine sequences and \code{unique} to get 
+all unique sequences or unique haplotypes. 
+
+There is a more detailed example for specifying USER defined data formats in the vignette advanced features. 
 }
 \value{
 The functions return an object of class \code{phyDat}. 

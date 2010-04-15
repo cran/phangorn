@@ -1,11 +1,13 @@
 \name{upgma}
 \alias{upgma}
-\title{ UPGMA }
+\alias{wpgma}
+\title{ UPGMA and WPGMA }
 \description{
-  UPGMA clustering. Just a wrapper function around \code{\link[stats]{hclust}}.
+  UPGMA and WPGMA clustering. Just a wrapper function around \code{\link[stats]{hclust}}.
 }
 \usage{
 upgma(D, method = "average", ...)
+wpgma(D, method = "mcquitty", ...)
 }
 \arguments{
   \item{D}{A distance matrix.}
@@ -18,12 +20,11 @@ A phylogenetic tree of class \code{phylo}.
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
-\seealso{ \code{\link[stats]{hclust}}, \code{\link[phangorn]{NJ}}, \code{\link[ape]{as.phylo}} }
+\seealso{ \code{\link{hclust}}, \code{\link{NJ}}, \code{\link{as.phylo}}, \code{\link{fastme}} }
 \examples{
 data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)
 tree = upgma(dm)
 plot(tree)
-
 }
 \keyword{cluster}

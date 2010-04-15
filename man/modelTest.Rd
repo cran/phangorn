@@ -4,7 +4,7 @@
 ModelTest
 }
 \description{
-Comparision of different substituion models 
+Comparison of different substition models 
 }
 \usage{
 modelTest(tree, data, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4)

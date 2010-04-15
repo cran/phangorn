@@ -1,7 +1,7 @@
 /* 
  * phangorn.c
  *
- * (c) 2009  Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2010  Klaus Schliep (klaus.schliep@gmail.com)
  * 
  * 
  * This code may be distributed under the GNU GPL
@@ -1233,31 +1233,6 @@ SEXP invSites(SEXP dlist, SEXP nr, SEXP nc, SEXP contrast, SEXP nco){
     UNPROTECT(1); // result 
     return(result);
 }     
-/*
-install.packages("phangorn_0.99-5.tar.gz", repos=NULL)
-
-library(phangorn)
-example(NJ)
-
-new2old.phyDat2 <- function(data){
-   f1 = function(data, contrast)contrast[data,]
-   contrast = attr(data, "contrast")
-   lapply(data, f1, contrast)
-}
-
-lli3 = function (data, tree, ...) 
-{
-    contrast = attr(data, "contrast")
-    nr = attr(data, "nr")
-    nc = attr(data, "nc")
-    nco = as.integer(dim(contrast)[1])
-    .Call("invSites", data[tree$tip.label], as.integer(nr), as.integer(nc), contrast, as.integer(nco), PACKAGE = "phangorn")    
-}
-
-lli3(Laurasiatherian, tree)
-
-invariantSites(SEXP dlist, SEXP nr, SEXP nc, SEXP contrast, SEXP nco)
-*/
 
 
 // matrix X to scale, dimemsions of X, scale vec result
@@ -1277,6 +1252,38 @@ void scaleMatrix(double *X, int nr, int nc, double *result){
         }
         result[i] += log(tmp[i]);
     }
+}
+
+void scaleMatrix3(double *X, int nr, int nc, double *result){
+    int i, j; 
+    double tmp;   
+    for(i = 0; i < nr; i++) {    
+        tmp = 0.0; 
+        for(j = 0; j < nc; j++) {
+           tmp += X[i + j*nr];
+        }        
+        for(j = 0; j < nc; j++) {
+           X[i + j*nr] /= tmp;
+        }
+        result[i] += log(tmp);
+    } 
+}
+
+void scaleMatrix2(double *X, int nr, int nc, double *result, double eps){
+    int i, j; 
+    double tmp;   
+    for(i = 0; i < nr; i++) {    
+        tmp = 0.0; 
+        for(j = 0; j < nc; j++) {
+           tmp += X[i + j*nr];
+        }
+        if(tmp < eps){          
+            for(j = 0; j < nc; j++) {
+                X[i + j*nr] /= tmp;
+            }
+            result[i] += log(tmp);
+        }
+    } 
 }
 
 

@@ -18,7 +18,7 @@ splitsNetwork(dm, gamma=.1, lambda=1e-6, weight=NULL)
 \details{
 \code{splitsNetwork} fits phylogenetic networks using L1, L2 and 
 non-negativity constraints.  
-The function minimises the penalized least squares
+The function minimizes the penalized least squares
 \deqn{\beta = min \sum(dm - X\beta)^2 + \lambda \|\beta \|^2_2 }{%
 beta = sum(dm - X*beta)^2 + lambda |beta|^2_2 }
 with respect to \deqn{\|\beta \|_1 <= \gamma, \beta >= 0}{%
@@ -28,8 +28,8 @@ External edges are fitted without constraints.
 }
 \value{
 \code{splitsNetwork} returns a matrix. The first column contains the 
-indices of the splits, the second column an unconstraint fit 
-without penalty terms and the third column the constraint fit.
+indices of the splits, the second column an unconstrained fit 
+without penalty terms and the third column the constrained fit.
 }
 \references{K. P. Schliep (2009). Some Applications of statistical phylogenetics (PhD Thesis)}
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
