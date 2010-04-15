@@ -7,7 +7,7 @@
 \title{
 Bootstrap }
 \description{
-\code{bootstrap.pml} performs (non-parametric) bootstrap analysis and \code{bootstrap.phyDat} produces a list of bootstrapped datasets. Under Linux the bootstrap is performed in parallel, if the multicore package is loaded. \code{plotBS} plots a phylogenetic tree with the with the bootstrap values assigned to the (internal) edges.}
+\code{bootstrap.pml} performs (non-parametric) bootstrap analysis and \code{bootstrap.phyDat} produces a list of bootstrapped data sets. Under Linux the bootstrap is performed in parallel, if the multicore package is loaded. \code{plotBS} plots a phylogenetic tree with the with the bootstrap values assigned to the (internal) edges.}
 \usage{
 bootstrap.pml(x, bs = 100, trees = TRUE, ...)
 bootstrap.phyDat(x, FUN, bs = 100, ...)
@@ -15,16 +15,16 @@ plotBS(tree, BStrees, type="unrooted", bs.col="black", bs.adj=c(0.5, 0.5), ...)
 }
 \arguments{
   \item{x}{
-an object of class pml or phyDat.
+an object of class \code{pml} or \code{phyDat}.
 }
   \item{bs}{
 number of bootstrap samples.
 }
   \item{trees}{
-return trees only (default) or whole pml objects.  
+return trees only (default) or whole \code{pml} objects.  
 }
   \item{\dots}{
-further parameters used by optim.pml or plot.phylo.
+further parameters used by \code{optim.pml} or \code{plot.phylo}.
 }
   \item{FUN}{ 
 the function to estimate the trees.
@@ -46,8 +46,8 @@ one or two numeric values specifying the horizontal and vertical justification o
 }
 }
 \value{
-returns an object of class multi.phylo or a list where each 
-element is an object of class pml.
+returns an object of class \code{multi.phylo} or a list where each 
+element is an object of class \code{pml}.
 }
 \author{
 Klaus Schliep \email{klaus.schliep@gmail.com}

@@ -9,7 +9,7 @@
 \description{
 
 \code{parsimony} returns the parsimony score of a tree.
-\code{optim.parsimony} tries to find the mamimum parsimony tree using NNI 
+\code{optim.parsimony} tries to find the maximum parsimony tree using Nearest Neighbor Interchange (NNI) 
 rearrangements. \code{pace} returns a (logical) matrix of the ancestral states
 of the root node.  
 }

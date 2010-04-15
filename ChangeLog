@@ -1,4 +1,30 @@
-        CHANGES IN PHANGORN VERSION 1.0-0
+        CHANGES in PHANGORN VERSION 1.0-1
+
+       
+NEW FEATURES
+
+    o ancestral sequence reconstruction 
+
+      (parsimony and likelihood based)
+
+    o a small convenience function acgt2ry for ry-coding
+
+    o as.phylo.splits computes a tree from compatible splits
+
+BUG FIXES
+
+    o a small error in pmlCluster was fixed     
+	
+OTHER CHANGES
+	
+    o upgma changed to accommodate change in as.phylo.hclust
+
+    o lento plots are looking nicer
+
+	
+
+	
+	CHANGES IN PHANGORN VERSION 1.0-0
 
         
 NEW FEATURES

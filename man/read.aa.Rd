@@ -24,7 +24,7 @@ read.aa(file, format = "interleaved", skip = 0,
 \description{
   This function reads amino acid sequences in a file, and returns a matrix 
   list of DNA sequences with the names of the taxa read in the file as
-  rownames.}
+  row names.}
 \value{
   a matrix of amino acid sequences.
 }

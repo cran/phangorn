@@ -5,20 +5,21 @@
 Lento plot
 }
 \description{
-The lento plot represents support and conflict of splits. 
+The lento plot represents support and conflict of splits/bipartitions. 
 }
 \usage{
-lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot", sub = NULL, xlab = NULL, ylab = NULL, ...)
+lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot", sub = NULL, xlab = NULL, ylab = NULL, bipart=TRUE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{obj}{an object of class phylo or splits}
   \item{xlim}{graphical parameter}
-  \item{ylim}{raphical parameter}
-  \item{main}{raphical parameter}
-  \item{sub}{raphical parameter}
-  \item{xlab}{raphical parameter}
-  \item{ylab}{raphical parameter}
+  \item{ylim}{graphical parameter}
+  \item{main}{graphical parameter}
+  \item{sub}{graphical parameter}
+  \item{xlab}{graphical parameter}
+  \item{ylab}{graphical parameter}
+  \item{bipart}{plot bipartition information.}
   \item{\dots}{Further arguments passed to or from other methods.}
 }
 \value{
@@ -30,11 +31,13 @@ Lento, G.M., Hickson, R.E., Chambers G.K., and Penny, D. (1995) Use of spectral 
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
 \seealso{
-\code{\link{as.splits}}
+\code{\link{as.splits}, \link{hadamard}}
 }
 \examples{
-trees = allTrees(5)
-lento(as.splits(trees))
+data(yeast)
+yeast.ry = acgt2ry(yeast)
+splits.h = h2st(yeast.ry)
+lento(splits.h)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
