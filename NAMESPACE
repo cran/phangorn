@@ -4,7 +4,7 @@ useDynLib(phangorn, .registration=TRUE)
 import(ape)
 importFrom(stats, AIC, logLik)  
 
-export(pml, optim.pml, parsimony, optim.parsimony, NJ, UNJ, PNJ, 
+export(pml, optim.pml, pml.control, parsimony, optim.parsimony, NJ, UNJ, PNJ, 
     phyDat, read.phyDat, write.phyDat, as.phyDat, as.splits, 
     dfactorial, ldfactorial, hadamard, nni, allSitePattern,
     fhm, distanceHadamard, treedist, sankoff, fitch, h2st, h4st,

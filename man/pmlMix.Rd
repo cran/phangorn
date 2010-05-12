@@ -7,13 +7,14 @@
   Phylogenetic mixture model. 
 }
 \usage{
-pmlMix(formula, fit, m = 2, omega = rep(1/m, m), ...)
+pmlMix(formula, fit, m=2, omega=rep(1/m, m), control=pml.control(eps=1e-06, maxit=20, trace=1),...)
 }
 \arguments{
   \item{formula}{ a formula object (see details).}
   \item{fit}{ an object of class \code{pml}. }
   \item{m}{ number of mixtures. }
   \item{omega}{ mixing weights.}
+  \item{control}{A list of parameters for controlling the fitting process.}
   \item{\dots}{ Further arguments passed to or from other methods. }
 }
 \details{

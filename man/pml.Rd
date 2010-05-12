@@ -1,6 +1,7 @@
 \name{pml}
 \alias{pml}
 \alias{optim.pml}
+\alias{pml.control}
 \title{Likelihood of a tree.}
 \description{
 \code{pml} computes the likelihood of a phylogenetic tree 
