@@ -6,12 +6,13 @@
   Model to estimate phylogenies for partitioned data. 
 }
 \usage{
-pmlPart(formula, object, ...)
+pmlPart(formula, object, control = pml.control(eps=0.1, maxit=10, trace=1),...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{formula}{ a formula object (see details).}
   \item{object}{ an object of class \code{pml} or a list of objects of class  \code{pml} . }
+  \item{control}{A list of parameters for controlling the fitting process.} 
   \item{\dots}{ Further arguments passed to or from other methods. }
 }
 \details{

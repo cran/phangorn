@@ -7,7 +7,7 @@
   Stochastic Partitioning of genes into p cluster. 
 }
 \usage{
-pmlCluster(formula, fit, weight, p = 4, part = NULL, ...)
+pmlCluster(formula, fit, weight, p=4, part=NULL, control=pml.control(eps=0.01, maxit=10, trace=1),...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -16,6 +16,7 @@ pmlCluster(formula, fit, weight, p = 4, part = NULL, ...)
   \item{weight}{ \code{weight}  is matrix of frequency of site patterns for all genes. }
   \item{p}{ number of clusters. }
   \item{part}{ starting partition, otherwise a random partition is generated. }
+  \item{control}{A list of parameters for controlling the fitting process.} 
   \item{\dots}{ Further arguments passed to or from other methods. }
 }
 \details{
