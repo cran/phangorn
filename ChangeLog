@@ -1,3 +1,38 @@
+        CHANGES in PHANGORN VERSION 1.1-0
+
+       
+NEW FEATURES
+
+    o Consistency Index (CI) and and Rentention Index (RI)
+
+    o clanistic tools  
+
+    o new generic function cbind.phyDat
+
+    o optim.parsimony works now also with the fitch algorithm,
+
+      faster than the sankoff version 
+
+BUG FIXES
+
+    o treedist and RF.dist now check whether trees are binary and 
+    
+      try to handle multifurcations (thanks to Jeremy Beaulieu for bug fixes)  
+
+OTHER CHANGES
+
+    o second vignette describing some special features 
+    
+    o allTrees is faster 
+
+    o trace and pml.control are now more consistent 
+
+    o optim.pml uses less memory and can be faster 
+ 
+      for data with lots of characters
+
+
+
         CHANGES in PHANGORN VERSION 1.0-2
 
         

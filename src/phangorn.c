@@ -30,6 +30,11 @@
 
 #define DINDEX(i, j) n*(i - 1) - i * (i - 1)/2 + j - i - 1
 
+char *transa = "N", *transb = "N";
+double one = 1.0, zero = 0.0;
+
+
+
 int give_index(int i, int j, int n)
 {
     if (i > j) return(DINDEX(j, i));
@@ -209,51 +214,8 @@ SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk){
     return(result);        
 }
         
-    
-    
-void fitch(unsigned char *dat, int *n, int *m, int *i, int *j, unsigned char * result, int *pars){
-    int k;
-    unsigned char tmp;
-    for(k = 0; k < (*n); k++){
-        tmp = dat[*i + k*(*m)] & dat[*j + k*(*m)];
-        if(tmp) result[k] = tmp;
-        else {result[k] = dat[*i + k*(*m)] | dat[*j + k*(*m)];
-            pars[k] += 1;
-        }
-    } 
-}        
-
-
-// replace fitch2 / fitch3 by fitch4 / fitch5
-void fitch2(int *dat, int *n, int *m, int i, int j, int *pars){
-    int k;
-    int tmp;
-    for(k = 0; k < (*n); k++){
-        tmp = dat[i + k*(*m)] & dat[j + k*(*m)];
-        if(tmp) dat[i + k*(*m)] = tmp;
-        else {dat[i + k*(*m)] = dat[i + k*(*m)] | dat[j + k*(*m)];
-            pars[k] += 1;
-        }
-    } 
-}        
-
-
-
-void fitch3(int *dat, int *n, int *m, int *pars, int *node, int *edge, int *nl) 
-{   
-    int i, ni, k;
-    ni = 0;
-    for (i=0; i< *nl; i++) {
-        if (ni == node[i]) fitch2(dat, n, m, ni-1, edge[i]-1, pars);                        
-        else {
-            ni = node[i];
-            for(k = 0; k < (*n); k++) dat[ni-1 + k*(*m)] = dat[edge[i]-1 + k*(*m)];                     
-        }
-    }
-}
-    
-// fitch4 fitch5 m raus  
-void fitch4(int *dat, int *nr, int *m, int i, int j, int *pars){
+ 
+void fitch4(int *dat, int *nr, int i, int j, int *pars){
     int k;
     int tmp;
     for(k = 0; k < (*nr); k++){
@@ -265,12 +227,13 @@ void fitch4(int *dat, int *nr, int *m, int i, int j, int *pars){
     } 
 }
 
-void fitch5(int *dat, int *nr, int *m, int *pars, int *node, int *edge, int *nl) 
+//int *m, 
+void fitch5(int *dat, int *nr, int *pars, int *node, int *edge, int *nl) 
 {   
     int i, ni, k;
     ni = 0;
     for (i=0; i< *nl; i++) {
-        if (ni == node[i]) fitch4(dat, nr, m, ni-1, edge[i]-1, pars);                    
+        if (ni == node[i]) fitch4(dat, nr, ni-1, edge[i]-1, pars);                    
         else {
             ni = node[i];
             for(k = 0; k < (*nr); k++) dat[(ni-1)*(*nr) + k] = dat[(edge[i]-1)*(*nr) + k];                     
@@ -278,87 +241,35 @@ void fitch5(int *dat, int *nr, int *m, int *pars, int *node, int *edge, int *nl)
     }
 }
 
-// erstes traversal fuer edgeweights 
-// set dat[,i] = dat[,i] & dat[,j]
-void fitch6(int *dat, int *nr, int i, int j, int *pars){
+
+void fitch0(int *res, int *dat, int *nr, int i, int j, int *pars){
     int k;
-//    int tmp;
+    int tmp;
     for(k = 0; k < (*nr); k++){
-        dat[i*(*nr) + k] = dat[i*(*nr) + k] & dat[j*(*nr) + k];
+        tmp = res[i*(*nr) + k] & dat[j*(*nr) + k];
+        if(tmp) res[i*(*nr) + k] = tmp;
+        else {res[i*(*nr) + k] = res[i*(*nr) + k] | dat[j*(*nr) + k];
+            pars[k] += 1;
+        }
     } 
 }
 
-
-
-// testen
-
-void fNodes(int *dat, int *nr, int *m, int *node, int *edge, int *n, int *result){   
-    int k, pj, i, j, start, *pars, *tmp, *res;
-//    double *res;
-    pj = node[(*n)-1L];
-    start = (*n)-1L;
-    tmp = (int *) R_alloc(*nr, sizeof(int)); 
-    pars = (int *) R_alloc(*nr, sizeof(int));   
-    res = (int *) R_alloc(*nr, sizeof(int));
-    for(i=0; i<(*nr); i++) tmp[i] = 0;
-    for(i=0; i<(*nr); i++) pars[i] = 0;
-    for(j=((*n)-1L); j>=0; j--) {
-        if (pj != node[j]) {
-            for(i=0; i<(*nr); i++) tmp[i] = 0;
-            fitch4(dat, nr, m, (*n)-1L, edge[i]-1, tmp);
-            for(i=0; i<(*nr); i++) pars[i] = tmp[i] ;  
-            pj = node[j];
-            start = j;
-        }
-        else for(i=0; i<(*nr); i++) pars[i] = tmp[i] ;
-        k = start;
-        while (k >= 0 && pj == node[k]) {
-            if (k != j) 
-                fitch4(dat, nr, m, (*n)-1L, edge[i]-1, pars);
-            k--;
+void FN(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc) 
+{   
+    int i, ni, k;
+    ni = 0;
+    for (i=0; i< *nl; i++) {
+        if (ni == node[i]){
+              if(pc[i]==0L)fitch0(res, dat, nr, ni-1, edge[i]-1, pars);
+              else fitch4(res, nr, ni-1, edge[i]-1, pars);
+              }                      
+        else {
+            ni = node[i];
+            for(k = 0; k < (*nr); k++) res[(ni-1)*(*nr) + k] = dat[(edge[i]-1)*(*nr) + k];   
+//            else for(k = 0; k < (*nr); k++) res[(ni-1)*(*nr) + k] = res[(edge[i]-1)*(*nr) + k];                    
         }
     }
-    result[0] = 0L; 
-    for(i=0; i<(*nr); i++) result[0] += pars[i];
 }
-
-
-//wird nicht verwendet        
-void sankoff(double *dat, int *n, double *cost, int *k, double *result){
-    int i, j, h; 
-    double tmp[*k], x;
-    for(i = 0; i < (*n); i++){
-        for(j = 0; j < (*k); j++){
-            for(h = 0; h< (*k); h++){tmp[h] = dat[i + h*(*n)] + cost[h + j*(*k)];}
-            x = tmp[0];
-            for(h = 1; h< (*k); h++) {if(tmp[h]<x) {x=tmp[h];}}
-            result[i+j*(*n)] = x;
-            }                   
-        }        
-}    
-
-
-SEXP sankoff2(SEXP sdat, SEXP sn, SEXP scost, SEXP sk){
-    int i, j, h, n=INTEGER(sn)[0], k = INTEGER(sk)[0];  
-    double tmp[k], x, *cost, *res, *dat;
-    SEXP result;
-    PROTECT(result = allocMatrix(REALSXP, n, k));
-    res = REAL(result);
-    PROTECT(sdat = coerceVector(sdat, REALSXP));
-    PROTECT(scost = coerceVector(scost, REALSXP));
-    cost = REAL(scost);
-    dat = REAL(sdat);
-    for(i = 0; i < n; i++){
-        for(j = 0; j < k; j++){
-            for(h = 0; h< k; h++) tmp[h] = dat[i + h*n] + cost[h + j*k];
-            x = tmp[0];
-        for(h = 1; h< k; h++) {if(tmp[h]<x) x=tmp[h]; }
-        res[i+j* n] = x;
-        }                   
-    }
-    UNPROTECT(3);
-    return(result);        
-}    
 
 
 static R_INLINE void sankoff4(double *dat, int n, double *cost, int k, double *result){
@@ -437,47 +348,6 @@ SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SE
     return(dlist2);
 }
 
-SEXP sankoffNeu(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips, SEXP weight){
-    R_len_t i, n = length(node), nt = length(tips);
-    int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], mn=INTEGER(mNodes)[0];
-    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node);
-    SEXP result, dlist2; //tmp, 
-    double *res, *rtmp, *cost, *pvec, pscore;
-    cost = REAL(scost);
-    if(!isNewList(dlist)) error("'dlist' must be a list");
-    ni = nodes[0];
-    pvec = (double *) R_alloc(nrx, sizeof(double));
-    PROTECT(dlist2 = allocVector(VECSXP, mn));
-    PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
-    res = REAL(result);
-    rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
-    for(i = 0; i < nt; i++) SET_VECTOR_ELT(dlist2, INTEGER(tips)[i], VECTOR_ELT(dlist, INTEGER(tips)[i]));
-    for(j=0; j<(nrx * ncx); j++) res[j] = 0.0; 
- 
-    for(i = 0; i < n; i++) {
-        ei = edges[i]; 
-        if(ni == nodes[i]){
-            sankoff4(REAL(VECTOR_ELT(dlist2,ei)), nrx, cost, ncx, res);
-            }
-        else{          
-            SET_VECTOR_ELT(dlist2, ni, result);
-            UNPROTECT(1); 
-            PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
-            res = REAL(result);
-            for(j=0; j<(nrx * ncx); j++) res[j] = 0.0; 
-            ni = nodes[i];
-            sankoff4(REAL(VECTOR_ELT(dlist2,ei)), nrx, cost, ncx, res); 
-            }
-    }
-    SET_VECTOR_ELT(dlist2, ni, result);    
-    rowMin2(REAL(result), nrx, ncx, pvec);
-    pscore = 0.0;
-    for(i = 0; i < nrx; i++) pscore += REAL(weight)[i] * pvec[i];
-//    rowMin(SEXP sdat, SEXP sn, SEXP sk)
-    UNPROTECT(2); // result dlist2  return dlist2
-    return(ScalarReal(pscore));
-}
-
 
     
 SEXP pNodes(SEXP data, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge){
@@ -507,6 +377,7 @@ SEXP pNodes(SEXP data, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge){
         while (k >= 0 && pj == nodes[k]) {
             if (k != j) 
                 sankoff4(REAL(VECTOR_ELT(data, edges[k])), nrx, cost, ncx, res); 
+                
             k--;
         }
         SET_VECTOR_ELT(dlist, edges[j], result);    
@@ -515,6 +386,7 @@ SEXP pNodes(SEXP data, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge){
     UNPROTECT(1);
     return(dlist);
 }
+
 
 static R_INLINE void matprod(double *x, int nrx, int ncx, double *y, int nry, int ncy, double *z)
 {
@@ -693,24 +565,6 @@ void NR6(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child
         for(i = 0; i < (nr*nc); i++) dtmp[i]*=kid[i]; //dtmp =  (dad %*% dP) * kid
         F77_CALL(dgemm)(transa, transb, &nr, &eins, &nc, &w[j], dtmp, &nr, bf, &nc, &one, res, &nr);
         }       
-} 
-
-void NR7(SEXP P, int nc, double el, double *w, double *g, SEXP dad, SEXP child, int ld, int nr, double *bf, double *res){
-    int i, eins=1L, j; 
-    double *kid;  
-    double *dtmp; //*res,  *dF, *dP, 
-    char *transa = "N", *transb = "N";
-    double one = 1.0, zero = 0.0;
-//    if(!isNewList(P)) error("'P' must be a list");
-//    if(!isNewList(dad)) error("dad'' must be a list");
-//    if(!isNewList(child)) error("'child' must be a list");    
-    dtmp = (double *) R_alloc(nr*nc, sizeof(double));
-    for(j=0;j<ld;j++){
-        kid = REAL(VECTOR_ELT(child, j)); // kid
-        F77_CALL(dgemm)(transa, transb, &nr, &nc, &nc, &one, REAL(VECTOR_ELT(dad, j)), &nr, REAL(VECTOR_ELT(P, j)), &nc, &zero, dtmp, &nr);
-        for(i = 0; i < (nr*nc); i++) dtmp[i]*=kid[i]; //dtmp =  (dad %*% dP) * kid
-        F77_CALL(dgemm)(transa, transb, &nr, &eins, &nc, &w[j], dtmp, &nr, bf, &nc, &one, res, &nr);
-    }       
 } 
 
 
@@ -918,8 +772,8 @@ SEXP getM3(SEXP dad, SEXP child, SEXP P, SEXP nr, SEXP nc){
     }
 
 
-// maybe return only list of one
-SEXP FS(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP ld, SEXP nr, SEXP basefreq, SEXP weight,SEXP f0, SEXP ll0, SEXP ff0)
+SEXP FS3(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP ld, SEXP nr, 
+         SEXP basefreq, SEXP weight,SEXP f0, SEXP ll0, SEXP ff0, SEXP retA, SEXP retB)
 {
     SEXP RESULT, EL, P; //, logLik; 
     double *tmp, *tmp2, *f, *wgt=REAL(weight), edle, ledle, newedle, eps=10, *bf=REAL(basefreq); //*df, 
@@ -947,7 +801,8 @@ SEXP FS(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP l
         ledle = log(edle) + scalep * delta;
         newedle = exp(ledle);
         if (newedle > 10.0) newedle = 10.0;
-        if (newedle < 1e-8) newedle = 1e-8;       
+        if (newedle < 1e-6) newedle = edle/2; // new 
+        if (newedle < 1e-6) newedle = 1e-6; // 1e-8       
   
         for(i=0; i<nrx; i++)f[i] = REAL(f0)[i];
 // getP         
@@ -973,74 +828,12 @@ SEXP FS(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP l
     PROTECT(EL = ScalarReal(edle));
     PROTECT(P = getPM(eig, nc, EL, g));
     SET_VECTOR_ELT(RESULT, 0, EL);
-    SET_VECTOR_ELT(RESULT, 1, getM3(child, dad, P, nr, nc));
-    SET_VECTOR_ELT(RESULT, 2, getM3(dad, child, P, nr, nc));
+    if(INTEGER(retA)[0]>0L)SET_VECTOR_ELT(RESULT, 1, getM3(child, dad, P, nr, nc));
+    if(INTEGER(retB)[0]>0L)SET_VECTOR_ELT(RESULT, 2, getM3(dad, child, P, nr, nc));
     SET_VECTOR_ELT(RESULT, 3, ScalarReal(l1));
     UNPROTECT(3);
     return (RESULT);
 } 
-
-
-SEXP FS2(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP ld, SEXP nr, SEXP basefreq, SEXP weight,SEXP f0, SEXP ll0, SEXP ff0)
-{
-    SEXP RESULT, EL, P; //, logLik; 
-    double *tmp, *tmp2, *f, *wgt=REAL(weight), edle, ledle, newedle, eps=10, *bf=REAL(basefreq); //*df, 
-    double ll, lll, delta=0.0, scalep = 1.0, *ws=REAL(w), *gs=REAL(g), l1=0.0, l0;
-    int i, k=0, ncx=INTEGER(nc)[0], nrx=INTEGER(nr)[0];
-    tmp = (double *) R_alloc(nrx, sizeof(double));
-    tmp2 = (double *) R_alloc(nrx, sizeof(double));
-    f = (double *) R_alloc(nrx, sizeof(double));
-    PROTECT(RESULT = allocVector(VECSXP, 3));
-    edle = REAL(el)[0];    
-    l0 = REAL(ll0)[0];
-    for(i=0; i<nrx ;i++) f[i]=REAL(ff0)[i];
-// eps uebergeben
-    while ( (eps > 1e-05) &&  (k < 5) ) {
-        if(scalep>0.6){  
-// NR5, NR6 zusammenfassen: P uebergeben / f nicht   
-            NR5(eig, ncx, edle, ws, gs, dad, child, INTEGER(ld)[0], nrx, bf, f, tmp);
-              
-            ll=0.0;  
-            lll=0.0;        
-            for(i=0; i<nrx ;i++) ll+=wgt[i]*tmp[i];
-            for(i=0; i<nrx ;i++) lll+=wgt[i]*tmp[i]*tmp[i];  
-            delta = ((ll/lll) < 3) ? (ll/lll) : 3;
-        } // end if        
-        ledle = log(edle) + scalep * delta;
-        newedle = exp(ledle);
-        if (newedle > 10.0) newedle = 10.0;
-        if (newedle < 1e-8) newedle = 1e-8;       
-  
-        for(i=0; i<nrx; i++)f[i] = REAL(f0)[i];
-        NR6(eig, ncx, newedle, ws, gs, dad, child, INTEGER(ld)[0], nrx, bf, f);
-        l1 = 0.0;
-        for(i=0; i<nrx ;i++) l1 += wgt[i] * log(f[i]);
-        eps = l1 - l0; // relative changes
-// some error handling              
-        if (eps < 0 || ISNAN(eps)) {
-            if (ISNAN(eps))eps = 0;
-            else {
-                scalep = scalep/2.0;
-                eps = 1.0;
-            }
-            newedle = edle;
-            l1 = l0;
-        }
-        else scalep = 1.0;
-        edle=newedle;
-        l0 = l1; 
-        k ++;
-    }   
-    PROTECT(EL = ScalarReal(edle));
-    PROTECT(P = getPM(eig, nc, EL, g));
-    SET_VECTOR_ELT(RESULT, 0, EL);
-    SET_VECTOR_ELT(RESULT, 1, getM3(child, dad, P, nr, nc));
-//    SET_VECTOR_ELT(RESULT, 2, getM3(dad, child, P, nr, nc));
-    SET_VECTOR_ELT(RESULT, 2, ScalarReal(l1));
-    UNPROTECT(3);
-    return (RESULT);
-} 
-
 
 
 void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root){ 
@@ -1235,26 +1028,7 @@ SEXP invSites(SEXP dlist, SEXP nr, SEXP nc, SEXP contrast, SEXP nco){
 }     
 
 
-// matrix X to scale, dimemsions of X, scale vec result
 void scaleMatrix(double *X, int nr, int nc, double *result){
-    int i, j; 
-    double *tmp;   
-    tmp = (double *) R_alloc(nr, sizeof(double));
-    for(i = 0; i < nr; i++) tmp[i] = 0.0; 
-    for(i = 0; i < nr; i++) {    
-        for(j = 0; j < nc; j++) {
-           tmp[i] += X[i + j*nr];
-        }
-    } 
-    for(i = 0; i < nr; i++) {    
-        for(j = 0; j < nc; j++) {
-           X[i + j*nr] /= tmp[i];
-        }
-        result[i] += log(tmp[i]);
-    }
-}
-
-void scaleMatrix3(double *X, int nr, int nc, double *result){
     int i, j; 
     double tmp;   
     for(i = 0; i < nr; i++) {    

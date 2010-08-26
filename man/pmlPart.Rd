@@ -6,7 +6,7 @@
   Model to estimate phylogenies for partitioned data. 
 }
 \usage{
-pmlPart(formula, object, control = pml.control(eps=0.1, maxit=10, trace=1),...)
+pmlPart(formula, object, control = pml.control(eps=1e-8, maxit=10, trace=1),...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -47,8 +47,6 @@ fit <- pml(tree,yeast)
 fits <- optim.pml(fit)
 
 weight=xtabs(~ index+genes,attr(yeast, "index"))[,1:10]
-
-set.seed(1)
 
 sp <- pmlPart(edge ~ rate + inv, fits, weight=weight)
 sp

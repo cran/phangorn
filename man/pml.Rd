@@ -12,7 +12,8 @@ different model parameters.
 pml(tree, data, bf=NULL, Q=NULL, inv=0, k=1, shape=1, rate=1, model="", ...)     
 optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
     optInv=FALSE, optGamma=FALSE, optEdge=TRUE, optRate=FALSE, 
-    control = pml.control(maxit=10, eps=0.001, trace=TRUE), model = NULL, subs = NULL, ...)  
+    control = pml.control(eps=1e-08, maxit=10, trace=1), model = NULL, subs = NULL, ...)  
+pml.control(epsilon = 1e-08, maxit = 10, trace = 1)
 }
 \arguments{
   \item{tree}{A phylogenetic \code{tree}, object of class \code{phylo}. }
@@ -33,8 +34,11 @@ optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
   \item{optEdge}{Logical value indicating the edge lengths gets optimized.}
   \item{optRate}{Logical value indicating the overall rate gets optimized.}
   \item{control}{A list of parameters for controlling the fitting process.}
-  \item{subs}{a (integer) vector same length as Q to specify the optimization of Q}
+  \item{subs}{A (integer) vector same length as Q to specify the optimization of Q}
   \item{\dots}{Further arguments passed to or from other methods.}
+  \item{epsilon}{Stop criterion for optimisation (see details).} 
+  \item{maxit}{Maximum number of iterations (see details).}  
+  \item{trace}{Show output during otimization (see details).}    
 }
 \details{
 The topology search uses a nearest neighbor interchange (NNI) 
@@ -58,6 +62,13 @@ TIM1e, TIM1, TIM2e, TIM2, TIM3e, TIM3, TVMe, TVM, SYM and GTR.
 For how these s models are specified see Posada (2008).
 
 So far 4 amino acid models are supported ("WAG", "JTT", "Dayhoff" and "LG"). 
+
+\code{pml.control} controls the fitting process. \code{epsilon} and \code{maxit} are only defined 
+for the most outer loop, this affects \code{pmlCluster}, \code{pmlPart} and \code{pmlMix}. 
+\code{epsilon} is defined as (logLik(k)-logLik(k+1))/logLik(k+1), this seems to be a good 
+heuristics which works reasonalby for small and large trees or alignments. 
+If \code{trace} is set to zero than no out put is shown, if functions are called internally 
+than the trace is decreased by one. 
 }
 \value{
 Returns a list of class \code{ll.phylo}

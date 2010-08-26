@@ -7,7 +7,7 @@ ModelTest
 Comparison of different substition models 
 }
 \usage{
-modelTest(tree, data, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4)
+modelTest(tree, data, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4, control = pml.control(epsilon = 1e-08, maxit = 3, trace = 1))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,6 +17,7 @@ modelTest(tree, data, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TR
   \item{G}{(discrete) Gamma model}
   \item{I}{invariant sites}
   \item{k}{rate classes}
+  \item{control}{A list of parameters for controlling the fitting process.}
 }
 \value{
 a data.frame containing the AIC and BIC for the tested models. 

@@ -5,7 +5,6 @@
 
 R_CallMethodDef callMethods[] = {
 {"dist2spectra", (DL_FUNC) &dist2spectra, 3},
-{"sankoff2", (DL_FUNC) &sankoff2, 4},
 {"sankoff3", (DL_FUNC) &sankoff3, 8},
 {"pNodes", (DL_FUNC) &pNodes, 6},
 {"sankoffQuartet", (DL_FUNC) &sankoffQuartet, 4},
@@ -20,16 +19,19 @@ R_CallMethodDef callMethods[] = {
 {"getd2PM", (DL_FUNC) &getd2PM, 4},
 {"getd2PM2", (DL_FUNC) &getd2PM, 4},
 {"getM3", (DL_FUNC) &getM3, 5},
-{"FS", (DL_FUNC) &FS, 14},
+{"FS3", (DL_FUNC) &FS3, 16},
 {"invSites", (DL_FUNC) &invSites, 5},
 {NULL, NULL, 0}
 };
-
+     
 
 R_CMethodDef cMethods[] = {
 {"fhm", (DL_FUNC) &fhm, 2},
 {"out", (DL_FUNC) &out, 5},
-{"fitch3", (DL_FUNC) &fitch3, 7},
+{"fitch5", (DL_FUNC) &fitch5, 6},
+{"FN", (DL_FUNC) &FN, 8},
+{"giveIndex", (DL_FUNC) &giveIndex, 6},
+{"cisort", (DL_FUNC) &cisort, 5},
 {"reorder", (DL_FUNC) &reorder, 6},
 {NULL, NULL, 0}
 };

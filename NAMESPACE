@@ -13,13 +13,15 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, NJ, UNJ, PNJ,
     designTree, designSplits, splitsNetwork, simSeq, SH.test, bootstrap.pml,
     bootstrap.phyDat, RF.dist, rNNI, rSPR, plotBS, Ancestors, Descendants,
     Children, Siblings, pace, modelTest, lento, compatible, acgt2ry, 
-    ancestral.pars, ancestral.pml) 
+    ancestral.pars, ancestral.pml, CI, RI, getClans, getSlices, getClips, getDiversity)
+#    optim.fitch, fitch.nni, fnodes, optim.sankoff) 
 
 #S3method('[', phyDat)          
 S3method(as.character, phyDat)
 S3method(as.data.frame, phyDat)
 S3method(anova, pml)
 S3method(c, phyDat)
+S3method(cbind, phyDat)
 S3method(unique, phyDat) 
 #S3method(as.phylo, phyloNode)
 #S3method(as.phyloNode, phylo)

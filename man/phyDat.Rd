@@ -47,7 +47,8 @@ If \code{type} "USER" a vector has to be give to \code{levels}.
 For example c("a", "c", "g", "t", "-") would create a data object that  
 can be used in phylogenetic analysis with gaps as fifth state.  
 \code{allSitePattern} returns all possible site patterns and can
-be useful in simulation studies.  
+be useful in simulation studies. For further details see the vignette 
+phangorn-specials.  
 \code{write.phyDat} calls the function write.dna or write.nexus.data and  
 \code{read.phyDat} calls the function read.dna, read.aa or read.nexus.data
 see for more details over there.
