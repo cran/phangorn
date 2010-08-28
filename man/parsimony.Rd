@@ -6,19 +6,23 @@
 \alias{PNJ}
 \alias{pace}
 \title{Parsimony tree.}
+\alias{CI}
+\alias{RI}
 \description{
 
 \code{parsimony} returns the parsimony score of a tree.
 \code{optim.parsimony} tries to find the maximum parsimony tree using Nearest Neighbor Interchange (NNI) 
 rearrangements. \code{pace} returns a (logical) matrix of the ancestral states
-of the root node.  
+of the root node. \code{CI} and \code{RI} computes the consistency and retention index.  
 }
 \usage{
 parsimony(tree, data, method="sankoff", ...)
-optim.parsimony(tree, data, cost=NULL, ...)
+optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, ...)
 fitch(tree, data, site = FALSE)
-sankoff(tree, data, cost = NULL, site = FALSE)
+sankoff(tree, data, cost = NULL, site = "pscore")
 pace(tree, data, ...)
+CI(tree, data)
+RI(tree, data)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -27,6 +31,7 @@ pace(tree, data, ...)
   \item{method}{one of 'fitch' or 'sankoff'.}
   \item{cost}{A cost matrix for the transitions between two states.} 
   \item{site}{logical, if TRUE site wise parsimony scores are returned. } 
+  \item{trace}{defines how much information is printed during optimisation. } 
   \item{...}{Further arguments passed to or from other methods.} 
 }
 \value{
@@ -36,7 +41,7 @@ pace(tree, data, ...)
 \references{Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
-\seealso{ \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}}
+\seealso{ \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}}
 \examples{
 data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)

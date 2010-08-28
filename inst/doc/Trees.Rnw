@@ -116,12 +116,10 @@ The object fit just estimated the likelihood for the tree it got supplied, but t
 fitJC = optim.pml(fit, TRUE)
 logLik(fitJC)
 @
-With the default values \Rfunction{pml} will estimate a Jukes-Cantor model. The function \Rfunction{update.pml} allows to change parameters. We will change the model to the GTR + $\Gamma(4)$ + I model and then optimize all the parameters.  
-<<echo=TRUE, results=hide>>=
-fitGTR = update(fit, k=4, inv=0.2) 
-fitGTR = optim.pml(fitGTR, TRUE,TRUE, TRUE, TRUE, TRUE)
-@
+With the default values \Rfunction{pml} will estimate a Jukes-Cantor model. The function \Rfunction{update.pml} allows to change parameters. We will change the model to the GTR + $\Gamma(4)$ + I model and then optimize all the parameters. 
 <<echo=TRUE>>=
+fitGTR = update(fit, k=4, inv=0.2) 
+fitGTR = optim.pml(fitGTR, TRUE,TRUE, TRUE, TRUE, TRUE, control = pml.control(trace = 0))
 fitGTR 
 @
 We can compare the objects for the JC and GTR + $\Gamma(4)$ + I model using likelihood ratio statistic
@@ -137,9 +135,9 @@ or the Shimodaira-Hasegawa test.
 <<echo=TRUE>>=
 SH.test(fitGTR, fitJC) 
 @
-At last we may want to apply bootstrap to test which how well the edges of the tree are supported:
-<<echo=TRUE, results=hide>>=
-bs = bootstrap.pml(fitJC, bs=100, optNni=TRUE)
+At last we may want to apply bootstrap to test which how well the edges of the tree are supported: %, results=hide
+<<echo=TRUE>>=
+bs = bootstrap.pml(fitJC, bs=100, optNni=TRUE, control = pml.control(trace = 0))
 @
 %$
 At last we plot the tree with the bootstrap support values on the edges
