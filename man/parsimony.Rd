@@ -16,9 +16,9 @@ rearrangements. \code{pace} returns a (logical) matrix of the ancestral states
 of the root node. \code{CI} and \code{RI} computes the consistency and retention index.  
 }
 \usage{
-parsimony(tree, data, method="sankoff", ...)
+parsimony(tree, data, method="fitch", ...)
 optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, ...)
-fitch(tree, data, site = FALSE)
+fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
 pace(tree, data, ...)
 CI(tree, data)
@@ -30,7 +30,7 @@ RI(tree, data)
   \item{tree}{ tree to start the nni search from.}
   \item{method}{one of 'fitch' or 'sankoff'.}
   \item{cost}{A cost matrix for the transitions between two states.} 
-  \item{site}{logical, if TRUE site wise parsimony scores are returned. } 
+  \item{site}{return either 'pscore' or 'site' wise parsimony scores. } 
   \item{trace}{defines how much information is printed during optimisation. } 
   \item{...}{Further arguments passed to or from other methods.} 
 }
@@ -41,7 +41,7 @@ RI(tree, data)
 \references{Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
-\seealso{ \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}}
+\seealso{ \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}} }
 \examples{
 data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)
