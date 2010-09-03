@@ -4,47 +4,74 @@
 \alias{getSlices}
 \alias{getDiversity}
 \title{
-Clans and Clips
+Clans, slices and clips
 }
 \description{
-Functions for clanistics, which compute clan, slices and clips for unrooted trees. 
+Functions for clanistics to compute clans, slices, clips for unrooted trees and functions to quantify the fragmentation of trees. 
 }
 \usage{
 getClans(tree)
 getClips(tree, all=TRUE)
 getSlices(tree)
-getDiversity(tree, x)
+getDiversity(tree, x, norm=TRUE, var.names = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
 \item{tree}{An object of class phylo or multiPhylo (getDiversity).}
 \item{all}{A logical, return all or just the largest clip. }
 \item{x}{An object of class phyDat. }
+\item{norm}{A logical, return Equitability Index (default) or Shannon Diversity. }
+\item{var.names}{A vector of variable names. }
 }
 \details{
-Every edge in an unrooted tree defines two complemantary clans.
+Every split in an unrooted tree defines two complementary clans. Thus
+for an unrooted binary tree with \eqn{n} leaves there are \eqn{2n - 3} edges, 
+and therefore \eqn{4n - 6} clans (including \eqn{n} trivial clans containing only
+one leave).
 
 Slices are defined by a pair of splits or tripartitions, which are not 
 clans. The number of distinguishable slices for a binary tree with 
-n tips is \eqn{2n^2 - 10n + 12}. 
-   
-A clip is a group of tips for which the maximum of the pairwise 
-distance within these group is smaller than the distince between 
-any member of the clip and any other tip.
+\eqn{n} tips is \eqn{2n^2 - 10n + 12}. 
 
-getDiversity computes how well a vector of characters (natives,  intruders) 
-fits on a tree. getDiversity computes a normalized version of the shannon diversity 
-index (E-value): \eqn{E = -\sum_{i}(p_i * log(p_i)) /log(\sum_{i}(p_i))}{E = -sum(p * log(p)) /log(sum(p))},
-where \eqn{p_i} are the sizes of the homogeneous clans of intruders. 
-If the data supplied by x can be separated by an edge of the tree than E-value will be zero.
+%A clip is a different type of partition as it is defined by evolutionary or cophenetic distance and not by the topology. Namely clips are groups of leaves for which the maximum pairwise distance is smaller than threshold. 
+%For a better separation we additionally demand that the maximum pairwise distance within a clip is lower than the distance between any member of the clip and any other tip.
+
+A clip is a different type of partition, defining groups of leaves that are related in terms of evolutionary distances and not only topology. 
+Namely, clips are groups of leaves for which all pairwise path-length distances are smaller than a given threshold value (Lapointe et al. 2010).
+There exists different numbers of clips for different thresholds, the largest (and trivial) one being the whole tree. 
+There is always a clip containing only the two leaves with the smallest pairwise distance. 
+
+Clans, slices and clips can be used to characterize how well a vector of 
+categorial characters (natives/intruders) fit on a tree. We will follow the definitions of Lapointe et al.(2010). 
+A complete clan is a clan that contains all leaves of a given state/color, but can
+also contain leaves of another state/color. A  clan is homogeneous if it  
+only contains leaves of one state/color. 
+
+getDiversity computes either the \cr
+Shannon Diversity: \eqn{H = -\sum_{i=1}^{k}(N_i/N)  log(N_i/N), N=\sum_{i=1}^{k} N_i}{H = -sum(N_i/N) * log(N_i/N), N=sum(N_i)}  \cr
+or the \cr 
+Equitability Index: \eqn{E = H / log(N)} \cr
+where \eqn{N_i} are the sizes of the \eqn{k} largest homogeneous clans of intruders. 
+If the categories of the data can be separated by an edge of the tree then the E-value will be zero,
+and maximum equitability (E=1) is reached if all intruders are in separate clans.
+getDiversity computes these Intruder indices for the whole tree, complete clans and complete slices.
+Additionally the parsimony scores (p-scores) are reported. The p-score indicates if the leaves contain only one color (p-score=0), if  
+the the leaves can be separated by a single split (perfect clan, p-score=1) or by a pair of splits (perfect slice, p-score=2). 
+
+So far only 2 states are supported (native, intruder), however it is also possible to recode several states 
+into the native or intruder state using contrasts, for details see section 2 in vignette("phangorn-specials").  
+Furthermore unknown character states are coded as ambiguous character, which can act either as native or intruder 
+minimizing the number of clans or changes (in parsimony analysis) needed to describe a tree for given data. 
 }
 \value{
-getClans, getSlices and getClips return a matrix of bipartitions.
-getDiversity a matrix of the divergence index for all tree.
+getClans, getSlices and getClips return a matrix of partitions, a matrix of ones and zeros where rows correspond to 
+a clan, slice or clip and columns to tips. A one indicates that a tip belongs to a certain partition. \cr  
+getDiversity returns a data.frame of the equitability index or Shannon divergence and parsimony scores (p-score)
+for all trees and variables.
 }
 
 \references{ 
-Lapointe, F.-J., Lopez, P., Boucher, Y., Koenig, J., Bapteste, E. (2010) Clanistics: a multi-level perspective for harvesting unrooted gene trees. \emph{Trends in Microbiology} (in press) 
+Lapointe, F.-J., Lopez, P., Boucher, Y., Koenig, J., Bapteste, E. (2010) Clanistics: a multi-level perspective for harvesting unrooted gene trees. \emph{Trends in Microbiology} 18: 341-347
 
 Wilkinson, M., McInerney, J.O., Hirt, R.P., Foster, P.G., Embley, T.M. (2007) Of clades and clans: terms for phylogenetic relationships in unrooted trees. \emph{Trends in Ecology and Evolution} 22: 114-115 
 }
@@ -55,20 +82,26 @@ Francois-Joseph Lapointe \email{francois-joseph.lapointe@umontreal.ca}
 }
 
 \seealso{
-\code{\link{parsimony}}, \code{\link{phyDat}}
+\code{\link{parsimony}}, Consistency index \code{\link{CI}}, Retention index \code{\link{RI}}, \code{\link{phyDat}}
 }
 
 
 \examples{
-set.seed(1)
+set.seed(111)
 tree = rtree(10)
 getClans(tree)
 getClips(tree, all=TRUE)
 getSlices(tree)
-X = matrix(c(1,1,1,1,1,2,2,2,2,2), ncol=1, dimnames=list(paste('t',1:10, sep=""),NULL))
-x = phyDat(X, type = "USER", levels = c(1,2))
-plot(tree, "u", tip.color = X[tree$tip,])  # red intruder 
-getDiversity(tree, x)
+
+set.seed(123)
+trees = rmtree(10, 20)
+X = matrix(sample(c("red", "blue", "violet"), 100, TRUE, c(.5,.4, .1)), ncol=5, 
+    dimnames=list(paste('t',1:20, sep=""), paste('Var',1:5, sep="_")))
+x = phyDat(X, type = "USER", levels = c("red", "blue"), ambiguity="violet")
+plot(trees[[1]], "u", tip.color = X[trees[[1]]$tip,1])  # intruders are blue 
+
+getDiversity(trees, x, var.names=colnames(X))
+
 }
 \keyword{ cluster }
 

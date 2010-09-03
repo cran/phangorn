@@ -1271,7 +1271,9 @@ getCols <- function (data, cols)
     data
 }
 
-
+#
+# as.matrix vermeiden
+#
 getRows <- function (data, rows) 
 {    
     for (i in 1:length(data)) data[[i]] = as.matrix(data[[i]])[rows, ]
@@ -1824,7 +1826,7 @@ sankoff.quartet <- function (dat, cost, p, l, weight)
 }
 
 
-parsimony <- function(tree, data, method='sankoff',...){
+parsimony <- function(tree, data, method='fitch',...){
 #    if(is.rooted(tree))tree <- unroot(tree)
 #    if(is.null(attr(tree,"order")) || attr(tree, "order")=="cladewise") tree <- reorderPruning(tree)  
 #    if(class(tree)!="phylo") stop("tree must be of class phylo") 
@@ -1876,7 +1878,7 @@ prepareDataFitch <- function (data)
 }
 
   
-fitch <- function (tree, data, site=FALSE) 
+fitch <- function (tree, data, site="pscore") 
 { 
     if (class(data) != "phyDat") 
         stop("data must be of class phyDat")
@@ -1886,11 +1888,14 @@ fitch <- function (tree, data, site=FALSE)
     data <- as.integer(data)
     attributes(data) <- d
     if(class(tree)=="phylo") return(fit.fitch(tree, data, site))
-    if(class(tree)=="multiPhylo")return(sapply(tree, fit.fitch, data, site))
+    if(class(tree)=="multiPhylo"){
+	    if(is.null(tree$TipLabel))tree = unclass(tree)
+	    return(sapply(tree, fit.fitch, data, site))
+    }
 }
 
-
-fit.fitch <- function (tree, data, returnData = FALSE){
+#FALSE
+fit.fitch <- function (tree, data, returnData = c("pscore", "site", "data")){
     if (is.null(attr(tree, "order")) || attr(tree, "order") == 
         "cladewise") 
         tree <- reorderPruning(tree)
@@ -1909,13 +1914,16 @@ fit.fitch <- function (tree, data, returnData = FALSE){
     result <- .C("fitch5", as.integer(dat), as.integer(nr), 
         as.integer(pars), as.integer(node), as.integer(edge), 
         as.integer(length(edge)), PACKAGE = "phangorn")
+    if (returnData=='site') return(result[[3]])    
     pscore <- sum(weight * result[[3]])
     res = pscore
-    if (returnData) 
+    if (returnData=="data") 
         res <- list(pscore = pscore, dat = result[[1]])
     res
     }
 
+    
+    
 
 fnodes <- function (tree, data, returnData = FALSE){
     if (is.null(attr(tree, "order")) || attr(tree, "order") == 
@@ -2106,7 +2114,10 @@ sankoff <- function (tree, data, cost = NULL, site = 'pscore')
     }   
     for (i in 1:length(data)) storage.mode(data[[i]]) = "double"
     if(class(tree)=="phylo") return(fit.sankoff(tree, data, cost, returnData =site))
-    if(class(tree)=="multiPhylo")return(sapply(tree, fit.sankoff, data, cost, site))
+    if(class(tree)=="multiPhylo"){
+	    if(is.null(tree$TipLabel))tree = unclass(tree)
+	    return(sapply(tree, fit.sankoff, data, cost, site))
+    }    
 }
 
 # change dependence of root
@@ -3163,7 +3174,7 @@ pml.control <- function (epsilon = 1e-08, maxit = 10, trace = 1)
 
 
 optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE, 
-    optInv = FALSE, optGamma = FALSE, optEdge = TRUE, optRate = FALSE, 
+    optInv = FALSE, optGamma = FALSE, optEdge = TRUE, optRate = FALSE, optRooted=FALSE, 
     control = pml.control(eps = 1e-8, maxit = 10, trace = 1), 
     model = NULL, subs = NULL, ...) 
 {
@@ -3187,9 +3198,11 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
             tree = multi2di(tree)
     }
     if(is.rooted(tree)) {
-        tree = unroot(tree)
-        warning("I unrooted the tree (rooted trees are not yet supported)", 
-            call. = FALSE)
+	    if(optRooted==FALSE){
+            tree = unroot(tree)
+            warning("I unrooted the tree (rooted trees are not yet supported)", 
+                call. = FALSE)
+        }    
     }
     if(is.null(attr(tree, "order")) || attr(tree, "order") == 
         "cladewise") 
@@ -3199,9 +3212,16 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
         object <- update.pml(object, tree = tree)
     }
     if(optEdge & optRate) {
-        warning("you can't optimise edges and rates at the same time, only edges are optimised", call. = FALSE)
+        warning("You can't optimise edges and rates at the same time, only edges are optimised!", call. = FALSE)
         optRate = FALSE
     }
+    if(optRooted){
+	    if(optNni)warning("Cannot perform tree rearrangements for rooted trees!", call. = FALSE)
+        optNni = FALSE 
+        optEdge = FALSE
+        if(!is.rooted(tree)) stop("Tree must be rooted!")
+        if(!is.ultrametric(tree)) stop("Tree must be ultrametric!")
+	}
     trace <- control$trace
     Q = object$Q
     if(is.null(subs)) subs = c(1:(length(Q) - 1), 0)
@@ -3246,6 +3266,13 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
            tree <- res[[1]]
         }
     }
+    if(optRooted){
+	    res <- optimRooted(object, control = pml.control(eps = 1e-07, maxit = 25, trace = trace-1))
+	    if (res[[2]] > ll){  
+           ll <- res[[2]]
+           tree <- res[[1]]
+        }     
+	}
     rounds = 1
 #    df = 0
     while (opti) {
@@ -3346,6 +3373,14 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
               tree <- res[[1]]
            }
         }
+        if(optRooted){
+	        object = update(object, tree=tree, bf=bf, Q=Q, shape=shape, inv=inv) 
+	        res <- optimRooted(object, control = pml.control(eps = 1e-07, maxit = 25, trace = trace-1))
+	        if (res[[2]] > ll){  
+                ll <- res[[2]]
+                tree <- res[[1]]
+            }     
+	    }
         if(optNni) {
             swap = 0
             iter = 1
@@ -3512,6 +3547,109 @@ optimEdge <- function (fit, control = pml.control(eps = 1e-08, maxit = 10, trace
     fit$logLik = newll
     fit
 }
+
+
+
+optimRooted <- function(fit, control = pml.control(eps = 1e-08, maxit = 25, trace = 1)){
+    tree = fit$tree
+    g = fit$g
+    w = fit$w
+    eig = fit$eig
+    bf = fit$bf
+    ll.0 = fit$ ll.0
+   
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise") 
+        tree <- reorder(tree, "p")
+    if(!is.rooted(tree))stop("tree must be rooted")
+  
+    weight = attr(fit$data , "weight")
+    optRoot <- function(t, dat, el1, el2, g, w, eig, bf, ll.0, weight){
+        P = phangorn:::getP(c(el1+t,el2-t), eig, g)
+        res=vector("list",length(g))
+        for(i in 1:length(g)){
+             res[[i]]=(dat[[i,1]] %*% P[[i,1]])
+             for(j in 2:(dim(dat)[2])){
+                 res[[i]] = res[[i]] * (dat[[i,j]] %*% P[[i,j]])
+                 }
+             }
+        result <- ll.0
+        for(i in 1:length(g))result <- result +  res[[i]]  %*% (w * bf)
+        loglik <- sum(weight * log(result))
+        loglik
+    }
+
+
+   optRoot1 <- function(t, dat, el, g, w, eig, bf, ll.0, weight, logLik=TRUE){
+        P = phangorn:::getP(c(el+t), eig, g)
+        res=vector("list",length(g))
+        for(i in 1:length(g)){
+             res[[i]]=(dat[[i,1]] %*% P[[i,1]])
+             for(j in 2:(dim(dat)[2])){
+                 res[[i]] = res[[i]] * (dat[[i,j]] %*% P[[i,j]])
+                 }
+             }
+        if(!logLik)return(res)
+        result <- ll.0  
+        for(i in 1:length(g))result <- result +  res[[i]]  %*% (w * bf)
+        loglik <- sum(weight * log(result))
+        loglik
+    }
+
+    scaleEdges <- function(t,fit){
+        fit$tree$edge.length = fit$tree$edge.length*t
+        phangorn:::pml5(fit)
+    }
+
+    child = tree$edge[, 2]
+    parent = tree$edge[, 1]
+    nTips = min(parent) - 1
+ 
+    ll= fit$logLik
+    eps=10
+    iter = 1
+    while(eps>control$eps && iter < control$maxit){
+        t <- optimize(f=scaleEdges, interval=c(0.25,4),fit, maximum=TRUE)
+        fit$tree$edge.length = fit$tree$edge.length*t[[1]]
+        tree = fit$tree
+        el = tree$edge.length
+        .dat=NULL 
+        dat = phangorn:::rnodes(fit)
+        dat2 = .dat
+        for(i in 1:length(parent)){
+            if(child[i]>nTips){
+                dad = child[i]
+                kids = which(parent==dad)
+                children = child[kids]  
+                kidsEl = el[kids] 
+                minEl = min(kidsEl) 
+                kidsEl = kidsEl - minEl
+                maxEl = minEl + el[i] # el[dad]
+                t <- optimize(f=optRoot,interval=c(0,maxEl),dat=cbind(dat2[,children, drop=FALSE],dat[,dad, drop=FALSE]),el1=kidsEl,el2=maxEl, g=g, w=w, eig=eig, bf=bf, ll.0=ll.0, weight=weight, maximum=TRUE)
+                el[kids] = kidsEl+t[[1]]
+                dat2[,dad] = optRoot1(0,dat=dat2[,children, drop=FALSE],el=el[kids], g=g, w=w, eig=eig, bf=bf, ll.0=ll.0, weight=weight, logLik=FALSE)
+                el[i] = maxEl-t[[1]]
+                tree$edge.length = el
+                fit$tree=tree
+                }
+            }
+        kids = which(parent==(nTips+1))
+        children = child[kids]  
+        kidsEl = el[kids] 
+        minEl = min(kidsEl) 
+        kidsEl = kidsEl - minEl
+        t <- optimize(f=optRoot1,interval=c(0,3),dat=dat2[,children, drop=FALSE],el=kidsEl, g=g, w=w, eig=eig, bf=bf, ll.0=ll.0, weight=weight, maximum=TRUE)
+        el[kids] = kidsEl+t[[1]]
+        tree$edge.length = el
+        fit$tree=tree
+        eps = (ll - t[[2]]) / t[[2]]
+        ll=t[[2]]
+        iter = iter+1
+        }
+    list(tree=tree, logLik=ll, c(eps=eps, iter=iter))
+}
+
+
+
 
 
 pml5 <- function (object, ...) 
@@ -6181,17 +6319,19 @@ shannon <- function (x, norm=TRUE)
 }
 
 
-getDiversity <- function(tree, x){
+getDiversity <- function(tree, x, norm=TRUE, var.names = NULL){
     k=1
     if(class(tree)=='multiPhylo') k=length(tree)
     l = attr(x, "nr")
-    tmp = matrix(0, k*l, 12)
+    tmp = matrix(0, k*l, 10)
     m = 1
     for(i in 1:k){
         if(class(tree)=='multiPhylo') tmptree = tree[[i]]
-        tmptree = tree
+        else tmptree = tree
+        if (is.rooted(tmptree)) tmptree = unroot(tmptree) 
+        clans=getClans(tmptree)
         for(j in 1:l){    
-            tmp[m, ] = getE(tmptree, subset(x,,j))
+            tmp[m, ] = getE(tmptree, subset(x,,j), clans, norm=norm)
             m = m+1
             }
         }        
@@ -6200,28 +6340,30 @@ getDiversity <- function(tree, x){
         tnam = names(tree)
         if(is.null(tnam)) tnam = 1:length(tree)
     }
-    tnam = rep(tnam, l)
-    dnam = 1:l
-    dnam = rep(dnam, each=k)
-    res = data.frame(tnam, dnam, tmp)
-    names(res) = c("tree", "variable", "E(tree)", "# natives", "# intruder", "# unknown", 
-        "E(clan)", "# natives", "# intruder", "# unknown", "E(slice)", 
-        "# natives", "# intruder", "# unknown")
-    res       
+    tnam = rep(tnam, each = l)
+    if(!is.null(var.names)) dnam = var.names
+    else dnam = 1:l
+    dnam = rep(dnam, k)
+    pscore = as.numeric(sankoff(trees,x, site="site"))
+    res = data.frame(tnam, dnam, tmp, pscore)
+    names(res) = c("tree", "variable", "E tree", "# natives", "# intruder", "# unknown", 
+        "E clan", "# intruder", "# unknown", "E slice", 
+        "# intruder", "# unknown", "p-score") # "# natives", , "# natives"
+    res 
     }
 
     
-getE <- function (tree, x) 
+getE <- function (tree, x, clans=NULL, norm=TRUE) 
 {
     if (is.rooted(tree)) 
         tree = unroot(tree)        
-    clans = getClans(tree)
+    if(is.null(clans))clans = getClans(tree)
     labels = tree$tip.label
     x = x[labels]
-    result = rep(NA, 12)
-    names(result) = c("E(tree)", "# natives", "# intruder", "# unknown", 
-        "E(clan)", "# natives", "# intruder", "# unknown", "E(slice)", 
-        "# natives", "# intruder", "# unknown") #, "bs 1", "bs 2"
+    result = rep(NA, 10)
+    names(result) = c("E* tree", "# natives", "# intruder", "# unknown", 
+        "E* clan", "# intruder", "# unknown", "E* slice", 
+        "# intruder", "# unknown") #, "bs 1", "bs 2", 2mal "# natives" raus
     result[2] = sum(x == 1)
     result[3] = sum(x == 2)
     result[4] = sum(x == 3)
@@ -6234,27 +6376,27 @@ getE <- function (tree, x)
         return(result)
     }
     intr = drop(LHG %*% as.numeric(x == 2))
-    result[1] = shannon(intr)
+    result[1] = shannon(intr, norm=norm)
     o <- order(intr, decreasing = TRUE)
-    if (!is.null(tree$node.label)) 
-        result[13:14] = as.numeric(rownames(LHG)[o[c(1, 2)]])
+#    if (!is.null(tree$node.label)) 
+#        result[13:14] = as.numeric(rownames(LHG)[o[c(1, 2)]])
     ind = which(LHG[o[1], ] == 1)
-    result[6] = sum(x[-ind] == 1)
-    result[7] = sum(x[-ind] == 2)
-    result[8] = sum(x[-ind] == 3)
+#    result[6] = sum(x[-ind] == 1)
+    result[6] = sum(x[-ind] == 2)
+    result[7] = sum(x[-ind] == 3)
     if (length(x[-ind]) < 4) 
         return(result)
-    result[5] = shannon(intr[-o[1]])
+    result[5] = shannon(intr[-o[1]], norm=norm)
     if (d == 2) {
         return(result)
     }
     ind2 = c(which(LHG[o[1], ] == 1), which(LHG[o[2], ] == 1))
-    result[10] = sum(x[-ind2] == 1)
-    result[11] = sum(x[-ind2] == 2)
-    result[12] = sum(x[-ind2] == 3)
+#    result[] = sum(x[-ind2] == 1)
+    result[9] = sum(x[-ind2] == 2)
+    result[10] = sum(x[-ind2] == 3)
     if (length(x[-ind2]) < 4) 
         return(result)
-    result[9] = shannon(intr[-c(o[1], o[2])])
+    result[8] = shannon(intr[-c(o[1], o[2])], norm=norm)
     result
 }
  

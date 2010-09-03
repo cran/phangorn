@@ -11,7 +11,7 @@ different model parameters.
 \usage{
 pml(tree, data, bf=NULL, Q=NULL, inv=0, k=1, shape=1, rate=1, model="", ...)     
 optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
-    optInv=FALSE, optGamma=FALSE, optEdge=TRUE, optRate=FALSE, 
+    optInv=FALSE, optGamma=FALSE, optEdge=TRUE, optRate=FALSE, optRooted=FALSE, 
     control = pml.control(eps=1e-08, maxit=10, trace=1), model = NULL, subs = NULL, ...)  
 pml.control(epsilon = 1e-08, maxit = 10, trace = 1)
 }
@@ -33,6 +33,7 @@ pml.control(epsilon = 1e-08, maxit = 10, trace = 1)
   \item{optGamma}{Logical value indicating whether gamma rate parameter gets optimized.}
   \item{optEdge}{Logical value indicating the edge lengths gets optimized.}
   \item{optRate}{Logical value indicating the overall rate gets optimized.}
+  \item{optRooted}{Logical value indicating if the edge lengths of a rooted tree get optimized.}
   \item{control}{A list of parameters for controlling the fitting process.}
   \item{subs}{A (integer) vector same length as Q to specify the optimization of Q}
   \item{\dots}{Further arguments passed to or from other methods.}
@@ -62,6 +63,11 @@ TIM1e, TIM1, TIM2e, TIM2, TIM3e, TIM3, TVMe, TVM, SYM and GTR.
 For how these s models are specified see Posada (2008).
 
 So far 4 amino acid models are supported ("WAG", "JTT", "Dayhoff" and "LG"). 
+
+If the option 'getRooted' is set to TRUE than the edge lengths of rooted tree are optimized.
+The tree has to be rooted and ultrametric! No tree rearrangements are yet supported.
+If 'getRooted=FALSE' any rooted tree is getting unrooted.
+  
 
 \code{pml.control} controls the fitting process. \code{epsilon} and \code{maxit} are only defined 
 for the most outer loop, this affects \code{pmlCluster}, \code{pmlPart} and \code{pmlMix}. 
