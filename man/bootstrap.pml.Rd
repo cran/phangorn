@@ -11,7 +11,7 @@ Bootstrap }
 \usage{
 bootstrap.pml(x, bs = 100, trees = TRUE, ...)
 bootstrap.phyDat(x, FUN, bs = 100, ...)
-plotBS(tree, BStrees, type="unrooted", bs.col="black", bs.adj=c(0.5, 0.5), ...)
+plotBS(tree, BStrees, type="unrooted", bs.col="black", bs.adj=NULL, ...)
 }
 \arguments{
   \item{x}{
@@ -36,7 +36,7 @@ The tree on which edges the bootstrap values are plotted.
 a list of trees (object of class "multiPhylo"). 
 }
   \item{type}{ 
-the type of tree.
+the type of tree to plot, so far "cladogram", "phylogram" and "unrooted" are supprted.
 }
   \item{bs.col}{ 
 color of bootstrap support labels.

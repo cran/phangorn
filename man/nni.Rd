@@ -9,7 +9,7 @@
 }
 \usage{
 nni(tree)
-rSPR(tree, moves=1, n=1)
+rSPR(tree, moves=1, n=1, k=NULL)
 rNNI(tree, moves=1, n=1)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -17,6 +17,7 @@ rNNI(tree, moves=1, n=1)
   \item{tree}{A phylogenetic \code{tree}, object of class \code{phylo}.}
   \item{moves}{Number of tree rearrangements to be transformed on a tree.}
   \item{n}{Number of trees to be simulated.}
+  \item{k}{If defined just SPR of distance k are performed.}
 }
 \value{
    an object of class multiPhylo. 

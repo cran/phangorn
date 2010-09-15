@@ -66,8 +66,9 @@ minimizing the number of clans or changes (in parsimony analysis) needed to desc
 \value{
 getClans, getSlices and getClips return a matrix of partitions, a matrix of ones and zeros where rows correspond to 
 a clan, slice or clip and columns to tips. A one indicates that a tip belongs to a certain partition. \cr  
-getDiversity returns a data.frame of the equitability index or Shannon divergence and parsimony scores (p-score)
-for all trees and variables.
+getDiversity returns a list with tree object, the first is a data.frame of the equitability index or Shannon divergence and parsimony scores (p-score)
+for all trees and variables. The data.frame has two attributes, the first is a splits object to identify the taxa of each tree and the second
+is a splits object containing all partitions that perfectly fit. 
 }
 
 \references{ 

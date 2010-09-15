@@ -1,3 +1,18 @@
+        CHANGES in PHANGORN VERSION 1.1-2
+
+       
+NEW FEATURES
+
+    o more generic methods for class splits (print, as.matrix)
+    
+    o plotBS can plot now cladograms and phylograms
+          
+BUG FIXES
+
+    o read.phyDat sometimes did not work properly for amino acids 
+
+
+
         CHANGES in PHANGORN VERSION 1.1-1
 
        
