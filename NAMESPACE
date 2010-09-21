@@ -8,7 +8,7 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, NJ, UNJ, PNJ,
     phyDat, read.phyDat, write.phyDat, as.phyDat, as.splits, 
     dfactorial, ldfactorial, hadamard, nni, allSitePattern,
     fhm, distanceHadamard, treedist, sankoff, fitch, h2st, h4st,
-    dist.logDet, dist.hamming, dist.ml, upgma, wpgma, write.nexus.splits, 
+    dist.logDet, dist.hamming, dist.ml, upgma, wpgma, write.nexus.splits, write.splits, 
     pmlPart, pmlCluster, pmlMix, pmlPen, read.aa, allTrees,
     designTree, designSplits, splitsNetwork, simSeq, SH.test, bootstrap.pml,
     bootstrap.phyDat, RF.dist, rNNI, rSPR, plotBS, Ancestors, Descendants,
@@ -23,6 +23,7 @@ S3method(anova, pml)
 S3method(c, phyDat)
 S3method(cbind, phyDat)
 S3method(unique, phyDat) 
+S3method(as.matrix, splits) 
 #S3method(as.phylo, phyloNode)
 #S3method(as.phyloNode, phylo)
 S3method(as.phyDat, DNAbin)
@@ -41,6 +42,7 @@ S3method(print, phyDat)
 S3method(print, pml)
 S3method(print, pmlMix)
 S3method(print, pmlPart)
+S3method(print, splits)
 #S3method(print, treedist)
 S3method(subset, phyDat)
 S3method(update, pml)

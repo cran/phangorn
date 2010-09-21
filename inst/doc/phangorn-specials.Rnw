@@ -58,7 +58,7 @@ This document illustrates some of the \phangorn{} some specialised features whic
 \section{User defined data formats}\label{sec:USER}
 The vignette \emph{Trees} describes in detail how to estimate phylogenies from nucleotide or amino acids. 
 
-To better understand how to define our own data type it is useful to know a bit about the internal representation of \Robject{phyDat} objects. The data of phyDat are defined similar to \Robject{factor} objects. 
+To better understand how to define our own data type it is useful to know a bit about the internal representation of \Robject{phyDat} objects. The internal representation of \Robject{phyDat} object is very similar to \Robject{factor} objects. 
   
 As an example we will show here several possibilities to define nucleotide data with gaps defined as a fifth state. When the number of gaps is low and the are missing at random this may be not important. 
  
@@ -86,7 +86,7 @@ This is not yet what we wanted as two sites of our alignment, which contain the 
 %gapsdata3 = phyDat(data, type="USER", levels=c("a", "c", "g", "t", "-"), ambiguity = c("?", "n"))
 %gapsdata3 
 %@
-To define ambigious characters like "r" and "y" explicitly we have to supply a contrast matrix. 
+To define ambigious characters like "r" and "y" explicitly we have to supply a contrast matrix similar to contrasts for factors. 
 <<echo=TRUE>>=
 contrast = matrix(data = c(1,0,0,0,0,
     0,1,0,0,0,
