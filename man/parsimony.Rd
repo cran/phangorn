@@ -4,10 +4,10 @@
 \alias{sankoff}
 \alias{fitch}
 \alias{PNJ}
-\alias{pace}
 \title{Parsimony tree.}
 \alias{CI}
 \alias{RI}
+\alias{pratchet}
 \description{
 
 \code{parsimony} returns the parsimony score of a tree.
@@ -17,10 +17,10 @@ of the root node. \code{CI} and \code{RI} computes the consistency and retention
 }
 \usage{
 parsimony(tree, data, method="fitch", ...)
-optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, ...)
+optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1,...)
+pratchet(data, start=NULL, k=20, np=1, trace=1, all=FALSE, ...)
 fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
-pace(tree, data, ...)
 CI(tree, data)
 RI(tree, data)
 }
@@ -30,23 +30,35 @@ RI(tree, data)
   \item{tree}{ tree to start the nni search from.}
   \item{method}{one of 'fitch' or 'sankoff'.}
   \item{cost}{A cost matrix for the transitions between two states.} 
-  \item{site}{return either 'pscore' or 'site' wise parsimony scores. } 
-  \item{trace}{defines how much information is printed during optimisation. } 
-  \item{...}{Further arguments passed to or from other methods.} 
+  \item{site}{return either 'pscore' or 'site' wise parsimony scores.} 
+  \item{trace}{defines how much information is printed during optimisation.} 
+  \item{start}{a starting tree can be supplied.}
+  \item{k}{number of rounds in the ratchet.}
+  \item{np}{number of (parallel) bootstraps (see details).}   
+  \item{all}{return all equally good trees or just one of them.} 
+  \item{...}{Further arguments passed to or from other methods (e.g. model="sankoff" and cost matrix).} 
 }
 \value{
   \code{parsimony} returns the maximum parsimony score (pscore). 
-  \code{optim.parsimony} returns a tree after NNI rearrangements.   
+  \code{optim.parsimony} returns a tree after NNI rearrangements.
+  \code{pratchet} returns a tree or list of trees containing the best tree(s) found during the search.   
 }
-\references{Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
+\details{
+On platforms where the multicore package is avaiable the parsimony ratchet may find solutions faster. To do this set the parameter np to the number of cores available.     
+}
+\references{
+Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
+Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Rarsimony Analysis. \emph{Cladistics} \bold{15}, 407-414
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
-\seealso{ \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}} }
+\seealso{ \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}} ,\code{\link{ancestral.pars}}}
 \examples{
 data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)
 tree = NJ(dm)
 parsimony(tree, Laurasiatherian)
-ptree <- optim.parsimony(tree, Laurasiatherian)
+treeNNI <- optim.parsimony(tree, Laurasiatherian)
+treeRatchet <- pratchet(Laurasiatherian, start=tree)
+parsimony(c(tree,treeNNI, treeRatchet), Laurasiatherian)
 }
 \keyword{cluster}

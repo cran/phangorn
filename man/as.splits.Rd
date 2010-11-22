@@ -19,7 +19,6 @@ as.splits(x, ...)
 \method{as.splits}{multiPhylo}(x, ...)
 \method{print}{splits}(x, maxp = getOption("max.print"), zero.print = ".", 
     one.print = "|", ...)
-write.splits(x, file = "", zero.print = ".", one.print = "|", ...)
 compatible(obj)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -29,7 +28,6 @@ compatible(obj)
   \item{zero.print}{character which should be printed for zeroes.} 
   \item{one.print}{character which should be printed for ones.} 
   \item{\dots}{Further arguments passed to or from other methods.}
-  \item{file}{a file name.} 
   \item{obj}{an object of class splits.}  
 }
 \value{
