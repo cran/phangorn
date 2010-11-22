@@ -1,3 +1,37 @@
+        CHANGES in PHANGORN VERSION 1.2-0            
+          
+NEW FEATURES
+
+    o new function pratchet (parsimony ratchet)   
+
+    o new function midpoint for rooting trees
+
+    o new function pruneTree to build concensus trees from node labels 
+    
+      (e.g. bootstrap values)
+    
+    o multicore support for modelTest  
+    
+BUG FIXES
+
+    o ancestral.pars sometimes did not show all possible states
+    
+    o the call-attributes did not get proper changed in update.pml and 
+    
+      optim.pml
+
+OTHER CHANGES
+
+    o there is now a general help page displayed with '?phangorn'
+
+    o dist.hamming is faster
+ 
+    o getClans, getSlices and getDiverstity can now 
+    
+      handle multifurcating trees     
+    
+
+
         CHANGES in PHANGORN VERSION 1.1-2
 
        

@@ -166,6 +166,24 @@ void out(double *d, double *r, int *n, int *k, int *l){
     }
 
 
+    
+// hamming distance    
+
+void distHamming(int *x, double *weight, int *nr, int *l, double *d){
+    int i, j, k, m;
+    k = 0L;
+    for(i = 0; i< (*l-1L); i++){
+        for(j = (i+1L); j < (*l); j++){
+             for(m=0; m<(*nr); m++){
+                 if(!(x[i*(*nr) + m] & x[j*(*nr) + m])) d[k] += weight[m]; 
+                 } 
+             k++;
+        }
+    }
+}
+
+    
+    
 //     
 SEXP rowMin(SEXP sdat, SEXP sn, SEXP sk){
     int i, h, n=INTEGER(sn)[0], k=INTEGER(sk)[0];  
@@ -214,62 +232,68 @@ SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk){
     return(result);        
 }
         
- 
-void fitch4(int *dat, int *nr, int i, int j, int *pars){
+
+void fitch43(int *dat1, int *dat2, int *nr, int *pars, double *weight, double *w){
     int k;
     int tmp;
     for(k = 0; k < (*nr); k++){
-        tmp = dat[i*(*nr) + k] & dat[j*(*nr) + k];
-        if(tmp) dat[i*(*nr) + k] = tmp;
-        else {dat[i*(*nr) + k] = dat[i*(*nr) + k] | dat[j*(*nr) + k];
+        tmp = dat1[k] & dat2[k];
+        if(tmp) dat1[k] = tmp;
+        else {dat1[k] = dat1[k] | dat2[k];
             pars[k] += 1;
+            (*w)+=weight[k];
         }
     } 
 }
 
-//int *m, 
-void fitch5(int *dat, int *nr, int *pars, int *node, int *edge, int *nl) 
+// statt fitch5 fuer optim.fitch
+void fitch6(int *dat, int *nr, int *pars, int *node, int *edge, int *nl, double *weight, double *pvec, double *pscore) 
 {   
     int i, ni, k;
     ni = 0;
     for (i=0; i< *nl; i++) {
-        if (ni == node[i]) fitch4(dat, nr, ni-1, edge[i]-1, pars);                    
+	    if (ni == node[i]){
+	         pvec[ni-1] += pvec[edge[i]-1];
+	         fitch43(&dat[(ni-1) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]); //pvec[(ni-1L)]
+        }                  
         else {
-            ni = node[i];
+            ni = node[i];   
+            pvec[(ni-1L)] += pvec[(edge[i]-1L)];  
+            // memcpy       
             for(k = 0; k < (*nr); k++) dat[(ni-1)*(*nr) + k] = dat[(edge[i]-1)*(*nr) + k];                     
         }
     }
+    pscore[0]=pvec[ni-1];
 }
 
 
-void fitch0(int *res, int *dat, int *nr, int i, int j, int *pars){
-    int k;
-    int tmp;
-    for(k = 0; k < (*nr); k++){
-        tmp = res[i*(*nr) + k] & dat[j*(*nr) + k];
-        if(tmp) res[i*(*nr) + k] = tmp;
-        else {res[i*(*nr) + k] = res[i*(*nr) + k] | dat[j*(*nr) + k];
-            pars[k] += 1;
-        }
-    } 
-}
-
-void FN(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc) 
-{   
+ 
+void FN(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc, double *weight) { 
+    //, double *pvec, double *tmpvec, double *pscore)   
     int i, ni, k;
+    double *pvec;
+    pvec = (double *) R_alloc(*nl, sizeof(double));
     ni = 0;
     for (i=0; i< *nl; i++) {
         if (ni == node[i]){
-              if(pc[i]==0L)fitch0(res, dat, nr, ni-1, edge[i]-1, pars);
-              else fitch4(res, nr, ni-1, edge[i]-1, pars);
-              }                      
+              if(pc[i]==0L){
+//	              pvec[ni-1] += tmpvec[edge[i]-1];
+	              fitch43(&res[(ni-1) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[0]);              
+              }    
+              else{ 
+//	          	  pvec[ni-1] += pvec[edge[i]-1];
+	              fitch43(&res[(ni-1) * (*nr)], &res[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[0]);   //&pvec[(ni-1)] 
+              }
+        }                      
         else {
             ni = node[i];
-            for(k = 0; k < (*nr); k++) res[(ni-1)*(*nr) + k] = dat[(edge[i]-1)*(*nr) + k];   
-//            else for(k = 0; k < (*nr); k++) res[(ni-1)*(*nr) + k] = res[(edge[i]-1)*(*nr) + k];                    
+//            pvec[ni-1] += pvec[edge[i]-1];
+            for(k = 0; k < (*nr); k++) res[(ni-1)*(*nr) + k] = dat[(edge[i]-1)*(*nr) + k];                 
         }
     }
+//    pscore[0]=pvec[ni-1];
 }
+
 
 
 static R_INLINE void sankoff4(double *dat, int n, double *cost, int k, double *result){
@@ -308,6 +332,21 @@ SEXP sankoffQuartet(SEXP dat, SEXP sn, SEXP scost, SEXP sk){
     return(result);        
 }    
 
+
+SEXP sankoffTwin(SEXP dat1, SEXP dat2, SEXP sn, SEXP scost, SEXP sk){
+    int j, n=INTEGER(sn)[0], k = INTEGER(sk)[0];  
+    double *cost, *tmp;
+    SEXP result;
+    PROTECT(result = allocMatrix(REALSXP, n, k));
+    tmp = REAL(result);
+    PROTECT(scost = coerceVector(scost, REALSXP));
+    cost = REAL(scost);
+    for(j=0; j<(n*k); j++) tmp[j] = REAL(dat1)[j];
+//    sankoff4(REAL(dat1), n, cost, k, tmp);
+    sankoff4(REAL(dat2), n, cost, k, tmp);
+    UNPROTECT(2);    
+    return(result);        
+} 
 
 
 SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips){
@@ -1124,7 +1163,6 @@ SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
     UNPROTECT(5); // result ans 
     return(erg);
 }
-
 
 
 

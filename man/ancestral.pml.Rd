@@ -1,6 +1,7 @@
 \name{ancestral.pml}
 \alias{ancestral.pml}
 \alias{ancestral.pars}
+\alias{pace}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Ancestral character reconstruction. 
@@ -10,7 +11,8 @@ Marginal reconstruction of the ancestral character states (of the root).
 }
 \usage{
 ancestral.pml(object, type = "ml", ...)
-ancestral.pars(tree, data, ...)
+ancestral.pars(tree, data, eps= 1e-08, ...)
+pace(tree, data, eps= 1e-08, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,6 +20,7 @@ ancestral.pars(tree, data, ...)
   \item{type}{either "ml" or "bayes"}
   \item{tree}{a tree, i.e. an object of class pml}
   \item{data}{an object of class phyDat} 
+  \item{eps}{a small value to prevent rounding errors}
   \item{\dots}{Further arguments passed to or from other methods.}
 }
 \value{

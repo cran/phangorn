@@ -7,20 +7,27 @@ ModelTest
 Comparison of different substition models 
 }
 \usage{
-modelTest(tree, data, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4, control = pml.control(epsilon = 1e-08, maxit = 3, trace = 1))
+modelTest(object, tree=NULL, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4, control = pml.control(epsilon = 1e-08, maxit = 3, trace = 1), multicore = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+  \item{object}{an object of class phyDat or pml}
   \item{tree}{a phylogenetic tree.}
-  \item{data}{an object of class phyDat}
-  \item{model}{substitution models to compare with each other}
-  \item{G}{(discrete) Gamma model}
-  \item{I}{invariant sites}
-  \item{k}{rate classes}
+  \item{model}{a vector containing the substitution models to compare with each other}
+  \item{G}{logical, TRUE (default) if (discrete) Gamma modelshould be tested}
+  \item{I}{logical, TRUE (default) if invariant sites should be tested}
+  \item{k}{number of rate classes}
   \item{control}{A list of parameters for controlling the fitting process.}
+  \item{multicore}{logical, whether models should estimated in parallel.}
+}
+\details{
+\code{modelTest} estimates all the specified models for a given tree and data. 
+When the multicore package is available, the computations are done in parallel.
+This is only possible without GUI interface and under linux.  
+Only nucleotide models are tested so far.  
 }
 \value{
-a data.frame containing the AIC and BIC for the tested models. 
+a data.frame containing the log-likelihood, AIC and BIC all tested models. 
 }
 \references{
 Posada, D. (2008) jModelTest: Phylogenetic Model Averaging. \emph{Molecular Biology and Evolution} \bold{25}: 1253-1256
