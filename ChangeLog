@@ -1,4 +1,24 @@
+        CHANGES in PHANGORN VERSION 1.3-0            
+
+          
+NEW FEATURES
+
+    o acctran to assign edge length to parsimony trees
+
+OTHER CHANGES
+
+    o phangorn can now be cited
+
+    o additional and improved ancestral reconstructions methods
+
+      (ACCTRAN, MPR)
+
+    o new vignette describing ancestral sequence reconstruction
+
+
+
         CHANGES in PHANGORN VERSION 1.2-0            
+
           
 NEW FEATURES
 

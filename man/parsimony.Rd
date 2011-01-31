@@ -8,6 +8,7 @@
 \alias{CI}
 \alias{RI}
 \alias{pratchet}
+\alias{acctran}
 \description{
 
 \code{parsimony} returns the parsimony score of a tree.
@@ -23,6 +24,7 @@ fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
 CI(tree, data)
 RI(tree, data)
+acctran(tree, data)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -42,12 +44,14 @@ RI(tree, data)
   \code{parsimony} returns the maximum parsimony score (pscore). 
   \code{optim.parsimony} returns a tree after NNI rearrangements.
   \code{pratchet} returns a tree or list of trees containing the best tree(s) found during the search.   
+  \code{acctran} returns a tree with edge length according to the ACCTRAN criterion. 
 }
 \details{
 On platforms where the multicore package is avaiable the parsimony ratchet may find solutions faster. To do this set the parameter np to the number of cores available.     
 }
 \references{
 Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
+
 Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Rarsimony Analysis. \emph{Cladistics} \bold{15}, 407-414
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}

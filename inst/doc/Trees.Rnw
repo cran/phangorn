@@ -53,7 +53,7 @@ foo <- packageDescription("phangorn")
 \nocite{Paradis2006}
 \section{Introduction}
 
-These notes should enable the user to estimate phylogenetic trees from alignment data with different methods using the \phangorn{} package. For more background on all the methods see e.g. \cite{Felsenstein2004, Yang2006}. This document illustrates some of the \phangorn{} features to estimate phylogenetic trees using different reconstruction methods. Small adaptations to the scripts in section \ref{sec:Appendix} should enable the user to perform phylogenetic analyses.
+These notes should enable the user to estimate phylogenetic trees from alignment data with different methods using the \phangorn{} package \cite{Schliep2010}. For more background on all the methods see e.g. \cite{Felsenstein2004, Yang2006}. This document illustrates some of the \phangorn{} features to estimate phylogenetic trees using different reconstruction methods. Small adaptations to the scripts in section \ref{sec:Appendix} should enable the user to perform phylogenetic analyses.
 \section{Getting started}
 The first thing we have to do is to read in an alignment. Unfortunately there exists many different file formats that alignments can be stored in. The function \Rfunction{read.phyDat} is used to  read in an alignment. There are several functions to read in alignments depending on the format of the dataset (nexus, phylip, fasta) and the kind of data (amino acid or nucleotides) in the \ape{} package \cite{Paradis2004} and \phangorn{}. The function \Rfunction{read.phyDat} calls these other functions. For the specific parameter settings available look in the help files of  the function \Rfunction{read.dna} (for phylip, fasta, clustal format), \Rfunction{read.nexus.data} for nexus files. For amino acid data additional \Rfunction{read.aa} is called.  
 %When using the \Rfunction{read.dna} from \ape{} the parameter the we have to use as.character=TRUE.  
@@ -94,10 +94,11 @@ The function parsimony returns the parsimony score, that is the number of change
 parsimony(treeUPGMA, primates)
 parsimony(treeNJ, primates)
 @
-We can use the function optim.parsimony performs tree rearrangements to find trees with a lower parsimony score. So far the only tree rearrangement implemented is nearest-neighbor interchanges (NNI). 
+The function optim.parsimony performs tree rearrangements to find trees with a lower parsimony score. So far the only tree rearrangement implemented is nearest-neighbor interchanges (NNI). However is also a version of the parsimony ratchet \cite{Nixon1999} implemented, which is likely to find better trees than just doing NNI rearrangements. 
 <<echo=TRUE>>=
 treePars = optim.parsimony(treeUPGMA, primates)
-parsimony(treePars, primates)
+treeRatchet = pratchet(primates, trace = 0)
+parsimony(c(treePars, treeRatchet), primates)
 @
 
 \section{Maximum likelihood}

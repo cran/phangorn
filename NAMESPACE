@@ -14,8 +14,8 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UN
     bootstrap.phyDat, RF.dist, rNNI, rSPR, plotBS, Ancestors, Descendants,
     Children, Siblings, pace, modelTest, lento, compatible, acgt2ry, 
     ancestral.pars, ancestral.pml, CI, RI, getClans, getSlices, getClips, getDiversity,
-    midpoint, pruneTree)
-#    optim.fitch, fitch.nni, fnodes, optim.sankoff) 
+    midpoint, pruneTree, acctran, getRoot, plotAnc) 
+#    optim.fitch, fitch.nni, fnodes, optim.sankoff, dec2bin, ptree) 
 
 #S3method('[', phyDat)          
 S3method(as.character, phyDat)

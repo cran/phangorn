@@ -1,6 +1,7 @@
 \name{midpoint}
 \alias{midpoint}
 \alias{pruneTree}
+\alias{getRoot}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{Tree manipulation}
 \description{
@@ -10,6 +11,7 @@
 \usage{
 midpoint(tree)
 pruneTree(tree, ..., FUN = ">=")
+getRoot(tree)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -24,7 +26,7 @@ to convert them.
 \code{midpoint} so far does not transform node.labels properly.   
 }
 \value{
- a tree.  
+\code{pruneTree} and \code{midpoint} a tree. \code{getRoot} returns the root node.
 }
 \author{ Klaus Schliep \email{klaus.schliep@gmail.com} }
 

@@ -12,7 +12,7 @@ different model parameters.
 pml(tree, data, bf=NULL, Q=NULL, inv=0, k=1, shape=1, rate=1, model="", ...)     
 optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
     optInv=FALSE, optGamma=FALSE, optEdge=TRUE, optRate=FALSE, optRooted=FALSE, 
-    control = pml.control(eps=1e-08, maxit=10, trace=1), model = NULL, subs = NULL, ...)  
+    control = pml.control(epsilon=1e-08, maxit=10, trace=1), model = NULL, subs = NULL, ...)  
 pml.control(epsilon = 1e-08, maxit = 10, trace = 1)
 }
 \arguments{
@@ -98,7 +98,7 @@ a maximum-likelihood approach. \emph{Molecular Biology and Evolution},  \bold{18
 Le, S.Q. and Gascuel, O. (2008) LG: An Improved, General 
 Amino-Acid Replacement Matrix \emph{Molecular Biology and Evolution} \bold{25(7)}, 1307--1320
 
-Posada, D. (2008) jModelTest: Phylogenetic Model Averaging. \emph{Molecular Biology and Evolution} \bold{25}: 1253-1256 
+Posada, D. (2008) jModelTest: Phylogenetic Model Averaging. \emph{Molecular Biology and Evolution} \bold{25}: 1253--1256 
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 % \note{For small trees the likelihood seems to be very similar to Paup* or PhyML.}

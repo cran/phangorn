@@ -17,19 +17,20 @@ Further information is available in two vignettes.
 \tabular{ll}{
 \code{Trees} \tab Constructing phylogenetic trees (source, pdf) \cr
 \code{phangorn-specials} \tab Advanced features (source, pdf) \cr
+\code{Ancestral} \tab Ancestral sequence reconstruction (source, pdf) \cr
 }
 The first vignette (to display type \code{vignette('Trees')}) gives an introduction in phylogenetic analysis with phangorn, and 
 the second vignette covers more advanced feature like defining special character spaces. 
-
 }
 \author{
 Klaus Schliep
 
 Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
 }
-%\references{
-%~~ Literature or other references for background information ~~
-%}
+\references{
+  Schliep K.P. (2010) phangorn: Phylogenetic analysis in R.
+  \emph{Bioinformatics}, doi: 10.1093/bioinformatics/btq706
+}
 \keyword{ package }
 %\seealso{
 %~~ Optional links to other man pages, e.g. ~~
