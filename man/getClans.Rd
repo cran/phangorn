@@ -75,6 +75,9 @@ is a splits object containing all partitions that perfectly fit.
 Lapointe, F.-J., Lopez, P., Boucher, Y., Koenig, J., Bapteste, E. (2010) Clanistics: a multi-level perspective for harvesting unrooted gene trees. \emph{Trends in Microbiology} 18: 341-347
 
 Wilkinson, M., McInerney, J.O., Hirt, R.P., Foster, P.G., Embley, T.M. (2007) Of clades and clans: terms for phylogenetic relationships in unrooted trees. \emph{Trends in Ecology and Evolution} 22: 114-115 
+
+Schliep, K., Lopez, P., Lapointe F.-J., Bapteste E. (2010) Harvesting Evolutionary Signals in a Forest of Prokaryotic Gene Trees, \emph{Molecular Biology and Evolution} doi:10.1093/molbev/msq323 
+
 }
 \author{
 Klaus Schliep \email{klaus.schliep@snv.jussieu.fr} 

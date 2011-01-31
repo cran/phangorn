@@ -6,7 +6,7 @@
   Model to estimate phylogenies for partitioned data. 
 }
 \usage{
-pmlPart(formula, object, control = pml.control(eps=1e-8, maxit=10, trace=1),...)
+pmlPart(formula, object, control = pml.control(epsilon=1e-8, maxit=10, trace=1),...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

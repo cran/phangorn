@@ -23,7 +23,7 @@ write.phyDat(x, file, format="phylip",...)
 \method{as.character}{phyDat}(x, allLevels = TRUE, ...)
 \method{as.data.frame}{phyDat}(x, ...)
 \method{as.DNAbin}{phyDat}(x, ...)
-\method{subset}{phyDat}(x, subset, select, ...)
+\method{subset}{phyDat}(x, subset, select, site.pattern = FALSE, ...)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -39,6 +39,7 @@ allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
   \item{names}{Names of sequences.}
   \item{subset}{a subset of taxa.}
   \item{select}{a subset of characters.}
+  \item{site.pattern}{select site pattern or sites.}
   \item{allLevels}{return original data.} 
   \item{...}{further arguments passed to or from other methods.}
 }
@@ -49,6 +50,7 @@ can be used in phylogenetic analysis with gaps as fifth state.
 \code{allSitePattern} returns all possible site patterns and can
 be useful in simulation studies. For further details see the vignette 
 phangorn-specials.  
+
 \code{write.phyDat} calls the function write.dna or write.nexus.data and  
 \code{read.phyDat} calls the function read.dna, read.aa or read.nexus.data
 see for more details over there.
@@ -73,6 +75,7 @@ the example of \code{\link{pmlMix}} for the use of \code{allSitePattern}}
 data(Laurasiatherian)
 class(Laurasiatherian)
 Laurasiatherian
+subset(Laurasiatherian, subset=1:5)
 # transform into old ape format
 LauraChar <- as.character(Laurasiatherian)
 # and back 

@@ -29,7 +29,7 @@ R_CMethodDef cMethods[] = {
 {"fhm", (DL_FUNC) &fhm, 2},
 {"out", (DL_FUNC) &out, 5},
 {"fitch6", (DL_FUNC) &fitch6, 9},
-{"FN", (DL_FUNC) &FN, 9},
+{"FN2", (DL_FUNC) &FN2, 11},
 {"giveIndex", (DL_FUNC) &giveIndex, 6},
 {"cisort", (DL_FUNC) &cisort, 5},
 {"reorder", (DL_FUNC) &reorder, 6},
