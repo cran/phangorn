@@ -1098,7 +1098,7 @@ as.DNAbin.phyDat <- function(x,...) {
    else stop("x must be a nucleotide sequence")
 }
 
-
+# 
 phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...) 
 {
     if (class(data) == "DNAbin") type <- "DNA"
@@ -1213,6 +1213,7 @@ read.phyDat <- function(file, format="phylip", type="DNA", ...){
         }
         if (type == "AA") data = read.aa(file, format=format, ...)
     }
+#levels = NULL, return.index = TRUE, contrast = NULL, ambiguity = "?"
     phyDat(data, type, return.index = TRUE)
 }
 
@@ -1272,10 +1273,14 @@ getRows <- function (data, rows, site.pattern = FALSE)
 # test
 subset.phyDat <- function (x, subset, select, site.pattern = FALSE,...) 
 {  
-    if(!site.pattern)select <- attr(x, "index")[select]   
+     
     if (!missing(subset)) x <- getCols(x, subset)
-    if(!missing(select) & any(is.na(select))) return(NULL)
-    if (!missing(select)) x <- getRows(x, select)    
+#    if(!missing(select) & any(is.na(select))) return(NULL)
+    if (!missing(select)){
+         if(!site.pattern)select <- attr(x, "index")[select] 
+         if(any(is.na(select))) return(NULL) 
+         x <- getRows(x, select)
+    }    
     x 
 }
 
@@ -2017,6 +2022,7 @@ parsimony <- function(tree, data, method='fitch', ...){
 }
 
 
+# fixed error
 ancestral.pars <- function (tree, data, type = c("MPR", "ACCTRAN")) 
 {
     call <- match.call()
@@ -2032,7 +2038,7 @@ ancestral.pars <- function (tree, data, type = c("MPR", "ACCTRAN"))
     label = as.character(1:m)
     nam = tree$tip.label
     label[1:length(nam)] = nam
-    x[[1]] = label
+    x[["names"]] = label
 
     nc = attr(data, "nc")
     result = vector("list", m) 
@@ -2661,7 +2667,7 @@ optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, ...){
 }
 
 
-pratchet <- function (data, start = NULL, k = 20, np = 1, trace = 1, all=FALSE, ...) 
+pratchet <- function (data, start = NULL, k = 20, np = 1, trace = 1, all=FALSE, multicore=FALSE, ...) 
 {
     eps = 1e-08
     trace = trace - 1
@@ -2695,11 +2701,21 @@ pratchet <- function (data, start = NULL, k = 20, np = 1, trace = 1, all=FALSE, 
     for (i in 1:k) {
         bstrees <- bootstrap.phyDat(data, FUN, tree = tree, bs = np, 
             trace = trace, ...)
-        if (require("multicore") && .Platform$OS.type == "unix") 
-            trees <- mclapply(bstrees, optim.parsimony, data, trace = trace, 
-                ...)
-        else trees <- lapply(bstrees, optim.parsimony, data, trace = trace, 
-            ...)
+
+        eval.success <- FALSE
+        if (!eval.success & multicore) {
+            if (!require(multicore) || .Platform$GUI!="X11") {
+                warning("package 'multicore' not found or GUI is used, 
+                analysis is performed in serial")
+            } else {       
+                trees <- mclapply(bstrees, optim.parsimony, data, trace = trace, ...)
+                eval.success <- TRUE
+            } 
+        }
+        if (!eval.success) trees <- lapply(bstrees, optim.parsimony, data, trace = trace, ...)
+#        if (require("multicore") && .Platform$GUI == "X11") 
+#            trees <- mclapply(bstrees, optim.parsimony, data, trace = trace, ...)
+#        else trees <- lapply(bstrees, optim.parsimony, data, trace = trace, ...)
         trees[[np + 1]] = tree
         pscores <- sapply(trees, function(data) attr(data, "pscore"))
         mp = min(pscores)
@@ -2760,8 +2776,6 @@ optim.sankoff <- function(tree, data, cost=NULL, trace=1, ...) {
 #
 # ACCTRAN
 #
-
-# check if it is all right
 ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE) 
 {
     if (class(data) != "phyDat") 
@@ -2819,6 +2833,8 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
         return(list(tree, matrix(result[[1]], nr, max(node))))
     tree
 }
+
+
 acctran <- function(tree, data) ptree(tree, data, type="ACCTRAN", retData=FALSE)
 
 
@@ -2928,12 +2944,8 @@ subsChoice <- function(type=c("JC", "F81", "K80", "HKY", "TrNe", "TrN", "TPM1", 
 }
 
 
-# tree = NULL ==> NJ(dist.hamming(data))
-# pml, data, data+tree
-# modelTest(object, tree=NULL, model, type, control, ...)    
-# multicore support 
 modelTest <- function(object, tree=NULL, model=c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G=TRUE, I=TRUE, k=4, 
-    control = pml.control(epsilon = 1e-08, maxit = 3, trace = 1), multicore=TRUE){
+    control = pml.control(epsilon = 1e-08, maxit = 3, trace = 1), multicore=FALSE){
     type = c("JC", "F81", "K80", "HKY", "TrNe", "TrN", "TPM1", "K81", "TPM1u", "TPM2", "TPM2u", "TPM3", "TPM3u", "TIM1e", "TIM1", "TIM2e", "TIM2", "TIM3e", "TIM3", "TVMe", "TVM", "SYM", "GTR")
     model = match.arg(model, type, TRUE)
     
@@ -2943,15 +2955,16 @@ modelTest <- function(object, tree=NULL, model=c("JC", "F81", "K80", "HKY", "SYM
          if(is.null(tree))tree = object$tree
     } 
     if(is.null(tree)) tree = NJ(dist.hamming(data))
+    trace <- control$trace
+    control$trace = trace-1
+
     fit = pml(tree, data)
-    fit = optim.pml(fit, control = control) # optimise edge.length -> less optimisations later
+    fit = optim.pml(fit, control = control)
     l = length(model)
     
     n = 1L + sum(I + G + (G&I))
 
     nseq = sum(attr(data, "weight"))
-    trace <- control$trace
-    control$trace = trace-1
 
     fitPar = function(model, fit, G, I, k){
         m=1 
@@ -3002,10 +3015,21 @@ modelTest <- function(object, tree=NULL, model=c("JC", "F81", "K80", "HKY", "SYM
              }  
          res              
     }
-      
-    if (require("multicore") && .Platform$OS.type == "unix")
-        RES <- mclapply(model, fitPar, fit, G, I, k) 
-    else RES <- lapply(model, fitPar, fit, G, I, k)
+#    if (require("multicore") && .Platform$GUI == "X11")
+#        RES <- mclapply(model, fitPar, fit, G, I, k) 
+#    else RES <- lapply(model, fitPar, fit, G, I, k)
+
+    eval.success <- FALSE
+    if (!eval.success & multicore) {
+        if (!require(multicore) || .Platform$GUI!="X11") {
+            warning("package 'multicore' not found or GUI is used, 
+            analysis is performed in serial")
+        } else {       
+            RES <- mclapply(model, fitPar, fit, G, I, k) 
+            eval.success <- TRUE
+        } 
+    }
+    if (!eval.success) res <- RES <- lapply(model, fitPar, fit, G, I, k)
 
     RESULT = matrix(NA, n*l, 5)
     RESULT = as.data.frame(RESULT)
@@ -3259,13 +3283,15 @@ pml3 <- function (object,...)
 }
 
 
+# this should replace pml
 pmlScale <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1, 
-    rate = 1, model = NULL, ret=c("logLik","pml"), ...) 
+    rate = 1, model = NULL, ret="pml", ...) 
 {
     call <- match.call()
     extras <- match.call(expand.dots = FALSE)$...
     pmla <- c("wMix", "llMix")
     existing <- match(pmla, names(extras))
+    ret  <- match.arg(ret, c("pml", "logLik"))
     wMix <- ifelse(is.na(existing[1]), 0, eval(extras[[existing[1]]], 
         parent.frame()))
     llMix <- ifelse(is.na(existing[2]), 0, eval(extras[[existing[2]]], 
@@ -3338,13 +3364,19 @@ pmlScale <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1
             eig = eig, assign.dat = FALSE, ...)
         m = m + 1
     }
-    lll <- exp(resll) %*% w
-    lll <- rowSums(lll) 
-    siteLik <- lll + ll.0
-    siteLik <- log(siteLik)
+    ind = which(ll.0>0) 
+    sca = .Call("rowMax", resll, length(weight), length(bf)) + 1 
+# apply(resll, 1, max) +1
+    resll = resll - sca 
+    lll <- exp(resll) 
+    lll <- (lll%*%w)
+    lll[ind] = lll[ind] + exp(log(ll.0[ind])-sca[ind])
+    
+    siteLik <- lll 
+    siteLik <- log(siteLik) + sca
 
     loglik = sum(weight * siteLik)
-    if(ret == "logLik")return(logLik) 
+    if(ret == "logLik")return(loglik) 
     df = length(tree$edge.length) + (k > 1) + (inv > 0) + length(unique(bf)) - 
         1 + length(unique(Q)) - 1
     result = list(logLik = loglik, inv = inv, k = k, shape = shape, 
@@ -3357,6 +3389,12 @@ pmlScale <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1
 }
 
 
+# optimize this + integrate logLik4 / Ziel genauer und doch schneller
+# hash table for node (vielleicht edge)
+# Q raus, enforce eig = edQt(bf = bf, Q = Q) 
+# 
+# include ll in pml2 improve speed update / eval mit pml2
+# pmlMix needs improvement  
 ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1, 
     Q = c(1, 1, 1, 1, 1, 1), eig = NULL, assign.dat = FALSE, ...) 
 {
@@ -3373,14 +3411,14 @@ ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
     nr <- as.integer(attr(dat1,"nr"))   
     nc <- as.integer(attr(dat1,"nc"))
     node = as.integer(node-min(node))
-    edge = as.integer(edge-1)
+    edge = as.integer(edge-1L)
     nTips = as.integer(length(tree$tip))
-    mNodes = as.integer(max(node)+1)
+    mNodes = as.integer(max(node) + 1L)
     contrast = attr(dat1, "contrast")
     nco = as.integer(dim(contrast)[1])
     res <- .Call("LogLik2", dat1[tree$tip.label], P, nr, nc, node, edge, nTips, mNodes, contrast, nco, PACKAGE = "phangorn")
 
-    result = res[[1]] %*% bf  
+    result = res[[1]] %*% bf  # root statt 1
     if (assign.dat){
         dat[(q+1):m] <- res
         attr(dat, "names") = c(tree$tip.label, as.character((q + 1):m))
@@ -3390,7 +3428,7 @@ ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
 }
 
 
-# scaled version (ca. 3 * slower) needs serious speeding up  
+# scaled version (ca. 3-4 * slower) needs serious speeding up  
 ll3 <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1, 
     Q = c(1, 1, 1, 1, 1, 1), eig = NULL, assign.dat = FALSE, 
     ...) 
@@ -3416,7 +3454,7 @@ ll3 <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
     mNodes = as.integer(max(node) + 1)
     contrast = attr(dat1, "contrast")
     nco = as.integer(dim(contrast)[1])
-    res <- .Call("LogLik4", dat[1:q], P, nr, nc, node, edge, nTips, mNodes, contrast, nco, PACKAGE = "phangorn")
+    res <- .Call("LogLik4", dat1[tree$tip.label], P, nr, nc, node, edge, nTips, mNodes, contrast, nco, PACKAGE = "phangorn")
     result = res[[2]][[1]] + log(res[[1]][[1]] %*% bf)     
     if (assign.dat) {
         dat[(q + 1):m] <- res
@@ -3761,8 +3799,9 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
             tree = multi2di(tree)
     }
     if(is.rooted(tree)) {
-	    if(optRooted==FALSE){
+        if(optRooted==FALSE){
             tree = unroot(tree)
+            tree = reorderPruning(tree) # may in wrong order for pml when using reorder
             warning("I unrooted the tree (rooted trees are not yet supported)", 
                 call. = FALSE)
         }    
@@ -4002,6 +4041,7 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
 }
 
 
+# added subset
 optimEdge2 <- function (tree, data, eig=eig, Q=Q, w=w, g=g, bf=bf, rate=rate, ll.0=ll.0,
               control = pml.control(epsilon = 1e-08, maxit = 10, trace=0), ...) 
 {
@@ -4023,6 +4063,7 @@ optimEdge2 <- function (tree, data, eig=eig, Q=Q, w=w, g=g, bf=bf, rate=rate, ll
     n = length(tree$edge.length)
     k = length(w)
     indata = data
+    data = subset(data, tree$tip) 
     data <- new2old.phyDat(data) # replace
 #    lt = length(tree$tip)
 #    for(i in 1:k)dat[i, 1:lt]=data    
@@ -4905,21 +4946,8 @@ allChildren = function(x){
    res
 }
 
-# sparse matrix
-allChildren2 = function (x) 
-{
-    parent = x$edge[, 1]
-    children = x$edge[, 2]
-    res = vector("list", max(x$edge))
-#browser()
-    for (i in unique(parent))      
-        res[[i]] = children[parent==i]
-    res
-}
 
-
-
-# much faster if node is no vector
+# much faster if node is no vector 
 Children = function(x, node){
 #   if(length(node)==1) return(allChildren(x)[[node]])
    if(length(node)==1)return(x$edge[x$edge[,1]==node,2])
@@ -4927,16 +4955,15 @@ Children = function(x, node){
 }
 
 
+# much faster for type=c("tips", "all")
 Descendants = function(x, node, type=c("tips","children","all")){
     type <- match.arg(type)
     if(type=="children") return(Children(x, node))
-    
-    desc = function(x, node, type){# ,isInternal=NULL, ch=NULL
+    ch = allChildren(x) # out of the loop
+    desc = function(x, node, type){
         isInternal = logical(max(x$edge))
-        isInternal[ unique(x$edge[,1]) ] =TRUE 
-       
-        if(!isInternal[node])return(node)
-        ch = allChildren(x)
+        isInternal[ unique(x$edge[,1]) ] =TRUE       
+        if(!isInternal[node])return(node)   
         res = NULL
         while(length(node)>0){
             tmp = unlist(ch[node])
@@ -4946,7 +4973,6 @@ Descendants = function(x, node, type=c("tips","children","all")){
     if(type=="tips") return(res[!isInternal[res]])
     res
     }
-    #if(type=="tips") res[!isInternal[res]] 
     if(length(node)>1) return(lapply(node, desc, x=x, type=type))
     desc(x,node, type)
 }
@@ -5559,6 +5585,7 @@ optimMixInv <- function(object, inv=0.01, omega,...){
 }
 
 
+# more C-Code
 pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)), 
     shape = 1, k = 1, Q = rep(1, length(levels) * (length(levels) - 1)/2), 
     levels = attr(data, "levels"), inv = 0, rate = 1, g = NULL, w = NULL, 
@@ -5597,7 +5624,8 @@ pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)),
     if (wMix > 0)
          ll.0 <- ll.0 + llMix           
     p = length(g)
-    nr <- attr(data, "nr")    
+    nr <- attr(data, "nr")   
+# C-Function somewhere starting here, less memory (less copying) or parallel fork 
     resll <- matrix(0, nr, k)
     while (m <= k) {
         resll[,m] = ll(data, tree, bf = bf, g = g[m], Q = Q, eig = eig, assign.dat = FALSE, ...)
@@ -5608,6 +5636,7 @@ pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)),
     if(wMix >0) siteLik <- siteLik * (1-wMix) + llMix
     siteLik = log(siteLik)
     sum(weight * siteLik)
+#
 }
 
 
@@ -6319,7 +6348,7 @@ simSeq = function(tree, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type = "DNA", mod
     
     m = length(levels)    
     
-    if(is.null(rootseq))rootseq = sample(levels,l,replace=TRUE, p=bf)
+    if(is.null(rootseq))rootseq = sample(levels, l, replace=TRUE, prob=bf)
     tree = reorder(tree)
     edge = tree$edge
     nNodes = max(edge)
@@ -6335,7 +6364,7 @@ simSeq = function(tree, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type = "DNA", mod
         P = getP(tl[i], eig, rate)[[1]]
         for(j in 1:m){
             ind = res[,from]==levels[j]
-            res[ind,to] = sample(levels,sum(ind),replace=TRUE, prob=P[,j])
+            res[ind,to] = sample(levels, sum(ind), replace=TRUE, prob=P[,j])
         }
     }
     k = length(tree$tip)
@@ -6348,7 +6377,7 @@ simSeq = function(tree, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type = "DNA", mod
 }        
 
 
-# add KH-test       
+# todo add KH-test       
 SH.test <- function (..., B = 10000, data = NULL)
 {
    fits <- list(...)
@@ -6404,41 +6433,47 @@ SH.test <- function (..., B = 10000, data = NULL)
 # Bootstrap functions 
 # multicore support
 #
-bootstrap.pml <-  function(x, bs=100, trees=TRUE, ...){
+bootstrap.pml = function (x, bs = 100, trees = TRUE, multicore=FALSE,  ...) 
+{
     data = x$data
     weight = attr(data, "weight")
     v = rep(1:length(weight), weight)
     BS = vector("list", bs)
-    for(i in 1:bs)BS[[i]]=tabulate(sample(v, replace=TRUE),length(weight))     
-
-    pmlPar <- function(weights, fit, trees=TRUE,...){
-         data = fit$data        
-         ind <- which(weights > 0)
-         data <- getRows(data, ind)
-         attr(data, "weight") <- weights[ind]               
-         fit = update(fit, data=data)
-         fit = optim.pml(fit,...)
-         if(trees){
-              tree = fit$tree
-#              tree$tip.label = NULL
-              return(tree) 
-              }
-         attr(fit, "data")=NULL
-         fit
-    }   
-    if (require("multicore") && .Platform$OS.type == "unix")
-       res <- mclapply(BS, pmlPar, x, trees=trees, ...) 
-    else res <- lapply(BS, pmlPar, x, trees=trees, ...)
-    if(trees){
-#        attr(res, "TipLabel") = x$tree$tip.label
-        class(res) = "multiPhylo" 
-#        res <- .compressTipLabel(res)
+    for (i in 1:bs) BS[[i]] = tabulate(sample(v, replace = TRUE), 
+        length(weight))
+    pmlPar <- function(weights, fit, trees = TRUE, ...) {
+        data = fit$data
+        ind <- which(weights > 0)
+        data <- getRows(data, ind)
+        attr(data, "weight") <- weights[ind]
+        fit = update(fit, data = data)
+        fit = optim.pml(fit, ...)
+        if (trees) {
+            tree = fit$tree
+            return(tree)
         }
+        attr(fit, "data") = NULL
+        fit
+    }
+    eval.success <- FALSE
+    if (!eval.success & multicore) {
+        if (!require(multicore) || .Platform$GUI!="X11") {
+            warning("package 'multicore' not found or GUI is used, 
+            bootstrapping is performed in serial")
+        } else {       
+            res <- mclapply(BS, pmlPar, x, trees = trees, ...)
+            eval.success <- TRUE
+        } 
+    }
+    if (!eval.success) res <- lapply(BS, pmlPar, x, trees = trees, ...)
+    if (trees) {
+        class(res) = "multiPhylo"
+    }
     res
 }
 
 
-bootstrap.phyDat <- function (x, FUN, bs = 100, ...) 
+bootstrap.phyDat <- function (x, FUN, bs = 100, multicore=FALSE, ...) 
 {
     weight = attr(x, "weight")
     v = rep(1:length(weight), weight)
@@ -6450,10 +6485,18 @@ bootstrap.phyDat <- function (x, FUN, bs = 100, ...)
          data <- getRows(data, ind)
          attr(data, "weight") <- weights[ind]
          FUN(data,...)        
-    }         
-    if (require("multicore") && .Platform$OS.type == "unix")
-        res <- mclapply(BS, fitPar, x, ...) 
-    else res <- lapply(BS, fitPar, x, ...) 
+    }
+    eval.success <- FALSE
+    if (!eval.success & multicore) {         
+        if (!require(multicore) || .Platform$GUI!="X11") {
+            warning("package 'multicore' not found or GUI is used, 
+            bootstrapping is performed in serial")
+        } else { 
+            res <- mclapply(BS, fitPar, x, ...) 
+            eval.success <- TRUE
+        } 
+    }
+    if (!eval.success) res <- lapply(BS, fitPar, x, ...) 
     res 
 }
 
@@ -6823,41 +6866,6 @@ ll2 = function (dat1, tree, g = 1, eig, ...)
 }
 
 
-ancestral.pmlOld <- function (object, type = "ml", ...) 
-{
-    pt <- match.arg(type, c("ml", "bayes"))        
-    tree <- object$tree
-    data <- object$data
-    INV <- object$INV
-    nr <- attr(data, "nr")
-    nc <- attr(data, "nc")
-    bf <- object$bf
-    model <- object$model
-#    type <- attr(object$data, "type")
-    inv <- object$inv
-    k <- object$k
-    levels <- attr(data, "levels")
-    weight <- attr(data, "weight")
-    eig <- object$eig
-    g <- object$g
-    w <- object$w
-    ll.0 <- object$ll.0 
-    m <- 1
-    res <- matrix(0, nr, nc)
-    if(inv>0) res = INV * inv
-    for(i in 1:k) {
-        res = res + w[i] * ll2(data, tree, g[i], eig)
-    }
-    if (is.null(attr(data, "index"))) 
-        index = rep(1:nr, attr(data, "weight"))
-    else index = attr(data, "index")
-    colnames(res) = levels  
-    if (pt == "bayes") res = res * rep(bf, each=nr)
-    res = res / rowSums(res)
-    res[index, ]  
-}
-
-
 ancestral.pml <- function (object, type=c("ml", "bayes")) 
 {
     call <- match.call()
@@ -6889,7 +6897,7 @@ ancestral.pml <- function (object, type=c("ml", "bayes"))
     label = as.character(1:m)
     nam = tree$tip.label
     label[1:length(nam)] = nam
-    x[[1]] = label
+    x[["names"]] = label
   
     
     tmp = length(data)
@@ -7251,6 +7259,9 @@ compareSplits <- function(res, nam1, nam2){
     }    
     res
 }
+
+
+
 
 
 

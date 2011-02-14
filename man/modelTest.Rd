@@ -7,7 +7,7 @@ ModelTest
 Comparison of different substition models 
 }
 \usage{
-modelTest(object, tree=NULL, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4, control = pml.control(epsilon = 1e-08, maxit = 3, trace = 1), multicore = TRUE)
+modelTest(object, tree=NULL, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4, control = pml.control(epsilon = 1e-08, maxit = 3, trace = 1), multicore = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -42,7 +42,7 @@ Posada, D. (2008) jModelTest: Phylogenetic Model Averaging. \emph{Molecular Biol
 \examples{
 \dontrun{    
 example(NJ)
-modelTest(tree, Laurasiatherian)
+modelTest(Laurasiatherian, tree)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

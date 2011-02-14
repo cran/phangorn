@@ -7,10 +7,10 @@
 \title{
 Bootstrap }
 \description{
-\code{bootstrap.pml} performs (non-parametric) bootstrap analysis and \code{bootstrap.phyDat} produces a list of bootstrapped data sets. Under Linux the bootstrap is performed in parallel, if the multicore package is loaded. \code{plotBS} plots a phylogenetic tree with the with the bootstrap values assigned to the (internal) edges.}
+\code{bootstrap.pml} performs (non-parametric) bootstrap analysis and \code{bootstrap.phyDat} produces a list of bootstrapped data sets. \code{plotBS} plots a phylogenetic tree with the with the bootstrap values assigned to the (internal) edges.}
 \usage{
-bootstrap.pml(x, bs = 100, trees = TRUE, ...)
-bootstrap.phyDat(x, FUN, bs = 100, ...)
+bootstrap.pml(x, bs = 100, trees = TRUE, multicore=FALSE, ...)
+bootstrap.phyDat(x, FUN, bs = 100, multicore=FALSE, ...)
 plotBS(tree, BStrees, type="unrooted", bs.col="black", bs.adj=NULL, ...)
 }
 \arguments{
@@ -22,6 +22,9 @@ number of bootstrap samples.
 }
   \item{trees}{
 return trees only (default) or whole \code{pml} objects.  
+}
+  \item{multicore}{
+logical, if TRUE analysis is performed in parallel (see details).
 }
   \item{\dots}{
 further parameters used by \code{optim.pml} or \code{plot.phylo}.
@@ -44,6 +47,11 @@ color of bootstrap support labels.
   \item{bs.adj}{ 
 one or two numeric values specifying the horizontal and vertical justification of the bootstrap labels.
 }
+}
+\details{
+It is possible that the bootstrap is performed in parallel, with help of the multicore package.
+Unfortunately the  multicore package does not work under windows or with GUI interfaces ("aqua" on a mac).
+However it will spped up nicely from the command line ("X11").  
 }
 \value{
 returns an object of class \code{multi.phylo} or a list where each 
