@@ -17,7 +17,8 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UN
     midpoint, pruneTree, acctran, getRoot, plotAnc) 
 #    optim.fitch, fitch.nni, fnodes, optim.sankoff, dec2bin, ptree) 
 
-#S3method('[', phyDat)          
+#S3method('[', phyDat)
+S3method('[', splits)          
 S3method(as.character, phyDat)
 S3method(as.data.frame, phyDat)
 S3method(anova, pml)

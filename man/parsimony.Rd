@@ -19,7 +19,7 @@ of the root node. \code{CI} and \code{RI} computes the consistency and retention
 \usage{
 parsimony(tree, data, method="fitch", ...)
 optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1,...)
-pratchet(data, start=NULL, k=20, np=1, trace=1, all=FALSE, ...)
+pratchet(data, start=NULL, k=20, np=1, trace=1, all=FALSE, multicore=FALSE, ...)
 fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
 CI(tree, data)
@@ -36,7 +36,8 @@ acctran(tree, data)
   \item{trace}{defines how much information is printed during optimisation.} 
   \item{start}{a starting tree can be supplied.}
   \item{k}{number of rounds in the ratchet.}
-  \item{np}{number of (parallel) bootstraps (see details).}   
+  \item{np}{number of (parallel) bootstraps (see details).}
+  \item{multicore}{logical, if TRUE analysis is performed in parallel (see details).}   
   \item{all}{return all equally good trees or just one of them.} 
   \item{...}{Further arguments passed to or from other methods (e.g. model="sankoff" and cost matrix).} 
 }
@@ -47,7 +48,7 @@ acctran(tree, data)
   \code{acctran} returns a tree with edge length according to the ACCTRAN criterion. 
 }
 \details{
-On platforms where the multicore package is avaiable the parsimony ratchet may find solutions faster. To do this set the parameter np to the number of cores available.     
+On platforms where the multicore package is avaiable the parsimony ratchet may find solutions faster. To do this set the parameter np to the number of cores available. See also details in \code{\link{bootstrap.pml}}.     
 }
 \references{
 Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
@@ -55,7 +56,7 @@ Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunder
 Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Rarsimony Analysis. \emph{Cladistics} \bold{15}, 407-414
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
-\seealso{ \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}} ,\code{\link{ancestral.pars}}}
+\seealso{ \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}} ,\code{\link{ancestral.pars}}, \code{\link{bootstrap.pml}}}
 \examples{
 data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)

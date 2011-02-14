@@ -1,7 +1,7 @@
 /* 
  * phangorn.c
  *
- * (c) 2010  Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2011  Klaus Schliep (klaus.schliep@gmail.com)
  * 
  * 
  * This code may be distributed under the GNU GPL
@@ -32,7 +32,7 @@
 
 char *transa = "N", *transb = "N";
 double one = 1.0, zero = 0.0;
-
+int ONE = 1L;
 
 
 int give_index(int i, int j, int n)
@@ -233,6 +233,8 @@ void rowMin2(double *dat, int n,  int k, double *res){
     }
 
 
+
+
 SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk){
     int i, h, n=INTEGER(sn)[0], k=INTEGER(sk)[0];  
     double x, *res, *dat;
@@ -301,7 +303,6 @@ void fitchT(int *dat1, int *dat2, int *nr, double *pars, double *weight, double 
 }
 
 
-// binary pars raus???
 void fitchT3(int *dat1, int *dat2, int *nr, double *pars, double *weight, double *w){
     int k;
     int tmp;
@@ -423,7 +424,6 @@ void fitchNACC2(int *root, int *dat, int *nr, double *pars, int *result, double 
              pars1[k] += weight[k];
              }
        if(tmp >0){
-//   tmp statt dat1[k]
            if(tmp < root[k]){ 
               pars[0] += .5*weight[k];
               pars1[k] += .5*weight[k];
@@ -525,8 +525,6 @@ SEXP FITCH(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEXP m
 }
 
 
-
-
 // eine else Schliefe raus
 void FN2(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc, double *weight, double *tmpvec, double *pvec) { 
     int i, ni, k;
@@ -550,8 +548,7 @@ void FN2(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, 
     }
 }
 
-// rewrite FN2 
-// combine FN2 and fitch6  
+
 SEXP FNALL(SEXP dat, SEXP nrx, SEXP node, SEXP edge,  SEXP node2, SEXP edge2, SEXP l, SEXP weight, SEXP mx, SEXP my, SEXP q, SEXP pc){   
     int *data=INTEGER(dat), *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, n=INTEGER(q)[0], *pars2, *dat2;  
     double *pvtmp, *pvtmp2;  
@@ -849,8 +846,8 @@ void NR5(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child
     double *kid;  
     double *eva, *eve, *evei; 
     double *dP, *dtmp; //*res,  *dF,
-    char *transa = "N", *transb = "N"; //raus
-    double one = 1.0, zero = 0.0; //raus
+//    char *transa = "N", *transb = "N"; //raus
+//    double one = 1.0, zero = 0.0; //raus
     if(!isNewList(eig)) error("eig must be a list"); //nach oben
     if(!isNewList(dad)) error("dad must be a list"); //nach oben
     if(!isNewList(child)) error("child must be a list"); //nach oben   
@@ -867,8 +864,10 @@ void NR5(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child
         kid = REAL(VECTOR_ELT(child, j)); // kid
         getdP(eva, eve, evei, nc, el, g[j], dP); //dP faellt weg
         F77_CALL(dgemm)(transa, transb, &nr, &nc, &nc, &one, REAL(VECTOR_ELT(dad, j)), &nr, dP, &nc, &zero, dtmp, &nr);
-        for(i = 0; i < (nr*nc); i++) dtmp[i]*=kid[i]; //dtmp =  (dad %*% dP) * kid
-        F77_CALL(dgemm)(transa, transb, &nr, &eins, &nc, &w[j], dtmp, &nr, bf, &nc, &one, res, &nr);
+        for(i = 0; i < (nr*nc); i++) dtmp[i]*=kid[i]; //dtmp =  (dad %*% dP) * kid 
+//  dgemv
+        F77_CALL(dgemv)(transa, &nr, &nc, &w[j], dtmp, &nr, bf, &ONE, &one, res, &ONE); 
+//        F77_CALL(dgemm)(transa, transb, &nr, &eins, &nc, &w[j], dtmp, &nr, bf, &nc, &one, res, &nr);
         }
     for(i=0; i<nr ;i++) res[i]/=f[i];                
 } 
@@ -879,15 +878,13 @@ void NR6(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child
     double *kid;  
     double *eva, *eve, *evei; 
     double *dP, *dtmp; //*res,  *dF,
-    char *transa = "N", *transb = "N";
-    double one = 1.0, zero = 0.0;
     if(!isNewList(eig)) error("'eig' must be a list");
     if(!isNewList(dad)) error("'dad' must be a list");
     if(!isNewList(child)) error("'child' must be a list");    
     dP = (double *) R_alloc(nc*nc, sizeof(double));
     dtmp = (double *) R_alloc(nr*nc, sizeof(double));
         
-    eva = REAL(VECTOR_ELT(eig, 0));
+    eva = REAL(VECTOR_ELT(eig, 0)); // raus
     eve = REAL(VECTOR_ELT(eig, 1));
     evei = REAL(VECTOR_ELT(eig, 2));
 
@@ -895,8 +892,10 @@ void NR6(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child
         kid = REAL(VECTOR_ELT(child, j)); // kid
         getP(eva, eve, evei, nc, el, g[j], dP); 
         F77_CALL(dgemm)(transa, transb, &nr, &nc, &nc, &one, REAL(VECTOR_ELT(dad, j)), &nr, dP, &nc, &zero, dtmp, &nr);
-        for(i = 0; i < (nr*nc); i++) dtmp[i]*=kid[i]; //dtmp =  (dad %*% dP) * kid
-        F77_CALL(dgemm)(transa, transb, &nr, &eins, &nc, &w[j], dtmp, &nr, bf, &nc, &one, res, &nr);
+        for(i = 0; i < (nr*nc); i++) dtmp[i]*=kid[i]; //dtmp =  (dad %*% dP) * kid //BLAS???
+// dgemv
+        F77_CALL(dgemv)(transa, &nr, &nc, &w[j], dtmp, &nr, bf, &ONE, &one, res, &ONE); 
+//        F77_CALL(dgemm)(transa, transb, &nr, &eins, &nc, &w[j], dtmp, &nr, bf, &nc, &one, res, &nr);
         }       
 } 
 
@@ -1105,6 +1104,7 @@ SEXP getM3(SEXP dad, SEXP child, SEXP P, SEXP nr, SEXP nc){
     }
 
 
+// return variance estimate
 SEXP FS3(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP ld, SEXP nr, 
          SEXP basefreq, SEXP weight,SEXP f0, SEXP ll0, SEXP ff0, SEXP retA, SEXP retB)
 {
@@ -1122,8 +1122,9 @@ SEXP FS3(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP 
 // eps uebergeben
     while ( (eps > 1e-05) &&  (k < 5) ) {
         if(scalep>0.6){  
-// NR5, NR6 zusammenfassen: P uebergeben / f nicht  
-// getdP - tmp
+// NR5, NR6 zusammenfassen: P uebergeben / f nicht  eig raus ziehen und alle variablen die oefters definiert werden
+// getdP - tmp 
+// NR5/6 explicit einbauen 
             NR5(eig, ncx, edle, ws, gs, dad, child, INTEGER(ld)[0], nrx, bf, f, tmp);  
             ll=0.0;  
             lll=0.0;        
@@ -1133,9 +1134,10 @@ SEXP FS3(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP 
         } // end if        
         ledle = log(edle) + scalep * delta;
         newedle = exp(ledle);
+// some error handling avoid too big small edges & too big steps
         if (newedle > 10.0) newedle = 10.0;
         if (newedle < 1e-6) newedle = edle/2; // new 
-        if (newedle < 1e-6) newedle = 1e-6; // 1e-8       
+        if (newedle < 1e-6) newedle = 1e-6; // 1e-8 phyML      
   
         for(i=0; i<nrx; i++)f[i] = REAL(f0)[i]; //memcpy ???
 // getP         
@@ -1163,6 +1165,7 @@ SEXP FS3(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP dad, SEXP child, SEXP 
     SET_VECTOR_ELT(RESULT, 0, EL);
     if(INTEGER(retA)[0]>0L)SET_VECTOR_ELT(RESULT, 1, getM3(child, dad, P, nr, nc));
     if(INTEGER(retB)[0]>0L)SET_VECTOR_ELT(RESULT, 2, getM3(dad, child, P, nr, nc));
+// add variance
     SET_VECTOR_ELT(RESULT, 3, ScalarReal(l1));
     UNPROTECT(3);
     return (RESULT);
@@ -1280,12 +1283,22 @@ void cisort(int *x, int *y, int *a, int *b, int *res){
     }
 }    
 
+/*
+static R_INLINE void matprod(double *x, int nrx, int ncx, double *y, int nry, int ncy, double *z)
+{
+    char *transa = "N", *transb = "N";
+    double one = 1.0, zero = 0.0;
+    F77_CALL(dgemm)(transa, transb, &nrx, &ncy, &ncx, &one, x, &nrx, y, &nry, &zero, z, &nrx);
+}
+*/
 
 
+// tmp extern erstellen??
 void matp(int *x, double *contrast, double *P, int *nr, int *nc, int *nrs, double *result){
     int i, j;
-    double *tmp; 
-    tmp = (double *) R_alloc((*nc) *(*nrs), sizeof(double));
+    double *tmp; // vielleicht rausziehen etwas weniger Speicher 
+    tmp = (double *) R_alloc((*nc) *(*nrs), sizeof(double)); 
+//    F77_CALL(dgemm)(transa, transb, nrs, nc, nc, &one, contrast, nc, P, nc, &zero, tmp, nrs);
     matprod(contrast, (*nrs), (*nc), P, (*nc), (*nc), tmp);   
     for(i = 0; i < (*nr); i++){ 
         for(j = 0; j < (*nc); j++) result[i + j*(*nr)] = tmp[x[i] - 1L + j*(*nrs)];  
@@ -1294,6 +1307,7 @@ void matp(int *x, double *contrast, double *P, int *nr, int *nc, int *nrs, doubl
 
 
 // nco: nr of contrasts (ca. 5% schneller), durch LogLik4 ersetzen
+// void LogLik
 SEXP LogLik2(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes, SEXP contrast, SEXP nco){
     R_len_t i, n = length(node);
     int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], nt=INTEGER(nTips)[0], mn=INTEGER(mNodes)[0];
@@ -1307,7 +1321,7 @@ SEXP LogLik2(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
     res = REAL(result);
     rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
 
-    char *transa = "N", *transb = "N";
+    char *transa = "N", *transb = "N"; // global??
     double one = 1.0, zero = 0.0;
 
     for(j=0; j < (nrx * ncx); j++) res[j] = 1.0;
@@ -1394,9 +1408,27 @@ void scaleMatrix2(double *X, int nr, int nc, double *result, double eps){
     } 
 }
 
+void scaleMatrix3(double *X, int nr, int nc, double *weight, double *result, double erg, double eps){
+    int i, j; 
+    double tmp, ltmp;   
+    for(i = 0; i < nr; i++) {    
+        tmp = 0.0; 
+        for(j = 0; j < nc; j++) {
+           tmp += X[i + j*nr];
+        }
+        if(tmp < eps){          
+            for(j = 0; j < nc; j++) {
+                X[i + j*nr] /= tmp;
+            }
+            ltmp = log(tmp); 
+            result[i] += ltmp;
+            erg += (ltmp * weight[i]);
+        }
+    } 
+}
 
 
-// nco nr of contrasts, add parameter k=50 only scale every 50th time, scaleMatrix2???
+
 SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes, SEXP contrast, SEXP nco){
     R_len_t i, n = length(node);
     int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], nt=INTEGER(nTips)[0], mn=INTEGER(mNodes)[0];
@@ -1412,10 +1444,10 @@ SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
     PROTECT(scTmp = allocVector(REALSXP, nrx));
     res = REAL(result);
     rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
-//    scaleTmp = (double *) R_alloc(nrx, sizeof(double));
     scaleTmp = REAL(scTmp);
-    char *transa = "N", *transb = "N";
-    double one = 1.0, zero = 0.0;
+// global
+//    char *transa = "N", *transb = "N";
+//    double one = 1.0, zero = 0.0;
     for(j=0; j < nrx; j++) scaleTmp[j] = 0.0;
     for(j=0; j < (nrx * ncx); j++) res[j] = 1.0;
     for(i = 0; i < n; i++) {
@@ -1467,7 +1499,79 @@ SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
 }
 
 
+SEXP LogLik5(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes, SEXP contrast, SEXP nco, SEXP weight){
+    R_len_t i, n = length(node);
+    int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], nt=INTEGER(nTips)[0], mn=INTEGER(mNodes)[0];
+    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node), *nChild, eps1;
+    SEXP erg, ans, result, scVec , scTmp;  
+    double *res, *rtmp, *scaleTmp, *tmpS, eps2;
+    
+    eps1 = 50L;
+    eps2 = 1e-10;
 
+    if(!isNewList(dlist)) error("'dlist' must be a list");
+    ni = nodes[0];
+    PROTECT(erg = allocVector(VECSXP, 2L));
+    PROTECT(ans = allocVector(VECSXP, mn)); 
+    PROTECT(scVec = allocVector(VECSXP, mn));
+    PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
+    PROTECT(scTmp = allocVector(REALSXP, nrx));
+    res = REAL(result);
+    tmpS = (double *) R_alloc(n, sizeof(double));
+    nChild = (int *) R_alloc(n, sizeof(int));
+    rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
+    scaleTmp = REAL(scTmp);
+    for(j=0; j < nrx; j++) scaleTmp[j] = 0.0;
+    for(j=0; j < (nrx * ncx); j++) res[j] = 1.0;
+    for(i = 0; i < n; i++) {
+        ei = edges[i]; 
+        if(ni != nodes[i]){
+            scaleMatrix2(res, nrx, ncx, scaleTmp, 1e-10);
+            SET_VECTOR_ELT(ans, ni, result);
+            SET_VECTOR_ELT(scVec, ni, scTmp);
+            UNPROTECT(2); //result scTmp
+            PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
+            res = REAL(result);
+            PROTECT(scTmp = allocVector(REALSXP, nrx));
+            scaleTmp = REAL(scTmp);
+            for(j=0; j < nrx; j++) scaleTmp[j] = 0.0;
+            ni = nodes[i];
+            if(ei < nt){ 
+                matp(INTEGER(VECTOR_ELT(dlist, ei)), REAL(contrast), REAL(VECTOR_ELT(P, i)), INTEGER(nr), INTEGER(nc), INTEGER(nco), res); 
+            }
+            else{ 
+                F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
+                       REAL(VECTOR_ELT(P, i)), &ncx, &zero, res, &nrx);
+                for(j=0; j < nrx; j++) scaleTmp[j] += REAL(VECTOR_ELT(scVec, ei-nt))[j];
+            }  
+//          z= 1L;
+        }
+        else {
+            if(ei < nt){ 
+                matp(INTEGER(VECTOR_ELT(dlist, ei)), REAL(contrast), REAL(VECTOR_ELT(P, i)), INTEGER(nr), INTEGER(nc), INTEGER(nco), rtmp);
+
+            }
+            else{ 
+                F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
+                    REAL(VECTOR_ELT(P, i)), &ncx, &zero, rtmp, &nrx);
+                for(j=0; j < nrx; j++) scaleTmp[j] += REAL(VECTOR_ELT(scVec, ei-nt))[j];
+            }
+            for(j=0; j < (nrx*ncx); j++) res[j] *= rtmp[j];
+//          z+=1L; // epsScale=50; statt+1 von vector
+//          if(z>epsScale){
+//              scaleMatrix(res, nrx, ncx, scaleTmp);   
+//              z=1;     
+//          }
+        }            
+    }
+    scaleMatrix(res, nrx, ncx, scaleTmp);
+    SET_VECTOR_ELT(ans, ni, result);
+    SET_VECTOR_ELT(scVec, ni, scTmp);
+    SET_VECTOR_ELT(erg, 0L, ans);
+    SET_VECTOR_ELT(erg, 1L, scVec);
+    UNPROTECT(5); // result ans 
+    return(erg);
+}
 
 
 
