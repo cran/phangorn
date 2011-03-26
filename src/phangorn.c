@@ -327,7 +327,7 @@ void fitchT3(int *dat1, int *dat2, int *nr, double *pars, double *weight, double
 // upper bound very conservative 
 void countMPR(double *res, int *dat1, int *dat2, int *nr, double *weight, int *external){
     int k;
-    int tmp, tmp2;
+    int tmp;
     for(k = 0; k < (*nr); k++){
         tmp = dat1[k] & dat2[k];
 
@@ -388,7 +388,7 @@ void fitchN2(int *res, int *dat, int *node, int *edge, int *nr, int *nl) {
 
 void fitchTriplet(int *res, int *dat1, int *dat2, int *dat3, int *nr) 
 {   
-    int i, ni, k;
+    int ni, k;
     ni = 0;
     
     int *v1, *v2, *v3;
@@ -842,7 +842,7 @@ void getd2P2(double *eva, double *ev, double *evi, int m, double el, double w, d
 
 
 void NR5(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child, int ld, int nr, double *bf, double *f, double *res){
-    int i, j, k, eins=1L; 
+    int i, j, k; 
     double *kid;  
     double *eva, *eve, *evei; 
     double *dP, *dtmp; //*res,  *dF,
@@ -874,7 +874,7 @@ void NR5(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child
 
 
 void NR6(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child, int ld, int nr, double *bf, double *res){
-    int i, eins=1L, j; 
+    int i, j; 
     double *kid;  
     double *eva, *eve, *evei; 
     double *dP, *dtmp; //*res,  *dF,
@@ -1282,6 +1282,172 @@ void cisort(int *x, int *y, int *a, int *b, int *res){
           }
     }
 }    
+
+void cisort2(int *x, int *y, int a, int b, int *res){
+   int xi, yi;
+   int i, j, k;    
+   i=0;
+   j=0;
+   k=0;
+   xi=x[0];
+   yi=y[0];  
+   while(k<((a)+(b))){
+      if(i<(a)){
+          if( (xi<yi) | (j==b) ){  //-1L
+              res[k]=xi;      
+              i++;
+              if(i<(a))xi=x[i];   
+              k++;     
+          }
+          else{
+              j++;
+              res[k]=yi;
+              if(j<(b))yi=y[j];  
+              k++;
+          }
+        }
+        else{
+              j++;
+              res[k]=yi;
+              if(j<(b))yi=y[j];  
+              k++;
+          }
+    }
+}    
+
+
+
+
+/* 
+bipart <- function(x){
+    if(is.null(attr(x,"order")) || attr(x, "order")=="cladewise") x = reorderPruning(x)
+    nNode=x$Nnode
+    nTips=length(x$tip)
+    parent <- as.integer(x$edge[, 1])
+    child <- as.integer(x$edge[, 2])
+    res = vector("list",nNode)
+    kl=integer(max(parent))
+    k=1 
+    p=parent[1]
+    tmp=NULL
+    for(i in 1:length(parent)){
+        pi=parent[i]
+        ci = child[i]
+        if(pi==p){
+            if(ci < (nTips+1)) tmp=cisort(tmp,ci) 
+            else tmp = cisort(tmp, res[[kl[ci]]])  
+        }
+        else{
+            kl[p]=k 
+            res[[k]]= (tmp) 
+            if(ci < (nTips+1)) tmp=ci 
+            else tmp = res[[kl[ci]]]
+            k=k+1 
+            p=pi
+        }    
+    }
+    res[[k]]=(tmp)    
+    attr(res, "nodes") = unique(parent)
+    res 
+}
+void cisort(int *x, int *y, int *a, int *b, int *res)
+
+library(phangorn)
+set.seed(1)
+tree= rtree(10)
+dyn.unload("phangorn.so")
+dyn.load("phangorn.so")
+#bipart = function(tree){
+    tree = phangorn:::reorderPruning(tree)
+    tree$edge
+    maxP  = max(tree$edge)
+    nTips = length(tree$tip)
+    .Call("bipart", as.integer(tree$edge[,1]) , as.integer(tree$edge[,2]), as.integer(nTips), as.integer(maxP), as.integer(tree$Nnode))
+#}
+
+
+bipart = function(obj){
+    if (is.null(attr(obj, "order")) || attr(obj, "order") == 
+        "cladewise") 
+        obj <- phangorn:::reorderPruning(obj)
+    storage.mode(obj$Nnode) <- "integer"
+    maxP  = max(obj$edge)
+    nTips = length(obj$tip)
+    storage.mode(obj$Nnode) <- "integer"
+    storage.mode(obj$edge) <- "integer"
+    res <- .Call("bipart", obj$edge[,1] , obj$edge[,2], as.integer(nTips), as.integer(maxP), obj$Nnode)
+    attr(res, "nodes") = unique(obj$edge[,1])
+    res    
+}
+bipart(tree)
+
+
+X = simSeq(tree, type='USER', levels=c('a', 'b'), l=20, rate=.05)
+trees = c(tree,tree,tree,tree,tree,tree,tree,tree,tree,tree)
+for(i in 1:10)trees[[i]]$node.label = c("", round(runif(tree$Nnode-1), 3))
+for(i in 1:10)trees[[i]] = pruneTree(trees[[i]], .15)
+getDiversity
+
+*/
+
+SEXP bipart(SEXP parent, SEXP child, SEXP nTips, SEXP maxP, SEXP Nnode){
+   int eins=1L, i, j, k, l=length(child), *tmp, *tmp2, *lch, *kl, pi, ci, p, nt=INTEGER(nTips)[0], mp=INTEGER(maxP)[0], ltmp; 
+   SEXP ans, ktmp;
+   tmp = (int *) R_alloc(mp, sizeof(int));
+   tmp2 = (int *) R_alloc(mp, sizeof(int));
+   lch = (int *) R_alloc(mp+1L, sizeof(int));
+   kl = (int *) R_alloc(mp+1L, sizeof(int));
+ 
+   PROTECT(ans = allocVector(VECSXP, INTEGER(Nnode)[0]));  
+   p=INTEGER(parent)[0];
+   k=0L;
+   kl[p]=0;
+   lch[p]=1;
+   tmp[0] = INTEGER(child)[0]; 
+   ltmp=1L;
+   for(i=1; i<l; i++){ 
+        pi = INTEGER(parent)[i]; 
+        ci = INTEGER(child)[i];
+        if(pi==p){
+             if(ci < (nt+1L)){
+                 cisort(&ci, tmp, &eins, &ltmp, tmp2);            
+                 ltmp += 1L;
+                 for(j=0; j<ltmp; j++) tmp[j] = tmp2[j];
+             }
+             else{
+                 cisort(INTEGER(VECTOR_ELT(ans, kl[ci])), tmp, &(lch[ci]), &ltmp, tmp2);                       
+                 ltmp += lch[ci]; 
+                 for(j=0; j<ltmp; j++) tmp[j] = tmp2[j];                                
+             }
+             kl[pi]=k; 
+             lch[pi] = ltmp;
+        }  
+        else{
+            PROTECT(ktmp = allocVector(INTSXP, ltmp));
+            for(j=0; j<ltmp; j++)INTEGER(ktmp)[j] = tmp2[j];
+            SET_VECTOR_ELT(ans, k, ktmp); 
+            UNPROTECT(1); // ktmp
+
+            if(ci < (nt+1)){ 
+                 tmp[0]=ci;
+                 ltmp=1L; 
+            } 
+            else{ 
+                ltmp=lch[ci];
+                for(j=0; j<ltmp; j++)tmp[j] = INTEGER(VECTOR_ELT(ans, kl[ci]))[j];
+            }
+            k += 1L; 
+            p = pi;
+        }
+   }
+   PROTECT(ktmp = allocVector(INTSXP, ltmp));// mp+1L
+   for(j=0; j<ltmp; j++)INTEGER(ktmp)[j] = tmp2[j];
+   SET_VECTOR_ELT(ans, k, ktmp);
+   UNPROTECT(2);
+   return(ans);  
+}
+
+
 
 /*
 static R_INLINE void matprod(double *x, int nrx, int ncx, double *y, int nry, int ncy, double *z)

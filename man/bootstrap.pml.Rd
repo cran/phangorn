@@ -51,7 +51,7 @@ one or two numeric values specifying the horizontal and vertical justification o
 \details{
 It is possible that the bootstrap is performed in parallel, with help of the multicore package.
 Unfortunately the  multicore package does not work under windows or with GUI interfaces ("aqua" on a mac).
-However it will spped up nicely from the command line ("X11").  
+However it will speed up nicely from the command line ("X11").  
 }
 \value{
 returns an object of class \code{multi.phylo} or a list where each 

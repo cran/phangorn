@@ -5,6 +5,9 @@
     library.dynam("phangorn", pkgname, libname)
     require(quadprog)
     require(ape)
+#    require(Matrix)
+    require(igraph)
+    require(rgl)
 }
 
 
@@ -12,20 +15,21 @@
 # some general functions
 #
 
+# return vector of positions
+dec2Bin = function (x) 
+{
+    res = NULL
+    i = 1L
+    while (x > 0) {
+        if (x%%2L) 
+            res = c(res, i)
+            x = x%/%2L
+            i = i + 1L
+        }
+    res
+}
 
-#dec2bin <- function(x){
-#    res=NULL
-#    i = 1L
-#    while(x>0){
-#        if(x %% 2L) res = c(res, 1L)
-#        else  res = c(res, 0L)
-#        x = x %/% 2L 
-#        i=i+1L
-#    }
-#    res
-#}
-
-
+# returns binary (0, 1) vector of length k
 dec2bin <- function (x, k=ceiling(log2(x))) 
 {
     i = 1L
@@ -88,19 +92,6 @@ split2seq = function(q){
 
 distanceHadamard <- function (dm, eps = 0.001) 
 {
-    dec2Bin = function (x) 
-    {
-        res = NULL
-        i = 1L
-        while (x > 0) {
-            if (x%%2L) 
-                res = c(res, i)
-            x = x%/%2L
-            i = i + 1L
-        }
-        res
-    }
-    
     if (class(dm) == "dist") {
         n <- attr(dm, "Size")
         Labels = attr(dm, "Labels")
@@ -179,27 +170,22 @@ h4st = function(obj, levels=c('a','c','g','t')){
     qv = matrix(seq2split(sv),2^(p-1),2^(p-1))
     sv = matrix(sv,2^(p-1),2^(p-1))
 
-    q = cbind(transversion = qv[-1,1], transition.1 = diag(qv)[-1], transition.2 = qv[1,-1])
-    result = list(q = q, qv = qv, sv=sv, n=sum(sv), names=names(obj))
+#    q = cbind(transversion = qv[-1,1], transition.1 = diag(qv)[-1], transition.2 = qv[1,-1])
+
+    transversion <- transition.1 <- transition.2 <- allSplits(p, colnames(obj)) 
+    attr(transversion,"weights") = qv[-1,1]
+    attr(transition.1,"weights") = diag(qv)[-1]
+    attr(transition.2,"weights") = qv[1,-1]
+
+#    result = list(q = q, qv = qv, sv=sv, n=sum(sv), names=names(obj))
+    result = list(transversion = transversion, transition.1=transition.1, transition.2 = transition.2, 
+        qv = qv, sv=sv, n=sum(sv), names=names(obj))
     result
 }
 
 
 h2st <- function (obj, eps=0.001) 
 {
-    dec2Bin = function (x) 
-    {
-        res = NULL
-        i = 1L
-        while (x > 0) {
-            if (x%%2L) 
-                res = c(res, i)
-            x = x%/%2L
-            i = i + 1L
-        }
-        res
-    }
-
     if (class(obj) != "phyDat") stop("Error") 
     if (attr(obj,"nc") != 2)stop("Error")
     nr = attr(obj, "nr") #n
@@ -219,6 +205,8 @@ h2st <- function (obj, eps=0.001)
     if(eps>0){
 	    qv = qv[-1]
         ind2 = which(qv>eps)
+        indT= c(2L^(0:(p-2)), 2L^(p-1)-1) 
+        ind2 = union(ind2, indT)
         n2 = length(ind2)
         splits = vector("list", n2)
         for(i in 1:n2)splits[[i]] = dec2Bin(ind2[i])
@@ -310,7 +298,6 @@ treedist <- function (tree1, tree2)
 }
 
 
-
 RF.dist <- function (tree1, tree2, check.labels = TRUE)
 {
    r1 = is.rooted(tree1)
@@ -369,6 +356,7 @@ RF.dist <- function (tree1, tree2, check.labels = TRUE)
     result
 }
 
+
 NJ <- function (x) 
 {
     x = as.matrix(x)
@@ -380,8 +368,8 @@ NJ <- function (x)
         labels = colnames(d)
     l = dim(d)[1]
     m = l - 2
-    nam = 1:l
-    k = 2 * l - 2
+    nam = 1L:l
+    k = 2L * l - 2L
     while (l > 2) {
         r = rowSums(d)/(l - 2)
         i = 0
@@ -400,8 +388,8 @@ NJ <- function (x)
         d = cbind(d, dnew)
         d = rbind(d, c(dnew, 0))
         d = d[-c(e1, e2), -c(e1, e2)]
-        k = k - 1
-        l = l - 1
+        k = k - 1L
+        l = l - 1L
     }
     edge.length = c(d[2, 1], edge.length)
     attr(edge.length,"names") = NULL
@@ -767,6 +755,36 @@ splitsNetwork <- function(dm, gamma=.1, lambda=1e-6, weight=NULL){
 }
 
 
+allSplits = function(k, labels=NULL){
+    result <- lapply(1:(2^(k-1)-1),dec2Bin)
+    if(is.null(labels)) labels=(as.character(1:k))
+    attr(result, 'labels') =labels
+    class(result)='splits'
+    result
+    }   
+
+    
+splits2design <- function(obj, weight=NULL){
+    labels= attr(obj,'labels')
+    m = length(labels)
+#    splits = obj$split
+    n=length(obj)
+    l = 1:m 
+    sl = sapply(obj, length)
+    p0 = sl * (m-sl)
+    p = c(0,cumsum(p0))
+    i = numeric()
+    for(k in 1:n){
+        sp = obj[[k]]
+        if(p0[k]!=0) i[(p[k]+1):p[k+1]] = phangorn:::getIndex(sp, l[-sp], m) 
+    }
+    dims=c(m*(m-1)/2,n)
+#    x = ifelse(is.null(weight),1L,weight[i]) 
+#    x=1L
+    sparseMatrix(i=i, p=p, dims=dims) #x=x, x=1L, index1 = TRUE
+    }
+
+
 #
 # Data structures for ML and MP
 # 
@@ -775,7 +793,7 @@ fast.table <- function (data)
 #    if(is.list(data))data = as.data.frame(data, stringsAsFactors=FALSE)
     if(!is.data.frame(data)) 
         data = as.data.frame(data, stringsAsFactors = FALSE)                    
-    da = do.call("paste", c(data, sep = ""))   #da = do.call("paste", c(data, sep = "\r"))                                          
+    da = do.call("paste", c(data, sep = "\r"))   #da = do.call("paste", c(data, sep = ""))                                          
     ind = !duplicated(da)                                                                  
     levels = da[ind]                                                                       
     cat <- factor(da,levels = levels)                                                      
@@ -788,7 +806,7 @@ fast.table <- function (data)
     result=list(index = bin, weights = y, data = data[ind,])                                                                                  
     result                                                                                 
 }                                                                                        
-         
+
 
 phyDat.default <- function (data, levels = NULL, return.index = TRUE, contrast = NULL, 
     ambiguity = "?", ...) 
@@ -826,27 +844,23 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE, contrast =
                 contrast = rbind(contrast, matrix(1, k, l))
         }
     }
-    for (i in 1:q) tmp[[i]] = factor(data[[i]], levels = all.levels)
-    data <- tmp
-    for (i in 1:q) class(data[[i]]) = "integer"
-    class(data) <- "data.frame"
+
+    d = dim(data)
+    att = attributes(data) 
+    data = match(unlist(data), all.levels)
+    attr(data, "dim") = d
+    data = as.data.frame(data, stringsAsFactors=FALSE)  
+    attributes(data) = att
+
     row.names(data) = as.character(1:p)
     data = na.omit(data)
+   
+    aaa = match(index, attr(data, "na.action"))
+    index = index[is.na(aaa)] 
+    index = match(index, unique(index))
     rn = as.numeric(rownames(data))
-#    ind = which(!duplicated(c(rn, as.character(unique(index)))))
-    ind = which(!duplicated(c(rn, unique(index))))
-    ind = ind - length(rn)
-    ind = ind[ind > 0]
-    for (i in 1:length(ind)) index[which(index == ind[i])] = NA
-    indextmp = diff(sort(unique(index)))
-    l1 = which(indextmp > 1)
-    d1 = indextmp[l1]
-    if (length(l1) > 0) {
-        for (i in 1:length(l1)) {
-            index[index > l1[i] & !is.na(index)] = index[index > 
-                l1[i] & !is.na(index)] - (d1[i] - 1)
-        }
-    }
+    attr(data, "na.action") = NULL  
+        
     weight = ddd$weight[rn]
     p = dim(data)[1]
     names(data) = nam
@@ -864,7 +878,7 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE, contrast =
     data
 }
 
-
+ 
 phyDat.DNA = function (data, return.index = TRUE) 
 {
     if (is.matrix(data)) 
@@ -875,6 +889,8 @@ phyDat.DNA = function (data, return.index = TRUE)
     if (is.matrix(data)) 
         data = as.data.frame(t(data), stringsAsFactors = FALSE)
     else data = as.data.frame(data, stringsAsFactors = FALSE)
+
+    data[] = tolower(as.matrix(data))
  
     ac = c("a", "c", "g", "t", "u", "m", "r", "w", "s", "y", 
         "k", "v", "h", "d", "b", "n", "?", "-")
@@ -890,26 +906,23 @@ phyDat.DNA = function (data, return.index = TRUE)
     index = ddd$index
     q = length(data)
     p = length(data[[1]])
-    for (i in 1:q) data[[i]] = factor(data[[i]], levels = ac)
-    for (i in 1:q) class(data[[i]]) = "integer"
-    class(data) <- "data.frame"
+    d = dim(data)
+    att = attributes(data) 
+    data = match(unlist(data), ac)
+    attr(data, "dim") = d
+    data = as.data.frame(data, stringsAsFactors=FALSE)
+    attributes(data) = att
+
     row.names(data) = as.character(1:p)
     data = na.omit(data)
     rn = as.numeric(rownames(data))
-#    ind = which(!duplicated(c(rn, as.character(unique(index)))))
-    ind = which(!duplicated(c(rn, unique(index)))) 
-    ind = ind - length(rn)
-    ind = ind[ind > 0]
-    for (i in 1:length(ind)) index[which(index == ind[i])] = NA
-    indextmp = diff(sort(unique(index)))
-    l1 = which(indextmp > 1)
-    d1 = indextmp[l1]
-    if (length(l1) > 0) {
-        for (i in 1:length(l1)) {
-            index[index > l1[i] & !is.na(index)] = index[index > 
-                l1[i] & !is.na(index)] - (d1[i] - 1)
-        }
-    }
+
+    aaa = match(index, attr(data, "na.action"))
+    index = index[is.na(aaa)] 
+    index = match(index, unique(index))
+    rn = as.numeric(rownames(data))
+    attr(data, "na.action") = NULL
+    
     weight = ddd$weight[rn]
     p = dim(data)[1]
     names(data) = nam
@@ -938,6 +951,8 @@ phyDat.AA <- function (data, return.index = TRUE)
         data = as.data.frame(t(data), stringsAsFactors = FALSE)
     else data = as.data.frame(data, stringsAsFactors = FALSE)
   
+    data[] = tolower(as.matrix(data))
+
     aa <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i", 
         "l", "k", "m", "f", "p", "s", "t", "w", "y", "v")
     aa2 <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i", 
@@ -956,31 +971,26 @@ phyDat.AA <- function (data, return.index = TRUE)
     q = length(data)
     p = length(data[[1]])
     tmp <- vector("list", q)
-    for (i in 1:q) tmp[[i]] = factor(data[[i]], levels = aa2)
-    data <- tmp
-    for (i in 1:q) class(data[[i]]) = "integer"
-    class(data) <- "data.frame"
+
+    d = dim(data)
+    att = attributes(data) 
+    data = match(unlist(data), aa2)
+    attr(data, "dim") = d
+    data = as.data.frame(data, stringsAsFactors=FALSE)
+    attributes(data) = att
+
     row.names(data) = as.character(1:p)
     data = na.omit(data)
     rn = as.numeric(rownames(data))
-#    ind = which(!duplicated(c(rn, as.character(unique(index)))))
-    ind = which(!duplicated(c(rn, unique(index))))
-    ind = ind - length(rn)
-    ind = ind[ind > 0]
-    for (i in 1:length(ind)) index[which(index == ind[i])] = NA
-    indextmp = diff(sort(unique(index)))
-    l1 = which(indextmp > 1)
-    d1 = indextmp[l1]
-    if (length(l1) > 0) {
-        for (i in 1:length(l1)) {
-            index[index > l1[i] & !is.na(index)] = index[index > 
-                l1[i] & !is.na(index)] - (d1[i] - 1)
-        }
-    }
+
+    aaa = match(index, attr(data, "na.action"))
+    index = index[is.na(aaa)] 
+    index = match(index, unique(index))
+    rn = as.numeric(rownames(data))
+    attr(data, "na.action") = NULL
+        
     weight = ddd$weight[rn]
     p = dim(data)[1]
-#    dat = vector("list", q) 
-#    for (i in 1:q) dat[[i]] = data[[i]]
     names(data) = nam
     attr(data, "row.names") = NULL
     attr(data, "weight") = weight
@@ -1098,7 +1108,7 @@ as.DNAbin.phyDat <- function(x,...) {
    else stop("x must be a nucleotide sequence")
 }
 
-# 
+ 
 phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...) 
 {
     if (class(data) == "DNAbin") type <- "DNA"
@@ -1270,7 +1280,7 @@ getRows <- function (data, rows, site.pattern = FALSE)
     data
 }
 
-# test
+
 subset.phyDat <- function (x, subset, select, site.pattern = FALSE,...) 
 {  
      
@@ -1417,7 +1427,6 @@ getRoot = function(tree){
 }
 
 
-# works very well (and is simple and fast)
 # renames root
 reroot <-  function (tree, node) 
 {
@@ -1435,7 +1444,6 @@ reroot <-  function (tree, node)
     tree <- collapse.singles(tree)
     reorderPruning(tree)
 }
-
 
 
 reroot2 <- function(tree, node) {
@@ -1506,7 +1514,6 @@ reorderPruning <- function (x, ...)
         stop("more than 1 root found")
     n = length(parents)    
     m = max(x$edge)  # edge  parents 
-#    neworder = .C("reorder", as.integer(parents), as.integer(child), as.integer(n), as.integer(m), integer(n), as.integer(root-1), DUP=FALSE)[[5]]
     neworder = .C("reorder", parents, child, as.integer(n), as.integer(m), integer(n), as.integer(root-1L), DUP=FALSE)[[5]]    
     x$edge = x$edge[neworder,]
     x$edge.length = x$edge.length[neworder]
@@ -1666,10 +1673,9 @@ allTrees <- function (n, rooted = FALSE, tip.label = NULL)
     trees
 }
 
-
-#
+ 
 # dn sehr viel schneller
-# dist.nodes ape replacement
+# dist.nodes ape replacement   
 bipi <- function (x)
 {
    if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise")
@@ -1722,16 +1728,6 @@ all.dist <- function (tree, edge.length = FALSE)
    res1 + res2
 }
 
-
-# etwas langsamer als dist.nodes / dn schneller als all.dist
-#all.dist2 <- function (tree, edge.length = FALSE)
-#{
-#    lab = tree$tip.label
-#    bp = bipi(tree)
-#    B1 = as.Matrix.splits(bp)
-#    res = -crossprod(B1) + colSums(B1)
-#    res+t(res)
-#}
 
 dn <- function (x){
     if (!is.binary.tree(x) ) 
@@ -1999,7 +1995,6 @@ rNNI <- function(tree, moves=1, n=1){
 #
 # Maximum Parsimony 
 #
-
 rowMin = function(X){
     d=dim(X)
     .Call("rowMin", X, as.integer(d[1]), as.integer(d[2]), PACKAGE = "phangorn") 
@@ -2022,7 +2017,6 @@ parsimony <- function(tree, data, method='fitch', ...){
 }
 
 
-# fixed error
 ancestral.pars <- function (tree, data, type = c("MPR", "ACCTRAN")) 
 {
     call <- match.call()
@@ -2081,7 +2075,6 @@ MinMaxPars <- function(tree, data){
 }
 
 
-# mpr2 ist mpr ohne test auf binary
 mpr <- function (tree, data, returnData = FALSE) 
 {
     data = prepareDataFitch(data)
@@ -2152,9 +2145,7 @@ mpr <- function (tree, data, returnData = FALSE)
     attr(result, "dim") = c(nr, m)
     row.names = node0
     result
-#    matrix(result, nr, m)
 }
-
 
 
 plotAnc <- function (tree, data, i = 1, ...) 
@@ -2208,8 +2199,6 @@ fitch <- function (tree, data, site="pscore")
 { 
     if (class(data) != "phyDat") 
         stop("data must be of class phyDat")
-#    if (!is.binary.tree(tree)) 
-#        warning("tree is not binary, parsimony score may be wrong!!!")
     levels <- attr(data, "levels")
     data <- prepareDataFitch(data)
     d = attributes(data)
@@ -2339,11 +2328,7 @@ is.rooted2 = function(tree){
 }
 
 
-
-
-    
 optim.fitch <- function(tree, data, trace=1, ...) {
-# checking outside
     if(class(tree)!="phylo") stop("tree must be of class phylo") 
     if(!is.binary.tree(tree)) tree <- multi2di(tree)
     if(is.rooted(tree))tree <- unroot(tree)
@@ -2430,6 +2415,8 @@ fitch.nni <- function (tree, data, ...)
             swap.edge = c(2, 3)
         else swap.edge = c(2, 4)
         tree2 <- changeEdge(tree, INDEX[(ind + 1)%/%2, swap.edge])
+
+#  fast.tree ??    
 #         tree2 <- changeEdge(tree, INDEX2[ind, swap.edge])
         test <- fit.fitch(tree2, data)
         if (test >= p0) 
@@ -2439,15 +2426,11 @@ fitch.nni <- function (tree, data, ...)
             swap = swap + 1
             tree <- tree2
             candidates[ind] = FALSE
-#            cand[INDEX2[ind, ] ] = TRUE
-            
+#            cand[INDEX2[ind, ] ] = TRUE           
             indi <- unique(which(INDEX %in% (INDEX[(ind + 1)%/%2, ]))%%m)
-   
 #            indi2 <- blub[cand[INDEX2]] 
- 
             indi[indi == 0] <- m
             indi = c((2 * indi) - 1, 2 * indi)
-
             candidates[indi] <- FALSE
             pscore[indi] <- Inf
         }
@@ -2667,7 +2650,7 @@ optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, ...){
 }
 
 
-pratchet <- function (data, start = NULL, k = 20, np = 1, trace = 1, all=FALSE, multicore=FALSE, ...) 
+pratchetOld <- function (data, start = NULL, k = 20, np = 1, trace = 1, all=FALSE, multicore=FALSE, ...) 
 {
     eps = 1e-08
     trace = trace - 1
@@ -2713,10 +2696,7 @@ pratchet <- function (data, start = NULL, k = 20, np = 1, trace = 1, all=FALSE, 
             } 
         }
         if (!eval.success) trees <- lapply(bstrees, optim.parsimony, data, trace = trace, ...)
-#        if (require("multicore") && .Platform$GUI == "X11") 
-#            trees <- mclapply(bstrees, optim.parsimony, data, trace = trace, ...)
-#        else trees <- lapply(bstrees, optim.parsimony, data, trace = trace, ...)
-        trees[[np + 1]] = tree
+        trees[[np + 1 ]] = tree
         pscores <- sapply(trees, function(data) attr(data, "pscore"))
         mp = min(pscores)
         if (trace >= 0) 
@@ -2735,6 +2715,84 @@ pratchet <- function (data, start = NULL, k = 20, np = 1, trace = 1, all=FALSE, 
         }
     }
     if(!all) return(tree)
+    result
+}
+
+
+
+pratchet <- function (data, start = NULL, k = 20, np = 1, trace = 1, all=FALSE, multicore=FALSE, ...) 
+{
+    eps = 1e-08
+    trace = trace - 1
+    uniquetree <- function(trees) {
+        k = 1
+        res = trees[[1]]
+        result = list()
+        result[[1]]=res
+        k=2
+        trees = trees[-1]
+        while (length(trees) > 0) {
+            rf = sapply(trees, RF.dist, res)
+            if(any(rf==0))trees = trees[-which(rf == 0)]
+            if (length(trees) > 0) {
+                res = trees[[1]]
+                result[[k]] = res
+                k=k+1 
+                trees = trees[-1]
+            }
+        }
+        result
+    }
+    if (is.null(start)) 
+        start = optim.parsimony(nj(dist.hamming(data)), data, trace = trace, 
+            ...)
+    tree = start
+    attr(tree, "pscore") = parsimony(tree, data, ...)
+    if (trace >= 0) 
+        print(paste("Best pscore so far:",attr(tree, "pscore")))
+    FUN = function(data, tree, ...) {
+        optim.parsimony(tree, data = data, ...)
+    }
+    result = list()
+    for (i in 1:k) {
+        bstrees <- bootstrap.phyDat(data, FUN, tree = tree, bs = np, 
+            trace = trace, ...)
+
+        eval.success <- FALSE
+        if (!eval.success & multicore) {
+            if (!require(multicore) || .Platform$GUI!="X11") {
+                warning("package 'multicore' not found or GUI is used, 
+                analysis is performed in serial")
+            } else {       
+                trees <- mclapply(bstrees, optim.parsimony, data, trace = trace, ...)
+                eval.success <- TRUE
+            } 
+        }
+        if (!eval.success) trees <- lapply(bstrees, optim.parsimony, data, trace = trace, ...)
+        if(class(result)=="phylo")m=1
+        else m = length(result)
+        if(m>0){
+              trees[(np+1) : (np+m)] = result[1:m]
+        }
+        pscores <- sapply(trees, function(data) attr(data, "pscore"))
+
+        mp = min(pscores)
+        if (trace >= 0) 
+            print(paste("Best pscore so far:",mp))
+        ind = which(pscores < mp + eps)
+        if (length(ind) == 1) {
+            result = trees[ind]
+            tree = result[[1]]
+        }
+        else {
+            result = uniquetree(trees[ind])
+            l = length(result)
+            tree = result[[sample(l, 1)]]
+        }
+    }
+    if(!all) return(tree)
+    if(length(result)==1) return(result[[1]])
+    class(result) = "multiPhylo"
     result
 }
 
@@ -2782,7 +2840,7 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
         stop("data must be of class phyDat")
     if (is.null(attr(tree, "order")) || attr(tree, "order") == 
         "cladewise") 
-        tree <- reorder(tree, "pruningwise")
+        tree <- ape:::reorder.phylo(tree, "pruningwise") #reorderPruning??
  #   if (!is.binary.tree(tree)) 
  #       stop("Tree must be binary!")
     tmp = fitch(tree, data, site = "data")
@@ -2857,7 +2915,7 @@ CI <- function(tree, data){
      l = length(tree$tip)
      data = data[tree$tip]
      dat2 = contrast[data[[1]], ]
-     for(i in 2:l)dat2 = dat2 + contrast[data[[i]], ]
+     for(i in 2:l)dat2 = dat2 + contrast[data[[i]], , drop=TRUE]
      m = rowSums(dat2>0) - 1
      sum(m * weight)/pscore
 }
@@ -2873,7 +2931,7 @@ RI <- function(tree, data){
      l = length(tree$tip)
      data = data[tree$tip]
      dat2 = contrast[data[[1]], ]
-     for(i in 2:l)dat2 = dat2 + contrast[data[[i]], ]
+     for(i in 2:l)dat2 = dat2 + contrast[data[[i]], , drop=TRUE]
      m = rowSums(dat2>0) - 1
      m = sum(m * weight)
      g = l - apply(dat2, 1, max)
@@ -3389,12 +3447,6 @@ pmlScale <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1
 }
 
 
-# optimize this + integrate logLik4 / Ziel genauer und doch schneller
-# hash table for node (vielleicht edge)
-# Q raus, enforce eig = edQt(bf = bf, Q = Q) 
-# 
-# include ll in pml2 improve speed update / eval mit pml2
-# pmlMix needs improvement  
 ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1, 
     Q = c(1, 1, 1, 1, 1, 1), eig = NULL, assign.dat = FALSE, ...) 
 {
@@ -3550,7 +3602,6 @@ pml.nni <- function (tree, data, w, g, eig, bf, ll.0, ll, ...)
         tree2 <- changeEdge(tree, INDEX[(ind+1)%/%2,swap.edge], INDEX[(ind+1)%/%2,], edgeMatrix[ind,])
         
         test <- pml2(tree2, data, bf = bf, k=k, g=g, w=w, eig=eig, ll.0=ll.0, ...) # maybe INV
-#        print(test)
         if(test <= ll + eps0) candidates[ind] = FALSE
         if(test > ll + eps0) {
             ll = test 
@@ -3566,7 +3617,7 @@ pml.nni <- function (tree, data, w, g, eig, bf, ll.0, ll, ...)
 
 
 
-rnodes <- function (fit) #, i=1, transform=transform) 
+rnodes <- function (fit)  
 {
     tree = fit$tree 
     data = getCols(fit$data, tree$tip) 
@@ -3583,7 +3634,6 @@ rnodes <- function (fit) #, i=1, transform=transform)
     dat = vector(mode = "list", length = m*l)
     dim(dat) <- c(l,m)
     
-#    data = fit$data
     tmp = length(data)
     for(i in 1:length(w))dat[i,1:tmp]=new2old.phyDat(data) 
     
@@ -3605,7 +3655,7 @@ rnodes <- function (fit) #, i=1, transform=transform)
     parent <- tree$edge[, 1]
     child <- tree$edge[, 2]
     nTips = min(parent) - 1
-    datp = vector("list", m)   # nur m statt m*l
+    datp = vector("list", m)   
     dat2 = vector("list", m * l)
 
     dim(dat2) <- c(l,m)
@@ -3654,7 +3704,7 @@ rnodes2 <- function (tree, data, w, g, eig, bf)
     parent <- tree$edge[, 1]
     child <- tree$edge[, 2]
     nTips = min(parent) - 1
-    datp = vector("list", m)   # nur m statt m*l
+    datp = vector("list", m)   
     dat2 = vector("list", m * l)
     dim(dat2) <- c(l,m)
 
@@ -4112,7 +4162,7 @@ optimRooted <- function(fit, control = pml.control(epsilon = 1e-08, maxit = 25, 
     ll.0 = fit$ ll.0
    
     if (is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise") 
-        tree <- reorder(tree, "p")
+        tree <- ape:::reorder.phylo(tree, "pruningwise") # reorderPruning???
     if(!is.rooted(tree))stop("tree must be rooted")
   
     weight = attr(fit$data , "weight")
@@ -4269,7 +4319,6 @@ pml6 <- function (tree, data, bf, Q, eig, ll.0, w, g, ...)
 # pmlPart + pmlCluster
 #
 
-# optimPartQ
 optimPartQ <- function (object, Q = c(1, 1, 1, 1, 1, 1), ...) 
 {
     l = length(Q)
@@ -4622,6 +4671,18 @@ pmlPart <- function (formula, object, control=pml.control(epsilon=1e-8, maxit=10
 #
 bip <- function (x) 
 {
+    if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
+        x = reorderPruning(x)
+    nTips = length(x$tip)
+    res = vector("list", max(x$edge))
+    res[1:nTips]=1:nTips
+    tmp = bipart(x)
+    res[attr(tmp, "nodes")] = tmp
+    res
+}
+
+bip2 <- function (x) 
+{
     if(is.null(attr(x,"order")) || attr(x, "order")=="cladewise") x = reorderPruning(x)
     nNode = x$Nnode
     nTips = length(x$tip)
@@ -4858,36 +4919,19 @@ cisort <- function(x,y){
 }
 
 
-bipart <- function(x){
-    if(is.null(attr(x,"order")) || attr(x, "order")=="cladewise") x = reorderPruning(x)
-    nNode=x$Nnode
-    nTips=length(x$tip)
-    parent <- as.integer(x$edge[, 1])
-    child <- as.integer(x$edge[, 2])
-    res = vector("list",nNode)
-    kl=integer(max(parent))
-    k=1 
-    p=parent[1]
-    tmp=NULL
-    for(i in 1:length(parent)){
-        pi=parent[i]
-        ci = child[i]
-        if(pi==p){
-            if(ci < (nTips+1)) tmp=cisort(tmp,ci) 
-            else tmp = cisort(tmp, res[[kl[ci]]])  
-        }
-        else{
-            kl[p]=k 
-            res[[k]]= (tmp) 
-            if(ci < (nTips+1)) tmp=ci 
-            else tmp = res[[kl[ci]]]
-            k=k+1 
-            p=pi
-        }    
-    }
-    res[[k]]=(tmp)    
-    attr(res, "nodes") = unique(parent)
-    res 
+# much faster (~10x)
+bipart = function(obj){
+    if (is.null(attr(obj, "order")) || attr(obj, "order") == 
+        "cladewise") 
+        obj <- reorderPruning(obj)
+#    storage.mode(obj$Nnode) <- "integer"
+    maxP  = max(obj$edge)
+    nTips = length(obj$tip)
+#    storage.mode(obj$Nnode) <- "integer"
+#    storage.mode(obj$edge) <- "integer"
+    res <- .Call("bipart", as.integer(obj$edge[,1]) , as.integer(obj$edge[,2]), as.integer(nTips), as.integer(maxP), as.integer(obj$Nnode))
+    attr(res, "nodes") = unique(obj$edge[,1])
+    res    
 }
 
 
@@ -4947,18 +4991,16 @@ allChildren = function(x){
 }
 
 
-# much faster if node is no vector 
 Children = function(x, node){
-#   if(length(node)==1) return(allChildren(x)[[node]])
    if(length(node)==1)return(x$edge[x$edge[,1]==node,2])
    allChildren(x)[node]
 }
 
 
-# much faster for type=c("tips", "all")
 Descendants = function(x, node, type=c("tips","children","all")){
     type <- match.arg(type)
     if(type=="children") return(Children(x, node))
+    if(type=="tips") return(bip(x)[node])
     ch = allChildren(x) # out of the loop
     desc = function(x, node, type){
         isInternal = logical(max(x$edge))
@@ -4977,14 +5019,6 @@ Descendants = function(x, node, type=c("tips","children","all")){
     desc(x,node, type)
 }
 
-
-SiblingsOld = function (x, node, include.self = FALSE) 
-{
-    v <- Children(x, Ancestors(x, node, "parent"))
-    if (!include.self) 
-        v <- v[v != node]
-    v
-}
 
 Siblings = function (x, node, include.self = FALSE) 
 {
@@ -5026,7 +5060,6 @@ getIndex = function(left, right, n){
 }
 
 
-# updating All: eps changed
 pmlCluster <- function (formula, fit, weight, p = 4, part = NULL, control=pml.control(epsilon=1e-8, maxit=10, trace=1), ...) 
 {
     call <- match.call()
@@ -5585,7 +5618,6 @@ optimMixInv <- function(object, inv=0.01, omega,...){
 }
 
 
-# more C-Code
 pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)), 
     shape = 1, k = 1, Q = rep(1, length(levels) * (length(levels) - 1)/2), 
     levels = attr(data, "levels"), inv = 0, rate = 1, g = NULL, w = NULL, 
@@ -5625,7 +5657,7 @@ pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)),
          ll.0 <- ll.0 + llMix           
     p = length(g)
     nr <- attr(data, "nr")   
-# C-Function somewhere starting here, less memory (less copying) or parallel fork 
+# TODO: C-Function somewhere starting here, less memory (less copying) or parallel fork 
     resll <- matrix(0, nr, k)
     while (m <= k) {
         resll[,m] = ll(data, tree, bf = bf, g = g[m], Q = Q, eig = eig, assign.dat = FALSE, ...)
@@ -5636,7 +5668,6 @@ pml2 <- function (tree, data, bf = rep(1/length(levels), length(levels)),
     if(wMix >0) siteLik <- siteLik * (1-wMix) + llMix
     siteLik = log(siteLik)
     sum(weight * siteLik)
-#
 }
 
 
@@ -6349,7 +6380,7 @@ simSeq = function(tree, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type = "DNA", mod
     m = length(levels)    
     
     if(is.null(rootseq))rootseq = sample(levels, l, replace=TRUE, prob=bf)
-    tree = reorder(tree)
+    tree = ape:::reorder.phylo(tree) #
     edge = tree$edge
     nNodes = max(edge)
     res = matrix(NA, l, nNodes)
@@ -6377,7 +6408,8 @@ simSeq = function(tree, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type = "DNA", mod
 }        
 
 
-# todo add KH-test       
+# todo add KH-test
+# interface to AU-test       
 SH.test <- function (..., B = 10000, data = NULL)
 {
    fits <- list(...)
@@ -6543,11 +6575,17 @@ plotBS = function(tree, BStrees, type="unrooted", bs.col="black", bs.adj=NULL, .
 
 
 #
-# splits format
+# splits format, networx, Matrix, lento plot 
 #
 as.splits <- function (x, ...){
-    if (class(x) == "splits") return(x)
+    if(inherits(x, "splits")) return(x)
     UseMethod("as.splits")
+}
+
+
+as.Matrix <- function (x, ...){
+    if (class(x) == "Matrix") return(x)
+    UseMethod("as.Matrix")
 }
 
 
@@ -6565,12 +6603,14 @@ as.matrix.splits <- function(x, zero.print = 0L, one.print=1L, ...){
 #
 # needs Matrix package, Matrix(t(as.matrix))
 # 
-#as.Matrix.splits <- function(x){
-#    l = length(x)
-#    j = unlist(x)
-#    i = rep(1:l, sapply(x, length))
-#    sparseMatrix(i,j) # ,x = rep(1L, length(i))
-#}
+
+# include weights
+as.Matrix.splits <- function(x){
+    l = length(x)
+    j = unlist(x)
+    i = rep(1:l, sapply(x, length))
+    sparseMatrix(i,j) # ,x = rep(1L, length(i))
+}
 
 
 print.splits <- function (x, maxp = getOption("max.print"), 
@@ -6588,9 +6628,32 @@ print.splits <- function (x, maxp = getOption("max.print"),
    if(!is.null(attr(x, "weights"))) attr(result, "weights") = attr(x, "weights")[i] 
    if(!is.null(attr(x, "data"))) attr(result, "data") = attr(x, "data")[i,, drop=FALSE] 
    attr(result, "labels") = attr(x, "labels")
-   class(result) = "splits"
+   class(result) = c("splits", "prop.part")
    result
 }
+
+
+c.splits <- function (..., recursive=FALSE) 
+{
+    x <- list(...)
+    n <- length(x)
+    match.names <- function(a, b) {
+        if (any(!(a %in% b))) 
+            stop("names do not match previous names")
+    }
+    if (n == 1) 
+        return(x[[1]])
+
+    labels <- attr(x[[1]], "labels")
+    for (i in 2:n) {
+        match.names(labels, attr(x[[i]], "labels"))
+    }
+    res = structure(NextMethod("c"), class=c("splits", "prop.part"))
+    attr(res, "labels") = labels
+    attr(res, "weight") = as.vector(sapply(x, attr, "weight"))
+    res
+}
+
 
 
 # computes splits from phylo
@@ -6600,7 +6663,7 @@ as.splits.phylo <- function(x, ...){
     edge.weights[x$edge[,2]] = x$edge.length
     attr(result, "weights") = edge.weights
     attr(result, "labels") <- x$tip
-    class(result) = 'splits'
+    class(result) = c('splits', 'prop.part')
     result 
 }
 
@@ -6621,41 +6684,71 @@ as.splits.multiPhylo <- function(x, ...){
     result = c(splitTips,splits)
     attr(result, "weights") = c(rep(lx, l), weights)
     attr(result, "labels") <- lab
-    class(result) = 'splits'
+    class(result) = c('splits', 'prop.part')
     result  
 }
 
 
-as.phylo.splits = function(x, ...){
-    labels = attr(x, "labels") 
+as.splits.prop.part <- function(x, ...){
+    if(is.null(attr(x, "number"))) attr(x, "weights") = rep(1, length(x)) 
+	else attr(x, "weights") = attr(x, "number")
+    class(x) = c('splits', 'prop.part')	
+    x
+}
+
+
+as.prop.part <- function (x, ...){
+    if (class(x) == "prop.part") return(x)
+    UseMethod("as.prop.part")
+}
+
+
+as.prop.part.splits <- function(x, ...){
+    attr(x, "number") = attr(x, "weights")
+    attr(x, "weights") = NULL
+    class(x) = c('prop.part')	
+    x
+}
+
+
+as.phylo.splits <- function (x, result = "phylo", ...) 
+{
+    result <- match.arg(result, c("phylo", "all"))
+    labels = attr(x, "labels")
     weights = attr(x, "weights")
     nTips = length(labels)
     dm = as.matrix(compatible(x))
     rs = rowSums(dm)
-    ind = which(rs==0)
-    if(any (rs>0)){     
-        tmp = which(rs>0)
-        candidates = order(rs)[tmp]
-        for(i in candidates){
-             if(sum(dm[ind,i])==0) ind = c(ind,i)
-        }      
-    }  
-    splits = x[ind]    
-    weights = weights[ind] 
+    ind = which(rs == 0)
+    if (any(rs > 0)) {
+        tmp = which(rs > 0)
+        candidates = tmp[order(rs[tmp])]
+        for (i in candidates) {
+            if (sum(dm[ind, i]) == 0) 
+                ind = c(ind, i)
+        }
+    }
+    splits = x[ind]
+    weights = weights[ind]
     l = length(ind)
     res = matrix(0L, l, nTips)
     for (i in 1:l) res[i, splits[[i]]] = 1L
-    dm2 = (crossprod(res*weights, 1-res))
-    dm2 = dm2+t(dm2)
-    dimnames(dm2) = list(labels,labels) 
-    di2multi(NJ(dm2), tol = 1e-08) 
+    dm2 = (crossprod(res * weights, 1 - res))
+    dm2 = dm2 + t(dm2)
+    dimnames(dm2) = list(labels, labels)
+    tree <- di2multi(NJ(dm2), tol = 1e-08)
+    tree <- phangorn:::reorderPruning(tree)
+    if (result == "phylo") 
+        return(tree)  
+    tree = phangorn:::reroot(tree, Ancestors(tree, 1, "parent")) 
+    list(tree = tree, index = tree$edge[, 2], split = as.splits(tree), rest = x[-ind])
 }
 
 
 # computes compatible splits
 compatible <- function(obj){
     labels = attr(obj, "labels")
-    if(!class(obj)=='splits')stop("obj needs to be of class splits")
+    if(!inherits(obj, "splits"))stop("obj needs to be of class splits")
     
     l = length(labels)
     n = length(obj)
@@ -6682,18 +6775,60 @@ compatible <- function(obj){
     }
 
     
+compatible2 <- function (obj1, obj2=NULL) 
+{   
+    if (!inherits(obj1, "splits")) 
+        stop("obj needs to be of class splits")
+    labels = attr(obj1, "labels")    
+    l = length(labels)
+    n = length(obj1)
+# use Matrix instead
+    bp1 = matrix(0L, n, l)
+    for (i in 1:n) bp1[i, obj1[[i]]] = 1L
+    bp1[bp1[, 1] == 0L, ] = 1L - bp1[bp1[, 1] == 0L, ] 
+    if(!is.null(obj2)){
+        m = length(obj2) 
+        bp2 = matrix(0L, m, l)
+        for (i in 1:m) bp2[i, obj2[[i]]] = 1L
+
+        labels2 = attr(obj2, "labels")
+        bp2 = bp2[, match(labels2, labels)]
+
+        bp2[bp2[, 1] == 0L, ] = 1L - bp2[bp2[, 1] == 0L, ]
+    }
+    else bp2 = bp1
+
+    if(is.null(obj2)) res = matrix(0L, n, n)
+    else res = matrix(0L, n, m)
+
+    tmp1 = tcrossprod(bp1, bp2)
+    tmp2 = tcrossprod(1L - bp1, 1L - bp2)
+    tmp3 = tcrossprod(bp1, 1L - bp2)
+    tmp4 = tcrossprod(1L - bp1, bp2)
+    res[(tmp1 * tmp2 * tmp3 * tmp4) > 0] = 1L
+    if(is.null(obj2)){
+        res = res[lower.tri(res)]
+        attr(res, "Size") <- n
+        attr(res, "Diag") <- FALSE
+        attr(res, "Upper") <- FALSE
+        class(res) <- "dist"
+    }
+    return(res)
+}
+
 
 compatible3 <- function(x, y=NULL) 
 {
-    if (!class(x) == "splits") 
+    if (!inherits(x, "splits")) 
         stop("x needs to be of class splits")
     if(is.null(y)) y <- x
         
-    if (!class(y) == "splits") 
+    if (!inherits(y, "splits")) 
         stop("y needs to be of class splits")
     xlabels = attr(x, "labels")
     ylabels = attr(y, "labels")
-    labels = intersect(xlabels, ylabels)
+    if(identical(xlabels, ylabels)) labels = xlabels 
+    else labels = intersect(xlabels, ylabels)
 #    if(length(labels) maybe warning
     nx = length(x)
     ny = length(y)   
@@ -6721,15 +6856,354 @@ compatible3 <- function(x, y=NULL)
     return(res)
 }
     
+
+#
+# networx
+#
+addEdge <- function(network, desc, split){
+    edge = network[[1]]$edge
+    parent = edge[,1]
+    child = edge[,2]
+
+    l = length(attr(split, "labels"))
+    if(split[[1]][1]==1) split[[1]] <- c(1:l)[-split[[1]]] # ==1
+ 
+    index = network[[2]]
+    ind = which(phangorn:::compatible2(split, desc[index]) == 1)
+    if(is.null(ind)) return(network)
+    add = TRUE
+
+    while(add){
+        tmp = ind
+        for(i in ind){
+             tmp2 = which(phangorn:::compatible2(desc[index][i], desc[index]) == 1)
+             tmp = union(tmp, tmp2)
+        }
+        if(identical(ind, tmp)){add=FALSE}
+        ind=tmp 
+    }    
+
+    oldNodes = unique(as.vector(edge[ind,]))
+    newNodes = (max(parent)+1L) : (max(parent)+length(oldNodes))
+
+    ind2 = index[-ind]
+    edge2 = edge[-ind,, drop=FALSE] 
+
+    for(i in 1:length(oldNodes)){
+        ind3 = which(edge2[,1] == oldNodes[i])
+#        ind3 = which(edge2 == oldNodes[i],arr=TRUE)[,1]
+        for(j in ind3) {
+             if(any( desc[[ ind2[j] ]] %in% split[[1]])){
+                   edge2[j,edge2[j,]==oldNodes[i]] = newNodes[i]
+             }
+        } 
+    } 
+    edge[-ind,] = edge2
+
+#alle Splits verdoppeln
+    dSpl = edge[ind,]
+    for(i in 1:length(oldNodes)) dSpl[dSpl==oldNodes[i]] = newNodes[i]
+    edge = rbind(edge, dSpl, deparse.level = 0) # experimental: no labels
+    network[[1]]$edge.length = c(network[[1]]$edge.length, network[[1]]$edge.length[ind])   
+    index = c(index, index[ind])
+
+#neu zu alt verbinden   
+    edge = rbind(edge, cbind(oldNodes, newNodes), deparse.level = 0) #  rbind(edge, cbind(oldNodes, newNodes), deparse.level = 0)# experimental: no labels
+    network[[1]]$edge.length = c(network[[1]]$edge.length, rep(attr(split,"weights"), length(oldNodes)))
+    index = c(index, rep(max(index)+1, length(oldNodes)) )
+    network[[2]] = index
     
-# lento plot   
+    network[[1]]$edge = edge
+    network[[1]]$Nnode = length(unique(edge[,1]))
+    
+    network[[3]]= c(desc, split)   #[length(sp)+1] = split
+    network   
+}
+
+
+as.networx <- function (x, ...) 
+{
+    if (inherits(x, "networx")) 
+        return(x)
+    UseMethod("as.networx")
+}
+
+
+as.networx.splits <- function(x, ...){   
+    tmp = as.phylo(x, "all")
+    obj = tmp[1:2]
+    splitsOld = tmp[[3]]
+    splitsNew = tmp[[4]]  
+    if(length(splitsNew)>0){  
+        ord <- order(colSums(phangorn:::compatible2(c(splitsOld,splitsNew), splitsNew)))
+        ord2 <- order(colSums(phangorn:::compatible2(splitsOld, splitsNew)))
+        ord3 <- order(colSums(phangorn:::compatible2(splitsNew, splitsNew)))
+        splitsNew = splitsNew[ord]
+
+        for(i in 1:length(splitsNew)){
+            tmp = addEdge(obj, splitsOld, splitsNew[i])
+            splitsOld = tmp[[3]]
+            obj = tmp[1:2]    
+        } 
+    }
+    res = obj[[1]]    
+    nTips = length(res$tip.label)
+    res$Nnode = max(res$edge) - nTips # raus in addEdge
+    res$split = obj[[2]]
+    class(res) = c("networx", "phylo")
+    res
+}
+
+
+consensusNet <- function(obj, prob=.3, ...){
+    l = length(obj)
+    spl = as.splits(obj)
+    w = attr(spl, "weight")
+    ind = (w/l) > prob 
+    spl = spl[ind] 
+    as.networx(spl)
+}
+
+
+reorder.networx <- function (x, order = "cladewise", ...) 
+{
+    order <- match.arg(order, c("cladewise", "pruningwise"))
+    if (!is.null(attr(x, "order"))) 
+        if (attr(x, "order") == order) 
+            return(x)
+    nb.node <- x$Nnode
+    if (nb.node == 1) 
+        return(x)
+    nb.tip <- length(x$tip.label)
+    nb.edge <- dim(x$edge)[1]
+    neworder <- if (order == "cladewise") 
+        .C("neworder_cladewise", as.integer(nb.tip), as.integer(x$edge[, 
+            1]), as.integer(x$edge[, 2]), as.integer(nb.edge), 
+            integer(nb.edge), PACKAGE = "ape")[[5]]
+    else .C("neworder_pruningwise", as.integer(nb.tip), as.integer(nb.node), 
+        as.integer(x$edge[, 1]), as.integer(x$edge[, 2]), as.integer(nb.edge), 
+        integer(nb.edge), PACKAGE = "ape")[[6]]
+    x$edge <- x$edge[neworder, ]
+    if (!is.null(x$edge.length)) 
+        x$edge.length <- x$edge.length[neworder]
+    # 
+    if (!is.null(x$split))x$split <- x$split[neworder]
+    attr(x, "order") <- order
+    x
+}
+
+
+coords <- function(obj, dim="3D"){
+	if(is.null(attr(obj,"order")) || attr(obj, "order")=="pruningwise") obj <- reorder(obj)
+    obj = reorder.networx(obj)
+
+    l = length(obj$edge.length)
+    ind1 = which(!duplicated(obj$split))
+
+    n = max(obj$edge)
+    adj = Matrix:::spMatrix(n, n, i = obj$edge[,2], j = obj$edge[,1], x = rep(1, length(obj$edge.length)))
+    g = graph.adjacency(adj, "undirected")
+
+    g2 <- graph(t(obj$edge)-1, directed=FALSE)
+    g2 <- set.edge.attribute(g, "weight", value=obj$edge.length)
+    if(dim=="3D"){
+        coord <- layout.kamada.kawai(g, dim=3)
+        k = matrix(0, max(obj$split), 3)
+        for(i in ind1){
+            tmp = coord[obj$edge[i, 2],] - coord[obj$edge[i, 1],]
+            k[obj$split[i], ] = kart2kugel(tmp[1], tmp[2], tmp[3])
+        }
+        k[obj$split[ind1],1] = obj$edge.length[ind1] 
+
+        res = matrix(0, vcount(g), 3)
+        for(i in 1:l){# unique(obj$split)
+            j = obj$edge[i,1]
+            m = obj$edge[i,2]
+            p = obj$split[i]
+            res[m,] = res[j,] + kugel2kart(k[p,1], k[p,2], k[p,3])     
+        }            
+    }
+    else{
+        coord <- layout.kamada.kawai(g, dim=2)
+        k = matrix(0, max(obj$split), 2)
+        for(i in ind1){
+            tmp = coord[obj$edge[i, 2],] - coord[obj$edge[i, 1],]
+            k[obj$split[i], ] = kart2kreis(tmp[1], tmp[2])
+        }
+        k[obj$split[ind1],1] = obj$edge.length[ind1] 
+        res = matrix(0, vcount(g), 2)
+        for(i in 1:l){# unique(obj$split)
+            j = obj$edge[i,1]
+            m = obj$edge[i,2]
+            p = obj$split[i]
+            res[m,] = res[j,] + kreis2kart(k[p,1], k[p,2])     
+        }
+    }  
+    res  
+}
+
+
+kart2kugel <- function(x,y,z){
+    r = sqrt(x*x+y*y+z*z)
+    alpha = atan(sqrt(x*x+y*y) / z)
+    if(z<0) alpha = alpha+pi
+    beta = atan(y/x)
+    if(x<0) beta = beta+pi 
+    c(r,alpha,beta)
+}
+
+	
+kart2kreis <- function(x,y){
+    r = sqrt(x*x+y*y)
+    alpha = atan(y/x) 
+    if(x<0) alpha = alpha+pi
+    c(r,alpha)
+}	
+	
+
+kreis2kart <- function(r,alpha){
+	c(r*cos(alpha), r*sin(alpha))
+}
+
+
+kugel2kart <- function(r,alpha,beta){
+    x = r * sin(alpha) * cos(beta) 
+    y = r * sin(alpha) * sin(beta) 
+    z = r * cos(alpha)
+    c(x,y,z)
+}
+
+
+edgeLabels <- function(xx,yy,zz=NULL, edge){
+        XX <- (xx[edge[, 1]] + xx[edge[, 2]])/2
+        YY <- (yy[edge[, 1]] + yy[edge[, 2]])/2
+        if(!is.null(zz)){
+	        ZZ <- (zz[edge[, 1]] + zz[edge[, 2]])/2
+	        return(cbind(XX, YY, ZZ))
+        }  
+        cbind(XX, YY)  
+}
+
+
+plot.networx = function(x, type="3D", show.tip.label=TRUE, show.edge.label=FALSE, show.nodes=FALSE, tip.color = "blue", edge.color="grey", edge.width = 3, 
+    font = 3, cex = 1, ...){
+    type = match.arg(type, c("3D", "2D")) 
+    n = max(x$edge)
+    tip = rep(NA, n)
+    tips = x$tip.label
+    tip[1:length(tips)] = tips
+    
+    x = reorder(x)
+    
+    adj = spMatrix(n, n, i = x$edge[,2], j = x$edge[,1], x = rep(1, length(x$edge.length)))
+    g = graph.adjacency(adj, "undirected")
+    
+    plot.success <- FALSE
+    if (!plot.success & type=="3D") {
+        if (!require(rgl)) {
+            warning("package 'rgl' not found, can only plot in 2D")
+        } else {       
+             coord <- coords(x, dim="3D")
+             plotRGL(coord, x, show.tip.label=show.tip.label, show.edge.label=show.edge.label, show.nodes=show.nodes, tip.color = tip.color,
+             edge.color=edge.color, edge.width = edge.width, font = font, cex = cex)
+             plot.success <- TRUE
+        } 
+    }
+    if (!plot.success){
+	    coord <- coords(x, dim="2D")
+	    plot2D(coord, x, show.tip.label=show.tip.label, show.edge.label=show.edge.label, tip.color = tip.color, edge.color=edge.color, 
+	    edge.width = edge.width, font = font, cex = cex, add=FALSE)
+	    }    
+}
+
+    
+plotRGL <- function(coords, net, show.tip.label=TRUE, show.edge.label=FALSE, show.nodes=FALSE, tip.color = "blue", edge.color="grey", 
+    edge.width = 3, font = 3, cex = par("cex"), ...){
+    edge = net$edge
+  
+    x = coords[,1]
+    y = coords[,2]
+    z = coords[,3]
+     
+    nTips = length(net$tip.label)
+
+    par3d(skipRedraw=TRUE)
+    for(i in 1:dim(edge)[1]){
+        segments3d(x[edge[i,]],y[edge[i,]],z[edge[i,]], col=edge.color, lwd=edge.width)
+    }
+    radius=0
+    if(show.nodes){
+        radius = sqrt((max(x)-min(x))^2 + (max(y)-min(y))^2 + (max(z)-min(z))^2) / 200    
+        spheres3d(x[1:nTips], y[1:nTips],z[1:nTips], radius=2*radius, color="cyan")
+        spheres3d(x[-c(1:nTips)], y[-c(1:nTips)],z[-c(1:nTips)], radius=radius, color="magenta")
+    }
+    if(show.tip.label){
+      rgl.texts(x[1:nTips]+2.05*radius,y[1:nTips],z[1:nTips],net$tip.label, color=tip.color, cex=cex, font=font)
+    }
+    if(show.edge.label){
+	    ec = edgeLabels(x, y, z, edge)
+	    rgl.texts(ec[,1], ec[,2], ec[,3], net$split, color=tip.color, cex=cex, font=font)     
+    } 
+    par3d(skipRedraw=FALSE)
+}
+
+
+plot2D <- function(coords, net, show.tip.label=TRUE, show.edge.label=FALSE, tip.color = "blue", edge.color="grey", edge.width = 3, 
+    font = 3, cex = par("cex"), add=FALSE, ...){
+   edge = net$edge
+   label = net$tip.label
+   xx = coords[,1]
+   yy = coords[,2]
+   nTips = length(label)
+
+   cex=1
+   
+   xlim <- range(xx)
+   ylim <- range(yy)
+     
+   if(show.tip.label){
+       offset <- max(nchar(label)) * 0.018 * cex * diff(xlim)
+       xlim = c(xlim[1]-offset, xlim[2]+offset)
+       ylim = c(ylim[1]-0.03 * cex * diff(ylim), ylim[2]+0.03 * cex * diff(ylim))
+   }
+   if(!add){ 
+       plot.new() 
+       plot.window(xlim, ylim, asp=1)
+   }
+   cladogram.plot(edge, xx, yy, edge.color, edge.width, 1)
+   if(show.tip.label){
+        ind=match(1:nTips, edge[,2])
+        pos = rep(4, nTips)
+        XX <- xx[edge[ind, 1]] - xx[edge[ind, 2]]
+        pos[XX>0] = 2
+        YY <- yy[edge[ind, 1]] - yy[edge[ind, 2]]
+        pos2 <- rep(3, nTips)
+        pos2[YY>0] = 1
+        pos[abs(YY)>abs(XX)] <- pos2[abs(YY)>abs(XX)] 	
+        text(xx[1:nTips], yy[1:nTips], labels=label, pos=pos, col=tip.color, cex=cex, font=font)
+    }
+    if(show.edge.label){
+	    ec = edgeLabels(xx,yy, edge=edge)
+	    text(ec[,1], ec[,2], labels=net$split, col=tip.color, cex=cex, font=font)     
+	    } 
+}   
+   
+    
 lento <- function (obj, xlim = NULL, ylim = NULL, main = "Lento plot", 
-    sub = NULL, xlab = NULL, ylab = NULL, bipart=TRUE, ...) 
+    sub = NULL, xlab = NULL, ylab = NULL, bipart=TRUE, trivial=FALSE, ...) 
 {
     if (class(obj) == "phylo") 
         obj = as.splits(obj)
-    labels = attr(obj, "labels")
+    if (class(obj) == "multiPhylo") 
+        obj = as.splits(obj)    
+    labels = attr(obj, "labels") 
     l = length(labels)
+    if(!trivial){
+        triv = sapply(obj, length)
+        ind = logical(length(obj)) 
+        ind[(triv >1) & (triv < (l-1))] = TRUE
+        obj = obj[ind]
+        }
     CM = compatible(obj)
     support = attr(obj, "weights")
     if (is.null(support)) 
@@ -6958,17 +7432,24 @@ fast.tree  = function(tree, node){
    obj
 }
 
+# sehr viel schneller
+fast.tree2  = function(tree, node){
+   parent = c(node, Ancestors(tree, node))
+   edge = tree$edge 
+   ind = match(edge[,1], parent)
+   edge=edge[which(!is.na(ind)),] 
+   obj = list(edge=edge, Nnode=length(parent), tip.label=as.character(edge[is.na(match(edge[,2], edge[,1])),2]))
+   class(obj) = 'phylo'
+   obj
+}
 
 ###########################################################################################
-
 
 
 getClans = function (tree) 
 {
 	if (is.rooted(tree)) 
         tree = unroot(tree)
-    if (!is.binary.tree(tree)) 
-        warning("tree is not binary")
     bp = bip(tree)
     nTips = length(tree$tip)
     root = nTips + 1
@@ -7122,19 +7603,29 @@ getE = function (tree, x, clans = NULL, norm = TRUE)
     ind = which(LHG[o[1], ] == 1)
     result[6] = sum(x[-ind] == 2)
     result[7] = sum(x[-ind] == 3)
+
+
     if (length(x[-ind]) < 4) 
         return(list(result, NULL))
     result[5] = shannon2(intr[-o[1]], norm = norm)
     ind2 = c(which(LHG[o[1], ] == 1), which(LHG[o[2], ] == 1))
+  
+    spl = structure(list(which(colSums(LHG)==0)), labels=labels, weights=1)
+    class(spl)="splits"
+
     if (d == 2) {
-        return(list(result, labels[colSums(LHG)==0]))
+#        return(list(result, labels[colSums(LHG)==0]))
+         return(list(result, spl))
     } 
     result[9] = sum(x[-ind2] == 2)
     result[10] = sum(x[-ind2] == 3)
-    if (length(x[-ind2]) < 4) 
-        return(list(result, labels[colSums(LHG)==0]))
+    if (length(x[-ind2]) < 4){ 
+#        return(list(result, labels[colSums(LHG)==0]))
+         return(list(result, spl))
+    } 
     result[8] = shannon2(intr[-c(o[1], o[2])], norm = norm)
-    return(list(result, labels[colSums(LHG)==0]))
+#    return(list(result, labels[colSums(LHG)==0]))
+    return(list(result, spl))
 }
 
 
@@ -7159,10 +7650,63 @@ E_Intruder <- function (clans, x)
 }
 
 
-getDiversity <- function (tree, x, norm = TRUE, var.names = NULL) 
+E_Intruder_2 <- function (clans, x, native=NULL) 
+{     
+    contr = attr(x, "contr")
+    d = dim(contr)
+    if(d[1]>d[2])contr[(d[2]+1):d[1],]=0
+    cp = clans %*% contr[as.numeric(x),]
+    
+	homo = which(rowSums(cp > 0) == 1)
+		
+    l = length(homo)
+    if (l > 0) {
+        HG = clans[homo, , drop = FALSE]
+        lhg = rep(TRUE, l)
+        rsh = rowSums(HG)
+        Z = tcrossprod(HG)>0
+        Z = Z * rsh
+        zmax = apply(Z,2,max)
+        lhg = !(zmax > rsh)  
+        LHG = HG[lhg, , drop = FALSE]
+        return(LHG)
+    }
+    return(NULL)
+}
+# E_Intruder_2(clans, subset(x,tree$tip)) (alle homo clans)
+
+#X = matrix(rep(1:4, each=5),20,1)
+#row.names(X) = paste("t", 1:20, sep="")
+#x=phyDat(X, type="USER", levels=1:4, ambiguity=NULL)
+
+
+# getE2
+getDiv <- function(tree, x, native=NULL){
+    clans = getClans(tree)
+    labels = tree$tip.label
+    x = subset(x, labels)
+    LHG = E_Intruder_2(clans, subset(x,,1))
+    if(!is.null(native)){
+	    ll = match(native, attr(x, "allLevels"))
+	    ind = (as.numeric(x) %in% ll)
+	    }    	    
+	if(!is.null(native)){    
+	    rs = rowSums(clans)
+	    intr = clans %*% ind    
+	    clans = clans[intr==0,]
+	    d = which.max(rs[intr==0])
+	    tree2 = drop.tip(tree, tip=labels[which(clans[d, ]==1)])
+    } 
+    else tree2=NULL
+	list(c(phangorn:::shannon(rowSums(LHG)),      
+    summary(factor(attr(x, "allLevels"))[as.numeric(subset(x,,1))]), parsimony(tree, x)), tree2 )     
+}
+
+
+getDiversity <- function (tree, x, norm = TRUE, var.names = NULL, labels="new") 
 {
     k = 1
-    if (class(tree) == "multiPhylo") 
+    if(class(tree) == "multiPhylo") 
         k = length(tree)
     l = attr(x, "nr")
     tmp = matrix(0, k * l, 12)
@@ -7175,8 +7719,8 @@ getDiversity <- function (tree, x, norm = TRUE, var.names = NULL)
     }
     if(is.null(var.names)) var.names = 1:l
 
-    treeM = matrix(0L, k,length(x), dimnames=list(tnam, names(x)))
-    treeM = vector("list", k)
+#    treeM = matrix(0L, k,length(x), dimnames=list(tnam, names(x)))
+#    treeM = vector("list", k)
     
     PM = data.frame("t1", "a", stringsAsFactors = FALSE)
     colnames(PM) = c("Tree", "Var")
@@ -7193,34 +7737,41 @@ getDiversity <- function (tree, x, norm = TRUE, var.names = NULL)
         else tmptree = tree
         if (is.rooted(tmptree)) 
             tmptree = unroot(tmptree)
-        treeM[[i]] = sort(match(tmptree$tip,perfect))
+#        treeM[[i]] = sort(match(tmptree$tip,perfect))
         clans = getClans(tmptree) 
         for (j in 1:l) {          
             TMP = getE(tmptree, getRows(x, j), clans, norm = norm)
             tmp[m, ] = TMP[[1]]
-            L[[m]] = sort(match(TMP[[2]],perfect))
+#            L[[m]] = sort(match(TMP[[2]],perfect))
+            L[[m]] = TMP[[2]] # if class =splits else NULL
             PM[m, 1] = tnam[i]
             PM[m, 2] = var.names[j]
             m = m + 1   
         }
     }
-    attr(L, "data") = PM
-    attr(L, "labels") = names(x)
-    class(L) = "splits"
+#    attr(L, "data") = PM
+#    attr(L, "labels") = names(x)
+#    class(L) = "splits"
         
-    attr(treeM, "labels") = names(x)
-    attr(treeM, "names") = tnam
-    class(treeM) = "splits"
+#    attr(treeM, "labels") = names(x)
+#    attr(treeM, "names") = tnam
+#    class(treeM) = "splits"
     
     tnam = rep(tnam, each = l)
     dnam = var.names
     dnam = rep(dnam, k)
     pscore = as.numeric(sankoff(tree, x, site = "site"))
     res = data.frame(tnam, dnam, tmp, pscore)
-    names(res) = c("tree", "variable", "E tree", "# natives", 
+    if(labels=="old")names(res) = c("tree", "variable", "E tree", "# natives", 
         "# intruder", "# unknown", "E clan", "# intruder", "# unknown", 
         "E slice", "# intruder", "# unknown", "bs 1", "bs 2", "p-score")
-    attr(res, "Trees") = treeM
+    else{
+        names(res) = c("tree", "variable", "E clan", "# natives", 
+            "# intruder", "# unknown", "E slice", "# intruder", "# unknown", 
+            "E melange", "# intruder", "# unknown", "bs 1", "bs 2", "p-score")    
+        warning("The variable names have changed")       
+    }    
+#    attr(res, "Trees") = treeM
     attr(res, "Perfect") = L
     res
 }
@@ -7246,9 +7797,9 @@ compareSplits <- function(res, nam1, nam2){
                     if(E1 == E2){ # if(E1 == 0 & E2 == 0){
 	                if( (wideI[m, i] >0) & (wideI[m, j]) >0){
                             ind1 = which(dat[,1]==trnam & dat[,2]==i)
-                            sp1 = splits[ind1]                     
+                            sp1 = splits[[ind1]]                     
                             ind2 = which(dat[,1]==trnam & dat[,2]==j) 
-                            sp2 = splits[ind2]
+                            sp2 = splits[[ind2]]
                             if(length(ind1)>0 & length(ind2)>0 )res[m, k] = drop(compatible3(sp1, sp2))
                         }
                     }
@@ -7259,6 +7810,8 @@ compareSplits <- function(res, nam1, nam2){
     }    
     res
 }
+
+
 
 
 

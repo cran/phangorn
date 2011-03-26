@@ -8,11 +8,11 @@ Lento plot
 The lento plot represents support and conflict of splits/bipartitions. 
 }
 \usage{
-lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot", sub = NULL, xlab = NULL, ylab = NULL, bipart=TRUE,...)
+lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot", sub = NULL, xlab = NULL, ylab = NULL, bipart=TRUE, trivial=FALSE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{obj}{an object of class phylo or splits}
+  \item{obj}{an object of class phylo, multiPhylo or splits}
   \item{xlim}{graphical parameter}
   \item{ylim}{graphical parameter}
   \item{main}{graphical parameter}
@@ -20,6 +20,7 @@ lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot", sub = NULL, xlab = NUL
   \item{xlab}{graphical parameter}
   \item{ylab}{graphical parameter}
   \item{bipart}{plot bipartition information.}
+  \item{trivial}{logical, whether to present trivial splits (default is FALSE).}
   \item{\dots}{Further arguments passed to or from other methods.}
 }
 \value{
@@ -37,7 +38,7 @@ Lento, G.M., Hickson, R.E., Chambers G.K., and Penny, D. (1995) Use of spectral 
 data(yeast)
 yeast.ry = acgt2ry(yeast)
 splits.h = h2st(yeast.ry)
-lento(splits.h)
+lento(splits.h, trivial=TRUE) 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

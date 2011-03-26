@@ -13,7 +13,7 @@ Functions for clanistics to compute clans, slices, clips for unrooted trees and 
 getClans(tree)
 getClips(tree, all=TRUE)
 getSlices(tree)
-getDiversity(tree, x, norm=TRUE, var.names = NULL)
+getDiversity(tree, x, norm=TRUE, var.names = NULL, labels="new")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -22,6 +22,7 @@ getDiversity(tree, x, norm=TRUE, var.names = NULL)
 \item{x}{An object of class phyDat. }
 \item{norm}{A logical, return Equitability Index (default) or Shannon Diversity. }
 \item{var.names}{A vector of variable names. }
+\item{labels}{see details. }
 }
 \details{
 Every split in an unrooted tree defines two complementary clans. Thus
@@ -62,6 +63,9 @@ So far only 2 states are supported (native, intruder), however it is also possib
 into the native or intruder state using contrasts, for details see section 2 in vignette("phangorn-specials").  
 Furthermore unknown character states are coded as ambiguous character, which can act either as native or intruder 
 minimizing the number of clans or changes (in parsimony analysis) needed to describe a tree for given data. 
+
+Set attribute labels to "old" for analysis as in Schliep et al. (2010) or to "new" for names which are more intuitive. 
+TDOD See also vignette("Clanistic").
 }
 \value{
 getClans, getSlices and getClips return a matrix of partitions, a matrix of ones and zeros where rows correspond to 
@@ -105,7 +109,6 @@ x = phyDat(X, type = "USER", levels = c("red", "blue"), ambiguity="violet")
 plot(trees[[1]], "u", tip.color = X[trees[[1]]$tip,1])  # intruders are blue 
 
 getDiversity(trees, x, var.names=colnames(X))
-
 }
 \keyword{ cluster }
 

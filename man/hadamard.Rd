@@ -51,7 +51,7 @@ Waddell P. J. (1995). Statistical methods of phylogenetic analysis: Including ha
 LogDet transforms, and maximum likelihood. \emph{PhD thesis}.
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
-\seealso{\code{\link{distanceHadamard}}, \code{\link{lento}}}
+\seealso{\code{\link{distanceHadamard}}, \code{\link{lento}}, \code{\link{plot.networx}}}
 
 \examples{
 H = hadamard(3)
@@ -62,12 +62,24 @@ fhm(v)
 data(yeast)
 dat = as.character(yeast)
 # RY-coding
-dat[dat=="a" | dat=="g"] = "r"
-dat[dat=="c" | dat=="t"] = "y"
-dat = phyDat(dat, type="USER", levels=c("r","y"))
-fit = h2st(dat)
-# write.nexus.splits(fit, file = "test.nxs")
+dat2 = dat
+dat2[dat=="a" | dat=="g"] = "r"
+dat2[dat=="c" | dat=="t"] = "y"
+dat2 = phyDat(dat2, type="USER", levels=c("r","y"), ambiguity=NULL)
+fit2 = h2st(dat2)
+lento(fit2)
+
+# write.nexus.splits(fit2, file = "test.nxs")
 # read this file into Spectronet or Splitstree to show the network
+\dontrun{
+dat4 = phyDat(dat, type="USER", levels=c("a","c", "g", "t"), ambiguity=NULL)
+fit4 = h4st(dat4)
+
+par(mfrow=c(3,1))
+lento(fit4[[1]], main="Transversion")
+lento(fit4[[2]], main="Transition 1")
+lento(fit4[[3]], main="Transition 2")
+}
 }
 \keyword{ cluster }% at least one, from doc/KEYWORDS
 
