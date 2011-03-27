@@ -22,7 +22,7 @@ If eps is positive an object of with all splits greater eps is returned.
 Data. \emph{Journal of Classification}, \bold{10}, 5-24.
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}, Tim White}
-\seealso{\code{\link{hadamard}}, \code{\link{lento}}}
+\seealso{\code{\link{hadamard}}, \code{\link{lento}}, \code{\link{plot.networx}}}
 
 \examples{
 data(yeast)
@@ -30,6 +30,7 @@ dm = dist.hamming(yeast)
 dm = as.matrix(dm)
 fit = distanceHadamard(dm)
 lento(fit)
+plot(as.networx(fit))
 }
 \keyword{ cluster }% at least one, from doc/KEYWORDS
 

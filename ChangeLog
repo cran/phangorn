@@ -1,3 +1,33 @@
+        CHANGES in PHANGORN VERSION 1.4-0
+
+NEW FEATURES
+
+    o plot.network to plot split networks in 3D (requires rgl) and 2D
+ 
+      (still very experimantal)
+
+    o consensusNet computes consensus networks 
+
+    o Lento plot allows to take multiPhylo objects as input 
+
+BUG FIXES
+
+    o CI and RI did not work with only one site pattern present 
+    
+    o pratchet returned only one, not all of the best trees found 
+
+OTHER CHANGES
+
+    o phangorn now requires the Matrix, igraph and rgl packages
+
+    o designTree returns a sparse Matrix and this can save a lot of memory
+
+    o internal code for computing bipartitions is much faster for large trees, 
+
+      and so are several functions depending on it, e.g. RF.dist, treedist, Descendants
+      
+      
+
         CHANGES in PHANGORN VERSION 1.3-1
 
 BUG FIXES
@@ -16,7 +46,7 @@ OTHER CHANGES
 
     o modelTest, pratchet, bootstrap.pml, bootstrap.phyDat
 
-      got an additional argument multicore option to swith 
+      got an additional argument multicore option to switch 
 
       between serial and parallel execution 
   

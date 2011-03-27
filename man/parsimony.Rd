@@ -28,7 +28,7 @@ acctran(tree, data)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{data}{A object of class phyDat containing (dna) sequences.}
+  \item{data}{A object of class phyDat containing sequences.}
   \item{tree}{ tree to start the nni search from.}
   \item{method}{one of 'fitch' or 'sankoff'.}
   \item{cost}{A cost matrix for the transitions between two states.} 

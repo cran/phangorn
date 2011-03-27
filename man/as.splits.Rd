@@ -1,10 +1,12 @@
 \name{as.splits}
 \alias{as.splits}
+\alias{as.prop.part}
 \alias{as.splits.phylo}
 \alias{as.splits.multiPhylo}
 \alias{as.matrix.splits}
 \alias{print.splits}
 \alias{write.splits}
+\alias{allSplits}
 \alias{compatible}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
@@ -20,6 +22,7 @@ as.splits(x, ...)
 \method{print}{splits}(x, maxp = getOption("max.print"), zero.print = ".", 
     one.print = "|", ...)
 compatible(obj)
+allSplits(k, labels = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -28,7 +31,9 @@ compatible(obj)
   \item{zero.print}{character which should be printed for zeroes.} 
   \item{one.print}{character which should be printed for ones.} 
   \item{\dots}{Further arguments passed to or from other methods.}
-  \item{obj}{an object of class splits.}  
+  \item{obj}{an object of class splits.} 
+  \item{k}{number of taxa.}
+  \item{labels}{names of taxa.} 
 }
 \value{
 \code{as.splits} returns an object of class splits, which is mainly a list of splits and some attributes.
