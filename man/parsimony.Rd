@@ -8,6 +8,7 @@
 \alias{CI}
 \alias{RI}
 \alias{pratchet}
+\alias{random.addition}
 \alias{acctran}
 \description{
 
@@ -19,7 +20,7 @@ of the root node. \code{CI} and \code{RI} computes the consistency and retention
 \usage{
 parsimony(tree, data, method="fitch", ...)
 optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1,...)
-pratchet(data, start=NULL, k=20, np=1, trace=1, all=FALSE, multicore=FALSE, ...)
+pratchet(data, start=NULL, k=20, np=1, trace=1, all=FALSE, method="fitch", multicore=FALSE, ...)
 fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
 CI(tree, data)
@@ -56,7 +57,7 @@ Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunder
 Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Rarsimony Analysis. \emph{Cladistics} \bold{15}, 407-414
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
-\seealso{ \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}} ,\code{\link{ancestral.pars}}, \code{\link{bootstrap.pml}}}
+\seealso{\code{\link{bab}}, \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}} ,\code{\link{ancestral.pars}}, \code{\link{bootstrap.pml}}}
 \examples{
 data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)

@@ -23,7 +23,7 @@ write.phyDat(x, file, format="phylip",...)
 \method{as.character}{phyDat}(x, allLevels = TRUE, ...)
 \method{as.data.frame}{phyDat}(x, ...)
 \method{as.DNAbin}{phyDat}(x, ...)
-\method{subset}{phyDat}(x, subset, select, site.pattern = FALSE, ...)
+\method{subset}{phyDat}(x, subset, select, site.pattern = TRUE, ...)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 }
 %- maybe also 'usage' for other objects documented here.

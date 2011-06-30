@@ -39,6 +39,8 @@ without penalty terms and the third column the constrained fit.
 data(yeast)
 dm = dist.ml(yeast)
 fit = splitsNetwork(dm)
+net = as.networx(fit)
+plot(net)
 write.nexus.splits(fit)
 }
 \keyword{ cluster }% at least one, from doc/KEYWORDS

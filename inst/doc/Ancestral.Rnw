@@ -46,6 +46,7 @@ foo <- packageDescription("phangorn")
 @
 
 
+
 \title{Ancestral sequence reconstruction with phangorn (Version \Sexpr{foo$Version})} %$
 \author{\mref{mailto:kschliep@snv.jussieu.fr}{Klaus P. Schliep}}
 \maketitle
@@ -93,7 +94,7 @@ options(SweaveHooks=list(fig=function()
 par(mar=c(2.1, 4.1, 2.1, 2.1))))
 @ 
  
-<<label=plotMPR,include=FALSE>>=
+<<label=plotMPR,include=FALSE>>= 
 par(mfrow=c(2,1))
 plotAnc(tree, anc.mpr, 17)
 title("MPR")
@@ -109,6 +110,7 @@ title("ACCTRAN")
 When nodes contain several colors reconstruction is not unique!}\label{fig:Pars}
 \end{center}
 \end{figure}
+
 
 
 \section{Likelihood reconstructions}
@@ -135,7 +137,7 @@ anc.ml = ancestral.pml(fit, "ml")
 anc.bayes = ancestral.pml(fit, "bayes")
 @
 The differences of the two aproaches for a specific site (17) are represented in figure\ref{fig:MLB}.
-<<label=plotMLB,include=FALSE>>=
+<<label=plotMLB,include=FALSE>>= 
 par(mfrow=c(2,1))
 plotAnc(tree, anc.ml, 17)
 title("ML")
@@ -161,6 +163,7 @@ toLatex(sessionInfo())
 @
 
 \end{document}
+
 
 
 
