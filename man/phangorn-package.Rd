@@ -28,8 +28,8 @@ Klaus Schliep
 Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
 }
 \references{
-  Schliep K.P. (2010) phangorn: Phylogenetic analysis in R.
-  \emph{Bioinformatics}, doi: 10.1093/bioinformatics/btq706
+  Schliep K.P. (2011) phangorn: Phylogenetic analysis in R.
+  \emph{Bioinformatics}, 27(4) 592-593
 }
 \keyword{ package }
 %\seealso{

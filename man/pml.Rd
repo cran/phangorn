@@ -24,7 +24,7 @@ pml.control(epsilon = 1e-08, maxit = 10, trace = 1)
   \item{k}{Number of intervals of the discrete gamma distribution.}
   \item{shape}{Shape parameter of the gamma distribution.}
   \item{rate}{Rate.}
-  \item{model}{Amino acid models: one of "WAG", "JTT", "Dayhoff" or "LG" or nucleotide model}
+  \item{model}{allows to choose an amino acid models or nucleotide model, see details.}
   \item{object}{An object of class \code{pml}.}
   \item{optNni}{Logical value indicating whether toplogy gets optimized (NNI).}
   \item{optBf}{Logical value indicating whether base frequencies gets optimized.}
@@ -60,9 +60,10 @@ GTR \tab TRUE \tab TRUE
 Via model in optim.pml the following nucleotide models can be specified:  
 JC, F81, K80, HKY, TrNe, TrN, TPM1, K81, TPM1u, TPM2, TPM2u, TPM3, TPM3u, 
 TIM1e, TIM1, TIM2e, TIM2, TIM3e, TIM3, TVMe, TVM, SYM and GTR. 
-For how these s models are specified see Posada (2008).
+These models are specified as in Posada (2008).
 
-So far 4 amino acid models are supported ("WAG", "JTT", "Dayhoff" and "LG"). 
+So far 9 amino acid models are supported ("WAG", "JTT", "Dayhoff", "LG", "cpREV", "mtmam", "mtArt", "MtZoa" and "mtREV24") 
+and additionally rate matrices and amino acid frequences can be supplied to . 
 
 If the option 'getRooted' is set to TRUE than the edge lengths of rooted tree are optimized.
 The tree has to be rooted and ultrametric! No tree rearrangements are yet supported.
@@ -91,16 +92,34 @@ Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunder
 
 Yang, Z. (2006). \emph{Computational Molecular evolution}. Oxford University Press, Oxford.
 
+Adachi, J., P. J. Waddell, W. Martin, and M. Hasegawa (2000) 
+Plastid genome phylogeny and a model of amino acid substitution for proteins
+encoded by chloroplast DNA.  \emph{Journal of Molecular Evolution}, \bold{50}, 348--358                             
+
+Rota-Stabelli, O., Z. Yang, and M. Telford. (2009) MtZoa: a general mitochondrial 
+amino acid substitutions model for animal evolutionary studies. \emph{Mol. Phyl. Evol}, \bold{52(1)}, 268--72       
+
 Whelan, S. and Goldman, N. (2001) A general empirical model of 
 protein evolution derived from multiple protein families using 
-a maximum-likelihood approach. \emph{Molecular Biology and Evolution},  \bold{18}, 691--699
+a maximum-likelihood approach. \emph{Molecular Biology and Evolution},  \bold{18}, 691--699                       
 
 Le, S.Q. and Gascuel, O. (2008) LG: An Improved, General 
-Amino-Acid Replacement Matrix \emph{Molecular Biology and Evolution} \bold{25(7)}, 1307--1320
+Amino-Acid Replacement Matrix \emph{Molecular Biology and Evolution}, \bold{25(7)}, 1307--1320                     
 
-Posada, D. (2008) jModelTest: Phylogenetic Model Averaging. \emph{Molecular Biology and Evolution} \bold{25}: 1253--1256 
+Yang, Z., R. Nielsen, and M. Hasegawa (1998) Models of amino acid                                                
+substitution and applications to Mitochondrial protein evolution. 
+\emph{Molecular Biology and Evolution}, \bold{15}, 1600--1611
+
+Abascal, F., D. Posada, and R. Zardoya (2007) MtArt: A new Model of amino acid 
+replacement for Arthropoda. \emph{Molecular Biology and Evolution}, \bold{24}, 1--5                                          
+
+Kosiol, C, and Goldman, N (2005) Different versions of the Dayhoff rate matrix -                               
+\emph{Molecular Biology and Evolution}, \bold{22}, 193--199 
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
+\seealso{
+\code{\link{bootstrap.pml}}, \code{\link{pmlPart}}, \code{\link{pmlMix}}, \code{\link{plot.phylo}}
+}
 % \note{For small trees the likelihood seems to be very similar to Paup* or PhyML.}
 % \seealso{ For a different implementation see \code{\link[ape]{mlphylo}}.} 
 \examples{
@@ -128,16 +147,16 @@ Posada, D. (2008) jModelTest: Phylogenetic Model Averaging. \emph{Molecular Biol
 # 2-state data (RY-coded)  
     
   dat <- as.character(Laurasiatherian)
-  # RY-coding
+# RY-coding
   dat[dat=="a"] <- "r"
   dat[dat=="g"] <- "r"
   dat[dat=="c"] <- "y"
   dat[dat=="t"] <- "y"
-  dat <- phyDat(dat, levels=c("r","y"))
+  dat <- phyDat(dat, type="USER", levels=c("r","y"))
   fit2ST <- pml(tree, dat, k=4, inv=.25) 
   fit2ST <- optim.pml(fit2ST,optNni=TRUE, optGamma=TRUE, optInv=TRUE) 
   fit2ST
-  # show some of the methods available for class pml
+# show some of the methods available for class pml
   methods(class="pml")  
 }
 \keyword{ cluster }% at least one, from doc/KEYWORDS

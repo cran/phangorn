@@ -7,7 +7,7 @@
   Stochastic Partitioning of genes into p cluster. 
 }
 \usage{
-pmlCluster(formula, fit, weight, p=4, part=NULL, control=pml.control(epsilon=1e-8, maxit=10, trace=1),...)
+pmlCluster(formula, fit, weight, p=1:5, part=NULL, nrep = 10, control=pml.control(epsilon=1e-8, maxit=10, trace=1),...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -16,6 +16,7 @@ pmlCluster(formula, fit, weight, p=4, part=NULL, control=pml.control(epsilon=1e-
   \item{weight}{ \code{weight}  is matrix of frequency of site patterns for all genes. }
   \item{p}{ number of clusters. }
   \item{part}{ starting partition, otherwise a random partition is generated. }
+  \item{nrep}{ number of replicates for each p.  }
   \item{control}{A list of parameters for controlling the fitting process.} 
   \item{\dots}{ Further arguments passed to or from other methods. }
 }
@@ -53,7 +54,7 @@ fit = optim.pml(fit)
 weight=xtabs(~ index+genes,attr(yeast, "index"))
 set.seed(1)
 
-sp <- pmlCluster(edge~rate, fit, weight, p=4)
+sp <- pmlCluster(edge~rate, fit, weight, p=1:4)
 sp
 SH.test(sp)
 }

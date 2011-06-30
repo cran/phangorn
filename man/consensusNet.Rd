@@ -46,14 +46,14 @@ bs <- bootstrap.phyDat(Laurasiatherian, pratchet, k=1, bs=100, multicore=FALSE, 
 class(bs) <- 'multiPhylo'
 cnet = consensusNet(bs, .26)
 plot(cnet, show.edge.label=TRUE)
-if(require(rgl)){ 
-    open3d()
-    plot(cnet, show.tip.label=FALSE, show.nodes=TRUE)
-}
+open3d()
+plot(cnet, show.tip.label=FALSE, show.nodes=TRUE)
+
 set.seed(1)
-tree1 = rtree(10, rooted=FALSE)
+tree1 = rtree(20, rooted=FALSE)
 sp = as.splits(rNNI(tree1, n=10))
 net = as.networx(sp)
+open3d()
 plot(net)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

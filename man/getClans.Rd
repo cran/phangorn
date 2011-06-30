@@ -65,7 +65,7 @@ Furthermore unknown character states are coded as ambiguous character, which can
 minimizing the number of clans or changes (in parsimony analysis) needed to describe a tree for given data. 
 
 Set attribute labels to "old" for analysis as in Schliep et al. (2010) or to "new" for names which are more intuitive. 
-TDOD See also vignette("Clanistic").
+%TODO See also vignette("Clanistic").
 }
 \value{
 getClans, getSlices and getClips return a matrix of partitions, a matrix of ones and zeros where rows correspond to 
@@ -80,7 +80,7 @@ Lapointe, F.-J., Lopez, P., Boucher, Y., Koenig, J., Bapteste, E. (2010) Clanist
 
 Wilkinson, M., McInerney, J.O., Hirt, R.P., Foster, P.G., Embley, T.M. (2007) Of clades and clans: terms for phylogenetic relationships in unrooted trees. \emph{Trends in Ecology and Evolution} 22: 114-115 
 
-Schliep, K., Lopez, P., Lapointe F.-J., Bapteste E. (2010) Harvesting Evolutionary Signals in a Forest of Prokaryotic Gene Trees, \emph{Molecular Biology and Evolution} doi:10.1093/molbev/msq323 
+Schliep, K., Lopez, P., Lapointe F.-J., Bapteste E. (2011) Harvesting Evolutionary Signals in a Forest of Prokaryotic Gene Trees, \emph{Molecular Biology and Evolution} 28(4): 1393-1405 
 
 }
 \author{
@@ -108,7 +108,8 @@ X = matrix(sample(c("red", "blue", "violet"), 100, TRUE, c(.5,.4, .1)), ncol=5,
 x = phyDat(X, type = "USER", levels = c("red", "blue"), ambiguity="violet")
 plot(trees[[1]], "u", tip.color = X[trees[[1]]$tip,1])  # intruders are blue 
 
-getDiversity(trees, x, var.names=colnames(X))
+(divTab <- getDiversity(trees, x, var.names=colnames(X)))
+summary(divTab)
 }
 \keyword{ cluster }
 

@@ -1,3 +1,49 @@
+        CHANGES in PHANGORN VERSION 1.4-1
+
+NEW FEATURES
+
+    o parsimony branch-and-bould algorithms bab (so far pretty slow and memory intensive) 
+
+    o more amino acid models
+
+    o function nnls.tree to compute non-negative edge weights for 
+
+      a given tree and a distance matrix 
+
+BUG FIXES
+    
+    o allTrees returns now an integer edge matrix, 
+
+      this could have caused some problems previously
+
+    o CI and RI now take better care of ambiguous states
+
+    o dist.ml has default value for amino acids 
+
+    o as.splits.multiPhylo produces more sensible bipartitions 
+ 
+      and so lento and consensusNet produce more useful plots
+
+      (thanks to Emmanuel Paradis)
+
+OTHER CHANGES
+
+    o several changes to the networx classes and methods
+
+    o modelTest now also returns the function calls of the estimated models,
+
+      which can be used in downstream analyses
+
+    o vignette "Trees" has a few more examples
+
+    o dist.ml is more general (base frequencies and rate matrix can be supplied) 
+
+    o pml objects are more compact, thanks to the Matrix package
+
+    o xtable is now a suggested package (needed for vignettes)
+      
+      
+
         CHANGES in PHANGORN VERSION 1.4-0
 
 NEW FEATURES
