@@ -14,7 +14,7 @@ Marginal reconstruction of the ancestral character states.
 ancestral.pml(object, type = c("ml", "bayes"))
 ancestral.pars(tree, data, type = c("MPR", "ACCTRAN"))
 pace(tree, data, type = c("MPR", "ACCTRAN"))
-plotAnc(tree, data, i, ...)
+plotAnc(tree, data, i, col=NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -24,6 +24,7 @@ plotAnc(tree, data, i, ...)
   \item{data}{an object of class phyDat} 
   \item{type}{method used to assign characters to internal nodes, see details.}  
   \item{i}{plots the i-th character of the \code{data}.}
+  \item{col}{a vector containing the colors for all possible states.}
   \item{\dots}{Further arguments passed to or from other methods.}
 }
 %  \item{eps}{a small value to prevent rounding errors}

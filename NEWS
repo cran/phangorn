@@ -1,4 +1,28 @@
-        CHANGES in PHANGORN VERSION 1.4-1
+       CHANGES in PHANGORN VERSION 1.5-0
+
+NEW FEATURES
+
+    o codon models can be used directly 
+
+      (dn/ds ratio can be computed)
+    
+    o modelTest works now also for amino acids
+
+BUG FIXES
+
+    o the code to compute RI and CI changed and should be more robust
+
+OTHER CHANGES
+
+    o package parallel is used instead of multicore 
+
+    o vignettes, examples, help improved
+
+    o ChangeLog is called NEWS
+
+
+
+       CHANGES in PHANGORN VERSION 1.4-1
 
 NEW FEATURES
 

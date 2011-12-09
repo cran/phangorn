@@ -3,6 +3,7 @@
 \alias{getClips}
 \alias{getSlices}
 \alias{getDiversity}
+\alias{diversity}
 \title{
 Clans, slices and clips
 }
@@ -14,6 +15,7 @@ getClans(tree)
 getClips(tree, all=TRUE)
 getSlices(tree)
 getDiversity(tree, x, norm=TRUE, var.names = NULL, labels="new")
+diversity(tree, X)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -23,6 +25,7 @@ getDiversity(tree, x, norm=TRUE, var.names = NULL, labels="new")
 \item{norm}{A logical, return Equitability Index (default) or Shannon Diversity. }
 \item{var.names}{A vector of variable names. }
 \item{labels}{see details. }
+\item{X}{a data.frame}
 }
 \details{
 Every split in an unrooted tree defines two complementary clans. Thus
@@ -48,7 +51,7 @@ A complete clan is a clan that contains all leaves of a given state/color, but c
 also contain leaves of another state/color. A  clan is homogeneous if it  
 only contains leaves of one state/color. 
 
-getDiversity computes either the \cr
+\code{getDiversity} computes either the \cr
 Shannon Diversity: \eqn{H = -\sum_{i=1}^{k}(N_i/N)  log(N_i/N), N=\sum_{i=1}^{k} N_i}{H = -sum(N_i/N) * log(N_i/N), N=sum(N_i)}  \cr
 or the \cr 
 Equitability Index: \eqn{E = H / log(N)} \cr
@@ -65,6 +68,10 @@ Furthermore unknown character states are coded as ambiguous character, which can
 minimizing the number of clans or changes (in parsimony analysis) needed to describe a tree for given data. 
 
 Set attribute labels to "old" for analysis as in Schliep et al. (2010) or to "new" for names which are more intuitive. 
+
+\code{diversity} returns a data.frame with the parsimony score for each tree and each levels of the variables in \code{X}. \code{X} has to be a \code{data.frame} where each column is a factor and the rownames of \code{X} correspond to the tips of the trees. 
+
+ 
 %TODO See also vignette("Clanistic").
 }
 \value{

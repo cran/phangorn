@@ -65,6 +65,11 @@ tree = NJ(dm)
 parsimony(tree, Laurasiatherian)
 treeNNI <- optim.parsimony(tree, Laurasiatherian)
 treeRatchet <- pratchet(Laurasiatherian, start=tree)
+treeRatchet <- acctran(treeRatchet, Laurasiatherian)
+
+plot(midpoint(treeRatchet))
+add.scale.bar()
+
 parsimony(c(tree,treeNNI, treeRatchet), Laurasiatherian)
 }
 \keyword{cluster}

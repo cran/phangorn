@@ -30,7 +30,7 @@ allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 \arguments{
   \item{data}{An object containing sequences.}
   \item{x}{An object containing sequences.}
-  \item{type}{Type of sequences ("DNA", "AA" or "USER").}
+  \item{type}{Type of sequences ("DNA", "AA", "CODON" or "USER").}
   \item{levels}{Level attributes.}
   \item{return.index}{If TRUE returns a index of the site patterns.}
   \item{file}{A file name.}
