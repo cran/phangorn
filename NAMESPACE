@@ -1,6 +1,5 @@
 useDynLib(phangorn, .registration=TRUE)
 
-#importFrom(graphics, plot)
 import(ape, Matrix)
 importFrom(stats, AIC, logLik, reorder) 
 
@@ -14,10 +13,8 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UN
     bootstrap.phyDat, RF.dist, rNNI, rSPR, plotBS, Ancestors, Descendants,
     Children, Siblings, pace, modelTest, lento, compatible, acgt2ry, 
     ancestral.pars, ancestral.pml, CI, RI, getClans, getSlices, getClips, getDiversity,
-    midpoint, pruneTree, acctran, getRoot, plotAnc, consensusNet, bab, random.addition) 
-#    optim.fitch, fitch.nni, fnodes, optim.sankoff, dec2bin, ptree, ll3, pmlScale) 
+    midpoint, pruneTree, acctran, getRoot, plotAnc, consensusNet, bab, random.addition, diversity)
 
-#S3method('[', phyDat)
 S3method('[', splits)          
 S3method(as.character, phyDat)
 S3method(as.data.frame, phyDat)

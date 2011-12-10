@@ -54,7 +54,7 @@ foo <- packageDescription("phangorn")
 \nocite{Paradis2006}
 \section{Introduction}
 
-These notes should enable the user to estimate phylogenetic trees from alignment data with different methods using the \phangorn{} package \cite{Schliep2010}. For more background on all the methods see e.g. \cite{Felsenstein2004, Yang2006}. This document illustrates some of the \phangorn{} features to estimate phylogenetic trees using different reconstruction methods. Small adaptations to the scripts in section \ref{sec:Appendix} should enable the user to perform phylogenetic analyses.
+These notes should enable the user to estimate phylogenetic trees from alignment data with different methods using the \phangorn{} package \cite{Schliep2011}. For more background on all the methods see e.g. \cite{Felsenstein2004, Yang2006}. This document illustrates some of the \phangorn{} features to estimate phylogenetic trees using different reconstruction methods. Small adaptations to the scripts in section \ref{sec:Appendix} should enable the user to perform phylogenetic analyses.
 \section{Getting started}
 The first thing we have to do is to read in an alignment. Unfortunately there exists many different file formats that alignments can be stored in. The function \Rfunction{read.phyDat} is used to  read in an alignment. There are several functions to read in alignments depending on the format of the dataset (nexus, phylip, fasta) and the kind of data (amino acid or nucleotides) in the \ape{} package \cite{Paradis2004} and \phangorn{}. The function \Rfunction{read.phyDat} calls these other functions. For the specific parameter settings available look in the help files of  the function \Rfunction{read.dna} (for phylip, fasta, clustal format), \Rfunction{read.nexus.data} for nexus files. For amino acid data additional \Rfunction{read.aa} is called.  
 %When using the \Rfunction{read.dna} from \ape{} the parameter the we have to use as.character=TRUE.  
@@ -207,10 +207,11 @@ fit = optim.pml(fitStart, TRUE, TRUE, TRUE, TRUE, TRUE)
  
 # 2. alternative: modelTest  
 (mt <- modelTest(dat, multicore=TRUE)) 
+mt$Model[which.min(mt$BIC)]
 # choose best model from the table, assume now GTR+G+I
 env = attr(mt, "env")
 fitStart = eval(get("GTR+G+I", env), env) 
- 
+fitStart = eval(get(mt$Model[which.min(mt$BIC)], env), env) 
 fit = optim.pml(fitStart, optNni=TRUE, optGamma=TRUE, optInv=TRUE, 
     model="GTR")
 bs = bootstrap.pml(fit, bs=100, optNni=TRUE, multicore=TRUE)
@@ -224,6 +225,10 @@ file="myfile"
 dat = read.phyDat(file, type = "AA")
 dm = dist.ml(dat, model="JTT")
 tree = NJ(dm)
+
+(mt <- modelTest(dat, model=c("JTT", "LG", "WAG"), multicore=TRUE)) 
+fitStart = eval(get(mt$Model[which.min(mt$BIC)], env), env) 
+
 fitNJ = pml(tree, dat, model="JTT", k=4, inv=.2)
 fit = optim.pml(fitNJ, optNni=TRUE, optInv=TRUE, optGamma=TRUE)
 fit

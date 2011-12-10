@@ -57,6 +57,13 @@ However it will speed up nicely from the command line ("X11").
 returns an object of class \code{multi.phylo} or a list where each 
 element is an object of class \code{pml}.
 }
+\references{
+Felsenstein J. (1985) Confidence limits on phylogenies. An approach using the bootstrap. \emph{Evolution} \bold{39}, 783--791
+
+Penny D. and Hendy M.D. (1985) Testing methods evolutionary tree construction. \emph{Cladistics} \bold{1}, 266--278
+
+Penny D. and Hendy M.D. (1986) Estimating the reliabbility of evolutionary trees. \emph{Molecular Biology and Evolution} \bold{3}, 403--417
+}
 \author{
 Klaus Schliep \email{klaus.schliep@gmail.com}
 }
