@@ -42,9 +42,9 @@ Holland B.R., Huber K.T., Moulton V., Lockhart P.J. (2004) Using consensus netwo
 \examples{
 data(Laurasiatherian)
 set.seed(1)
-bs <- bootstrap.phyDat(Laurasiatherian, pratchet, k=1, bs=100, multicore=FALSE, trace=0)
+bs <- bootstrap.phyDat(Laurasiatherian, FUN = function(x)nj(dist.hamming(x)), bs=100, multicore=FALSE)
 class(bs) <- 'multiPhylo'
-cnet = consensusNet(bs, .26)
+cnet = consensusNet(bs, .3)
 plot(cnet, show.edge.label=TRUE)
 open3d()
 plot(cnet, show.tip.label=FALSE, show.nodes=TRUE)

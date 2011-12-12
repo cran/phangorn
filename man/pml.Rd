@@ -144,17 +144,11 @@ Kosiol, C, and Goldman, N (2005) Different versions of the Dayhoff rate matrix -
   fitGTR <- optim.pml(fitJC_GI, optNni=TRUE, optGamma=TRUE, optInv=TRUE, optBf=TRUE, optQ=TRUE) 
 }
 
+
 # 2-state data (RY-coded)  
-    
-  dat <- as.character(Laurasiatherian)
-# RY-coding
-  dat[dat=="a"] <- "r"
-  dat[dat=="g"] <- "r"
-  dat[dat=="c"] <- "y"
-  dat[dat=="t"] <- "y"
-  dat <- phyDat(dat, type="USER", levels=c("r","y"))
-  fit2ST <- pml(tree, dat, k=4, inv=.25) 
-  fit2ST <- optim.pml(fit2ST,optNni=TRUE, optGamma=TRUE, optInv=TRUE) 
+  dat <- acgt2ry(Laurasiatherian) 
+  fit2ST <- pml(tree, dat) 
+  fit2ST <- optim.pml(fit2ST,optNni=TRUE) 
   fit2ST
 # show some of the methods available for class pml
   methods(class="pml")  

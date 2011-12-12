@@ -6,6 +6,23 @@
 }
 
 
+# For phangorn2
+# PML and friends
+# logLik5 statt logLik2 (skaling, grosse Datensaetze)
+# pml2 mit nur einer Memory-allokation verwenden (Ziel 30-40% schneller)
+# optimisation in C durchfuehren (Ziel 10-20% schneller)
+# optim.quartet auf distances umstellen (3*schneller) (SPR like posibilities)
+# cat model (weniger memory)
+# pmlPart, pmlMix enger an pml angleichen
+# MP 
+# sankoff schneller (ca 100%)
+# bab mit min-max-squeeze (kann sehr viel schneller werden)
+# pratchet / optim.fitch schneller machen, overhead reduzieren
+# LASSO in network
+# bessere 3D-plot
+# UPGMA_NNI (mit paper)
+# dist.ml 10* schneller
+
 #
 # some general functions
 #
@@ -3727,7 +3744,7 @@ modelTest <- function (object, tree = NULL, model = c("JC", "F81", "K80",
     RESULT
 }
 
-  
+ 
 optimGamma = function(tree, data, shape=1, k=4,...){
     fn = function(shape, tree, data, k,...)pml2(tree, data, shape=shape, k=k,...)
     res = optimize(f=fn, interval = c(0,100), lower = 0, upper = 100, maximum = TRUE,
@@ -4012,6 +4029,7 @@ pmlScale <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1
 }
 
 
+# Q raus, bf vielleicht raus
 ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1, 
     Q = c(1, 1, 1, 1, 1, 1), eig = NULL, assign.dat = FALSE, ...) 
 {
@@ -4019,7 +4037,7 @@ ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
     node <- tree$edge[, 1]
     edge <- tree$edge[, 2]
     m = length(edge) + 1
-    if (is.null(eig)) eig = edQt(bf = bf, Q = Q)
+    if (is.null(eig)) eig = edQt(bf = bf, Q = Q) # raus
     el <- tree$edge.length
     P <- getP(el, eig, g)  
     nr <- as.integer(attr(dat1,"nr"))   
@@ -4042,7 +4060,8 @@ ll <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
 }
 
 
-# scaled version, needs more speeding up  
+# scaled version, needs more speeding up 
+# logLik5 verwenden, Q raus  
 ll3 <- function (dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1, 
     Q = c(1, 1, 1, 1, 1, 1), eig = NULL, assign.dat = FALSE, 
     ...) 
@@ -8128,7 +8147,7 @@ write.nexus.splits <- function (obj, file = "", weights=NULL)
 #
 # ancestral sequences ML
 #
-ll2 = function (dat1, tree, g = 1, eig, ...) 
+ll2 <- function (dat1, tree, g = 1, eig, ...) 
 {
     if (is.null(attr(tree, "order")) || attr(tree, "order") == 
         "cladewise") 
