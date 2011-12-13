@@ -57,7 +57,10 @@ Klaus Schliep \email{klaus.schliep@gmail.com}
 \code{\link{consensusNet}}, \code{\link{hadamard}}, \code{\link{distanceHadamard}}, \code{\link{layout.kamada.kawai}}
 }
 \examples{
+\dontrun{
+see example in consensusNet 
 example(consensusNet)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

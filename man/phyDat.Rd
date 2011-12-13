@@ -25,6 +25,7 @@ write.phyDat(x, file, format="phylip",...)
 \method{as.DNAbin}{phyDat}(x, ...)
 \method{subset}{phyDat}(x, subset, select, site.pattern = TRUE, ...)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
+acgt2ry(obj)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -41,6 +42,7 @@ allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
   \item{select}{a subset of characters.}
   \item{site.pattern}{select site pattern or sites.}
   \item{allLevels}{return original data.} 
+  \item{obj}{as object of class phyDat}
   \item{...}{further arguments passed to or from other methods.}
 }
 \details{
@@ -60,6 +62,8 @@ and convert the data to class phyDat.
 
 The generic function \code{c} can be used to to combine sequences and \code{unique} to get 
 all unique sequences or unique haplotypes. 
+
+\code{acgt2ry} converts a \code{phyDat} object of nucleotides into an binary ry-coded dataset.  
 
 There is a more detailed example for specifying USER defined data formats in the vignette advanced features. 
 }
