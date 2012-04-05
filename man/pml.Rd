@@ -118,7 +118,7 @@ Kosiol, C, and Goldman, N (2005) Different versions of the Dayhoff rate matrix -
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \seealso{
-\code{\link{bootstrap.pml}}, \code{\link{pmlPart}}, \code{\link{pmlMix}}, \code{\link{plot.phylo}}
+\code{\link{bootstrap.pml}}, \code{\link{modelTest}}, \code{\link{pmlPart}}, \code{\link{pmlMix}}, \code{\link{plot.phylo}}
 }
 % \note{For small trees the likelihood seems to be very similar to Paup* or PhyML.}
 % \seealso{ For a different implementation see \code{\link[ape]{mlphylo}}.} 

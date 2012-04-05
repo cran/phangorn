@@ -16,14 +16,14 @@ Descendants(x, node, type=c("tips","children","all"))
 }
 \arguments{
   \item{x}{a tree (a phylo object).}
-  \item{node}{an integer corresponding to a node ID}
+  \item{node}{an integer or a vector of integers corresponding to a node ID}
   \item{type}{specify whether to return just direct
-    ancestor / parents or all }
+    children / parents or all }
   \item{include.self}{whether to include self in list of siblings}
 }
 
 \value{
-   a vector containing the indices of the nodes. 
+   a vector or a list containing the indices of the nodes. 
 }
 \seealso{these functions are inspired by \code{treewalk} in phylobase package}
 \examples{
@@ -31,7 +31,7 @@ tree = rtree(10)
 plot(tree, show.tip.label = FALSE)
 nodelabels()
 tiplabels()
-Ancestors(tree, 1, "all")
+Ancestors(tree, 1:3, "all")
 Children(tree, 11)
 Descendants(tree, 11, "tips")
 Siblings(tree, 3)

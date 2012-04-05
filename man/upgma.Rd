@@ -20,10 +20,10 @@ A phylogenetic tree of class \code{phylo}.
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
-\seealso{ \code{\link{hclust}}, \code{\link{NJ}}, \code{\link{as.phylo}}, \code{\link{fastme}}, \code{\link{nnls.tree}} }
+\seealso{ \code{\link{hclust}}, \code{\link{dist.hamming}}, \code{\link{NJ}}, \code{\link{as.phylo}}, \code{\link{fastme}}, \code{\link{nnls.tree}} }
 \examples{
 data(Laurasiatherian)
-dm = dist.logDet(Laurasiatherian)
+dm = dist.ml(Laurasiatherian)
 tree = upgma(dm)
 plot(tree)
 }

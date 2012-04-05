@@ -12,13 +12,13 @@ for amino acid models.
 \usage{
 dist.hamming(x, ratio = TRUE)
 dist.logDet(x)
-dist.ml(x, model="JC69", pairwise.deletion = FALSE, bf=NULL, Q=NULL, ...)
+dist.ml(x, model="JC69", exclude="none", bf=NULL, Q=NULL, ...)
 }
 \arguments{
   \item{x}{An object of class \code{phyDat}}
   \item{ratio}{Compute uncorrected ('p') distance or character difference.}
   \item{model}{One of "JC69", "WAG", "JTT", "LG" or "Dayhoff"}
-  \item{pairwise.deletion}{A logical indicating whether to delete the sites with missing data (or ambigious states) in a pairwise way. The default is to delete the sites with at least one missing data for all sequences.}
+  \item{exclude}{One of "none", "all", "pairwise" indicating whether to delete the sites with missing data (or ambigious states). The default is handle missing data as in pml.}
   \item{bf}{A vector of base frequencies.}
   \item{Q}{A vector containing the lower triangular part of the rate matrix.} 
   \item{\dots}{Further arguments passed to or from other methods.}

@@ -54,8 +54,8 @@ Unfortunately the  multicore package does not work under windows or with GUI int
 However it will speed up nicely from the command line ("X11").  
 }
 \value{
-returns an object of class \code{multi.phylo} or a list where each 
-element is an object of class \code{pml}.
+\code{bootstrap.pml} returns an object of class \code{multi.phylo} or a list where each 
+element is an object of class \code{pml}. 
 }
 \references{
 Felsenstein J. (1985) Confidence limits on phylogenies. An approach using the bootstrap. \emph{Evolution} \bold{39}, 783--791
@@ -68,7 +68,7 @@ Penny D. and Hendy M.D. (1986) Estimating the reliabbility of evolutionary trees
 Klaus Schliep \email{klaus.schliep@gmail.com}
 }
 \seealso{
-\code{\link{optim.pml}}, \code{\link{pml}}, \code{\link{plot.phylo}}
+\code{\link{optim.pml}}, \code{\link{pml}}, \code{\link{plot.phylo}}, \code{\link{consensusNet}}
 }
 \examples{
 \dontrun{

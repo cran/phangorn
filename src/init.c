@@ -32,6 +32,7 @@ R_CMethodDef cMethods[] = {
 {"giveIndex", (DL_FUNC) &giveIndex, 6},
 {"cisort", (DL_FUNC) &cisort, 5},
 {"reorder", (DL_FUNC) &reorder, 6},
+{"pwIndex", (DL_FUNC) &pwIndex, 6},
 {NULL, NULL, 0}
 };
 

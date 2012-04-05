@@ -10,7 +10,7 @@ void giveIndex(int *left, int* right, int *ll, int *lr, int *n, int *res);
 void sankoff4(double *dat, int n, double *cost, int k, double *result);
 void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root);
 void cisort(int *x, int *y, int *a, int *b, int *res);
-
+void pwIndex(int *left, int* right, int *l, int *n, double *w, double *res);
 
 
 SEXP dist2spectra(SEXP dm, SEXP nx, SEXP ns);
