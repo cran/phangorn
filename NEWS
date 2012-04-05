@@ -1,8 +1,31 @@
+       CHANGES in PHANGORN VERSION 1.6-0
+
+NEW FEATURES
+
+    o dist.ml has more options and is faster (ca. 5 times for nucleotides and 20 times for amino acids)
+
+BUG FIXES
+
+    o plotBS did not work properly with ape version 3.0
+
+OTHER CHANGES
+
+    o vignettes changed for a faster compilation of the package 
+
+    o Ancestors allows a vector of nodes as input
+
+    o midpoint uses less memory and works for larger trees (10000 of tips) 
+
+    o ancestral.pars gives better formated output
+
+
+
        CHANGES in PHANGORN VERSION 1.5-1
 
 OTHER CHANGES
 
     o several examples changed for a faster compilation of the package 
+
 
 
        CHANGES in PHANGORN VERSION 1.5-0

@@ -1,7 +1,7 @@
 /* 
  * phangorn.c
  *
- * (c) 2011  Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2012  Klaus Schliep (klaus.schliep@gmail.com)
  * 
  * 
  * This code may be distributed under the GNU GPL
@@ -27,8 +27,10 @@
 #include <R_ext/Lapack.h>
 
 
-
+// off-diagonal
 #define DINDEX(i, j) n*(i - 1) - i * (i - 1)/2 + j - i - 1
+// with diagonal (+i), R index (+1)
+#define DINDEX2(i, j) n*(i - 1) - i * (i - 1)/2 + j - 1
 
 char *transa = "N", *transb = "N";
 double one = 1.0, zero = 0.0;
@@ -41,6 +43,14 @@ int give_index(int i, int j, int n)
     else return(DINDEX(i, j));
 }
  
+
+int give_index2(int i, int j, int n)
+{
+    if (i > j) return(DINDEX2(j, i));
+    else return(DINDEX2(i, j));
+}
+ 
+
  
 void giveIndex(int *left, int* right, int *ll, int *lr, int *n, int *res){
     int i, j, k;
@@ -52,6 +62,88 @@ void giveIndex(int *left, int* right, int *ll, int *lr, int *n, int *res){
              }    
         }
     }
+
+
+void giveIndex2(int *left, int* right, int *ll, int *lr, int *n, int *res){
+    int i, j, k;
+    k=0;
+    for (i = 0; i < *ll; i++){
+        for (j = 0; j < *lr; j++){
+             res[k] = give_index2(left[i], right[j], *n);
+             k++;
+             }    
+        }
+    }
+
+
+/*
+
+data(Laurasiatherian)
+data(chloroplast)
+
+Rprof(tmp <- tempfile())
+dm <- dist.ml(Laurasiatherian)
+Rprof()
+summaryRprof(tmp)
+unlink(tmp)
+
+Rprof(tmp <- tempfile())
+dm2 <- dist.ml2(Laurasiatherian)
+Rprof()
+summaryRprof(tmp)
+unlink(tmp)
+
+Rprof(tmp <- tempfile())
+dm <- dist.ml(chloroplast)
+Rprof()
+summaryRprof(tmp)
+unlink(tmp)
+
+Rprof(tmp <- tempfile())
+dm2 <- dist.ml2(chloroplast)
+Rprof()
+summaryRprof(tmp)
+unlink(tmp)
+
+
+
+dyn.load("phangorn.so")
+.C("giveIndex",4L, 4L, 1L, 1L, 18L, integer(1))
+.C("pwIndex", as.integer(x), as.integer(y), length(x), 18L, rep(1, 1605), numeric(171))
+.C("pwIndex", as.integer(1), as.integer(1), 1L, 18L, 1, numeric(171))
+
+system.time(for(i in 1:1000)    w0 <- .C("pwIndex", as.integer(x[[1]]), as.integer(x[[2]]), 
+                as.integer(nr), as.integer(n), weight, numeric(li), 
+                dup = FALSE, PACKAGE = "phangorn")[[6]])
+
+
+system.time(for(i in 1:1000)    w1 <- .Call("PWI", as.integer(x[[1]]), as.integer(x[[2]]), 
+                as.integer(nr), as.integer(n), weight, as.integer(li)))
+
+*/
+
+// dist.ml speedup 3*
+void pwIndex(int *left, int* right, int *l, int *n, double *w, double *res){
+    int i, k;
+    k=0;
+    for (i = 0; i < *l; i++){
+        k = give_index2(left[i], right[i], *n);
+        res[k] += w[i];        
+        }
+    }
+
+
+
+SEXP PWI(SEXP LEFT, SEXP RIGHT, SEXP L, SEXP N, SEXP W, SEXP LI){
+    int i, li=INTEGER(LI)[0];    
+    SEXP res;  
+    PROTECT(res = allocVector(REALSXP, li));
+    for(i = 0; i < li; i++)REAL(res)[i] = 0.0;
+    pwIndex(INTEGER(LEFT), INTEGER(RIGHT), INTEGER(L), INTEGER(N), REAL(W), REAL(res));    
+    UNPROTECT(1);    
+    return(res);
+}
+
 
 
 int bitcount(int x){ 
@@ -305,7 +397,7 @@ void fitch35(int *dat1, int *dat2, int *dat3, int *nr, double *weight, double *w
     fitch53(res, dat3, nr, weight, w);
 } 
 
-
+// const??
 void fitch6(int *dat, int *nr, int *pars, int *node, int *edge, int *nl, double *weight, double *pvec, double *pscore) 
 {   
     int i, ni, k;
@@ -547,7 +639,7 @@ SEXP FITCH(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEXP m
 }
 
 
-
+// fuer fast.fitch data ausserhalb definieren und zuweisen 
 SEXP FITCH123(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEXP mx, SEXP q, SEXP ps){   
     int *data, *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, n=INTEGER(q)[0];   //=INTEGER(dat)
     double *pvtmp;  
@@ -719,6 +811,43 @@ SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SE
 }
 
 
+// faster und memory efficient, aehnlich wie logLik2
+SEXP sankoff3B(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips){
+    R_len_t i, n = length(node), nt = length(tips);
+    int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], mn=INTEGER(mNodes)[0];
+    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node);
+    SEXP result, dlist2; //tmp, 
+    double *res, *cost; // *rtmp,
+    cost = REAL(scost);
+    if(!isNewList(dlist)) error("'dlist' must be a list");
+    ni = nodes[0];
+    PROTECT(dlist2 = allocVector(VECSXP, mn));
+    PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
+    res = REAL(result);
+    for(i = 0; i < nt; i++) SET_VECTOR_ELT(dlist2, INTEGER(tips)[i], VECTOR_ELT(dlist, INTEGER(tips)[i]));
+    for(j=0; j<(nrx * ncx); j++) res[j] = 0.0; 
+ 
+    for(i = 0; i < n; i++) {
+        ei = edges[i]; 
+        if(ni == nodes[i]){            
+            sankoff4(REAL(VECTOR_ELT(dlist2,ei)), nrx, cost, ncx, res);
+            }
+        else{          
+            SET_VECTOR_ELT(dlist2, ni, result);
+            UNPROTECT(1); 
+            PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
+            res = REAL(result);
+            for(j=0; j<(nrx * ncx); j++) res[j] = 0.0; 
+            ni = nodes[i];
+            sankoff4(REAL(VECTOR_ELT(dlist2,ei)), nrx, cost, ncx, res); 
+            }
+    }
+    SET_VECTOR_ELT(dlist2, ni, result);    
+    UNPROTECT(2); 
+    return(dlist2);
+}
+
+
     
 SEXP pNodes(SEXP data, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge){
     R_len_t n = length(node); 
@@ -762,7 +891,7 @@ static R_INLINE void matprod(double *x, int nrx, int ncx, double *y, int nry, in
     F77_CALL(dgemm)(transa, transb, &nrx, &ncy, &ncx, &one, x, &nrx, y, &nry, &zero, z, &nrx);
 }
 
-
+// void matp(int *x, double *contrast, double *P, int nr, int nc, int nrs, double *result){
 void matp(int *x, double *contrast, double *P, int *nr, int *nc, int *nrs, double *result){
     int i, j;
     double *tmp; 
@@ -792,7 +921,7 @@ matprod = function(X, Y){
 }
 */
 
- 
+// getP oder getPP raus 
 static R_INLINE void getP(double *eva, double *ev, double *evi, int m, double el, double w, double *result){
     int i, j, h;
     double tmp[m], res;
@@ -888,60 +1017,6 @@ void getd2P2(double *eva, double *ev, double *evi, int m, double el, double w, d
 }
 
 
-
-void NR5(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child, int ld, int nr, double *bf, double *f, double *res){
-    int i, j, k; 
-    double *kid;  
-    double *eva, *eve, *evei; 
-    double *dP, *dtmp; 
-    if(!isNewList(eig)) error("eig must be a list"); 
-    if(!isNewList(dad)) error("dad must be a list"); 
-    if(!isNewList(child)) error("child must be a list");   
-    dP = (double *) R_alloc(nc*nc, sizeof(double));
-    dtmp = (double *) R_alloc(nr*nc, sizeof(double));
-        
-    eva = REAL(VECTOR_ELT(eig, 0));
-    eve = REAL(VECTOR_ELT(eig, 1));
-    evei = REAL(VECTOR_ELT(eig, 2));
-
-    for(k=0; k<nr; k++) res[k] = 0.0;
-        
-    for(j=0;j<ld;j++){
-        kid = REAL(VECTOR_ELT(child, j)); // kid
-        getdP(eva, eve, evei, nc, el, g[j], dP); //dP faellt weg
-        F77_CALL(dgemm)(transa, transb, &nr, &nc, &nc, &one, REAL(VECTOR_ELT(dad, j)), &nr, dP, &nc, &zero, dtmp, &nr);
-        for(i = 0; i < (nr*nc); i++) dtmp[i]*=kid[i]; //dtmp =  (dad %*% dP) * kid 
-        F77_CALL(dgemv)(transa, &nr, &nc, &w[j], dtmp, &nr, bf, &ONE, &one, res, &ONE); 
-        }
-    for(i=0; i<nr ;i++) res[i]/=f[i];                
-} 
-
-
-void NR6(SEXP eig, int nc, double el, double *w, double *g, SEXP dad, SEXP child, int ld, int nr, double *bf, double *res){
-    int i, j; 
-    double *kid;  
-    double *eva, *eve, *evei; 
-    double *dP, *dtmp; 
-    if(!isNewList(eig)) error("'eig' must be a list");
-    if(!isNewList(dad)) error("'dad' must be a list");
-    if(!isNewList(child)) error("'child' must be a list");    
-    dP = (double *) R_alloc(nc*nc, sizeof(double));
-    dtmp = (double *) R_alloc(nr*nc, sizeof(double));
-        
-    eva = REAL(VECTOR_ELT(eig, 0)); // raus
-    eve = REAL(VECTOR_ELT(eig, 1));
-    evei = REAL(VECTOR_ELT(eig, 2));
-
-    for(j=0;j<ld;j++){
-        kid = REAL(VECTOR_ELT(child, j)); // kid
-        getP(eva, eve, evei, nc, el, g[j], dP); 
-        F77_CALL(dgemm)(transa, transb, &nr, &nc, &nc, &one, REAL(VECTOR_ELT(dad, j)), &nr, dP, &nc, &zero, dtmp, &nr);
-        for(i = 0; i < (nr*nc); i++) dtmp[i]*=kid[i]; //dtmp =  (dad %*% dP) * kid
-        F77_CALL(dgemv)(transa, &nr, &nc, &w[j], dtmp, &nr, bf, &ONE, &one, res, &ONE); 
-        }       
-} 
-
-
 SEXP getPM(SEXP eig, SEXP nc, SEXP el, SEXP w){
     R_len_t i, j, nel, nw, k;
     int m=INTEGER(nc)[0], l=0;
@@ -972,6 +1047,7 @@ SEXP getPM(SEXP eig, SEXP nc, SEXP el, SEXP w){
     UNPROTECT(1);//RESULT
     return(RESULT);
 } 
+
 
 SEXP getPM2(SEXP eig, SEXP nc, SEXP el, SEXP w){
     R_len_t i, j, nel, nw;
@@ -1261,7 +1337,7 @@ SEXP getPrep(SEXP dad, SEXP child, SEXP eve, SEXP evi, SEXP nr, SEXP nc){
     }
 
 
-
+// tmp ausserhalb nr55, nr66 initialisieren
 void NR55(double *eva, int nc, double el, double *w, double *g, SEXP X, int ld, int nr, double *f, double *res){
     int i, j, k; 
     double *tmp;  
@@ -1275,6 +1351,23 @@ void NR55(double *eva, int nc, double el, double *w, double *g, SEXP X, int ld, 
         }
     for(i=0; i<nr ;i++) res[i]/=f[i];                
 } 
+
+
+void NR555(double *eva, int nc, double el, double *w, double *g, SEXP X, int ld, int nr, double *f, double *res){
+    int i, j, k; 
+    double *tmp;  
+    tmp = (double *) R_alloc(nc, sizeof(double));
+
+    for(k=0; k<nr; k++) res[k] = 0.0;
+        
+    for(j=0;j<ld;j++){
+        for(i=0; i<nc ;i++) tmp[i] = (eva[i] * g[j]) * exp(eva[i] * g[j] * el);       
+        F77_CALL(dgemv)(transa, &nr, &nc, &w[j], REAL(VECTOR_ELT(X, j)), &nr, tmp, &ONE, &one, res, &ONE); 
+        }
+    for(i=0; i<nr ;i++) res[i]/=f[i];                
+} 
+
+
 
  
 void NR66(double *eva, int nc, double el, double *w, double *g, SEXP X, int ld, int nr, double *res){
@@ -1290,7 +1383,7 @@ void NR66(double *eva, int nc, double el, double *w, double *g, SEXP X, int ld, 
         }               
 } 
 
- 
+// add variance 
 SEXP FS4(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP X, SEXP dad, SEXP child, SEXP ld, SEXP nr, 
          SEXP basefreq, SEXP weight, SEXP f0, SEXP retA, SEXP retB)
 {
@@ -1320,7 +1413,7 @@ SEXP FS4(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP X, SEXP dad, SEXP chil
         newedle = exp(ledle);
 // some error handling avoid too big small edges & too big steps
         if (newedle > 10.0) newedle = 10.0;
-        if (newedle < 1e-8) newedle = edle/2; // new 
+        if (newedle < 1e-8) newedle = edle/2; 
         if (newedle < 1e-8) newedle = 1e-8; // 1e-8 phyML      
   
         for(i=0; i<nrx; i++)f[i] = REAL(f0)[i]; 
@@ -1353,6 +1446,73 @@ SEXP FS4(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP X, SEXP dad, SEXP chil
     UNPROTECT(3);
     return (RESULT);
 } 
+
+
+
+// mit Varianz, abgespeckt  
+SEXP FS5(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP X, SEXP ld, SEXP nr, SEXP basefreq, SEXP weight, SEXP f0)
+{
+    SEXP RESULT; // EL, P; 
+    double *tmp, *f, *wgt=REAL(weight), edle, ledle, newedle, eps=10, *eva=REAL(VECTOR_ELT(eig,0)); 
+    double ll, lll, delta=0.0, scalep = 1.0, *ws=REAL(w), *gs=REAL(g), l1=0.0, l0=0.0;
+    int i, k=0, ncx=INTEGER(nc)[0], nrx=INTEGER(nr)[0];
+    tmp = (double *) R_alloc(nrx, sizeof(double));
+    f = (double *) R_alloc(nrx, sizeof(double));
+    PROTECT(RESULT = allocVector(REALSXP, 2));
+    edle = REAL(el)[0];    
+        
+    for(i=0; i<nrx; i++)f[i] = REAL(f0)[i];
+    NR66(eva, ncx, edle, ws, gs, X, INTEGER(ld)[0], nrx, f); // ncx-1L !!!
+    for(i=0; i<nrx ;i++) l0 += wgt[i] * log(f[i]);    
+
+    while ( (eps > 1e-05) &&  (k < 5) ) {
+        if(scalep>0.6){  
+            NR55(eva, ncx-1L, edle, ws, gs, X, INTEGER(ld)[0], nrx, f, tmp);  
+            ll=0.0;  
+            lll=0.0;        
+            for(i=0; i<nrx ;i++) ll+=wgt[i]*tmp[i];
+            for(i=0; i<nrx ;i++) lll+=wgt[i]*tmp[i]*tmp[i];  
+            delta = ((ll/lll) < 3) ? (ll/lll) : 3;
+        } // end if        
+        ledle = log(edle) + scalep * delta;
+        newedle = exp(ledle);
+// some error handling avoid too big small edges & too big steps
+        if (newedle > 10.0) newedle = 10.0;
+        if (newedle < 1e-8) newedle = edle/2; 
+        if (newedle < 1e-8) newedle = 1e-8; // 1e-8 phyML      
+  
+        for(i=0; i<nrx; i++)f[i] = REAL(f0)[i]; 
+        NR66(eva, ncx, newedle, ws, gs, X, INTEGER(ld)[0], nrx, f);
+        l1 = 0.0;
+        for(i=0; i<nrx ;i++) l1 += wgt[i] * log(f[i]); // + log
+        eps = l1 - l0;
+// some error handling              
+        if (eps < 0 || ISNAN(eps)) {
+            if (ISNAN(eps))eps = 0;
+            else {
+                scalep = scalep/2.0;
+                eps = 1.0;
+            }
+            newedle = edle;
+            l1 = l0;
+        }
+        else scalep = 1.0;
+        edle=newedle;
+        l0 = l1; 
+        k ++;
+    }   
+// variance 
+    NR555(eva, ncx-1L, edle, ws, gs, X, INTEGER(ld)[0], nrx, f, tmp);  
+    lll=0.0;        
+    for(i=0; i<nrx ;i++) lll+=wgt[i]*tmp[i]*tmp[i]; 
+
+    REAL(RESULT)[0] = edle;
+    REAL(RESULT)[1] = 1.0/ lll; // variance
+//    SET_VECTOR_ELT(RESULT, 3, ScalarReal(l1)); 
+    UNPROTECT(1);
+    return (RESULT);
+} 
+
 
 
 /*
@@ -1602,8 +1762,8 @@ SEXP LogLik2(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
     PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
     res = REAL(result);
     rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
-    char *transa = "N", *transb = "N"; // global??
-    double one = 1.0, zero = 0.0;
+//    char *transa = "N", *transb = "N"; // global??
+//    double one = 1.0, zero = 0.0;
 
     for(j=0; j < (nrx * ncx); j++) res[j] = 1.0;
     for(i = 0; i < n; i++) {
@@ -1673,36 +1833,45 @@ void scaleMatrix(double *X, int nr, int nc, double *result){
 }
 
 
-void scaleMatrix2(double *X, int *nr, int *nc, double *result){
+// result[i] += log(tmp); in loop
+void scaleMatrix2(double *X, int nr, int nc, double *result, double eps){
     int i, j; 
-    double tmp;   
-    for(i = 0; i < *nr; i++) {    
+    double tmp;
+//    eps = 1.0e-10;   
+    for(i = 0; i < nr; i++) {    
         tmp = 0.0; 
-        for(j = 0; j < *nc; j++) {
-           tmp += X[i + j* (*nr)];
+        for(j = 0; j < nc; j++) tmp += X[i + j* nr];        
+        if(tmp < eps){
+            for(j = 0; j < nc; j++) X[i + j* nr] /= tmp;
+            result[i] += log(tmp);
         }        
-        for(j = 0; j < *nc; j++) {
-           X[i + j* (*nr)] /= tmp;
-        }
-        result[i] += log(tmp);
     } 
 }
 
 
-// mit scaling
+void scaleMatrix3(double *X, int *nr, int *nc, double *result, double *eps){
+    int i, j; 
+    double tmp;
+//    eps = 1.0e-10;   
+    for(i = 0; i < *nr; i++) {    
+        tmp = 0.0; 
+        for(j = 0; j < *nc; j++) tmp += X[i + j* (*nr)];        
+        if(tmp < eps[0]){
+            for(j = 0; j < *nc; j++) X[i + j* (*nr)] /= tmp;
+            result[i] += log(tmp);
+        }
+    } 
+}
+
+
 SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes, SEXP contrast, SEXP nco){
     R_len_t i, n = length(node);
     int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], nt=INTEGER(nTips)[0], mn=INTEGER(mNodes)[0];
-    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node), *nChild, eps1;
+    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node);
     SEXP erg, ans, result, scVec , scTmp;  
     double *res, *rtmp, *scaleTmp;
     if(!isNewList(dlist)) error("'dlist' must be a list");
     ni = nodes[0];
-    eps1 = 50L;
-    nChild = (int *) R_alloc( (nt+mn), sizeof(int));
-    for(j=0; j < (nt + mn); j++) nChild[j] = 0L; 
-    for(j=0; j < nt; j++) nChild[j] = 1L; 
-
     PROTECT(erg = allocVector(VECSXP, 2L));
     PROTECT(ans = allocVector(VECSXP, mn)); 
     PROTECT(scVec = allocVector(VECSXP, mn));
@@ -1717,10 +1886,8 @@ SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
     for(i = 0; i < n; i++) {
         ei = edges[i]; 
         if(ni != nodes[i]){
-            if(nChild[ni]>eps1){
-                scaleMatrix(res, nrx, ncx, scaleTmp);
-                nChild[ni] = 1L;
-            }
+//          no scalMatrix here??
+            scaleMatrix(res, nrx, ncx, scaleTmp);
             SET_VECTOR_ELT(ans, ni, result);
             SET_VECTOR_ELT(scVec, ni, scTmp);
             UNPROTECT(2); //result scTmp
@@ -1731,13 +1898,13 @@ SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
             for(j=0; j < nrx; j++) scaleTmp[j] = 0.0;
             ni = nodes[i];
             if(ei < nt) 
-                matp(INTEGER(VECTOR_ELT(dlist, ei)), REAL(contrast), REAL(VECTOR_ELT(P, i)), INTEGER(nr), INTEGER(nc), INTEGER(nco), res); 
+                matp(INTEGER(VECTOR_ELT(dlist, ei)), REAL(contrast), REAL(VECTOR_ELT(P, i)), INTEGER(nr), INTEGER(nc), INTEGER(nco), res); // nr, nrx, INTEGER(nr)
             else{ 
                 F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
                        REAL(VECTOR_ELT(P, i)), &ncx, &zero, res, &nrx);
                 for(j=0; j < nrx; j++) scaleTmp[j] += REAL(VECTOR_ELT(scVec, ei-nt))[j];
-            }         
-            nChild[ni] += nChild[ei];
+            }     
+//          z=1L;      
         }
         else {
             if(ei < nt) 
@@ -1748,7 +1915,11 @@ SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
                 for(j=0; j < nrx; j++) scaleTmp[j] += REAL(VECTOR_ELT(scVec, ei-nt))[j];
             }
             for(j=0; j < (nrx*ncx); j++) res[j] *= rtmp[j];
-            nChild[ni] += nChild[ei];
+//          z+=1L; // epsScale=50; statt+1 von vector
+//          if(z>epsScale){
+//              scaleMatrix(res, nrx, ncx, scaleTmp);   
+//              z=1;     
+//          }
         }            
     }
     scaleMatrix(res, nrx, ncx, scaleTmp);
@@ -1759,6 +1930,12 @@ SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
     UNPROTECT(5); // result ans 
     return(erg);
 }
+
+
+
+// 2237 --> 2099 Ziel <2000!!!
+// NR5, NR6 raus --> 2046
+
 
 
 

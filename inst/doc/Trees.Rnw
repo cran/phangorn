@@ -145,7 +145,10 @@ or the Shimodaira-Hasegawa test.
 SH.test(fitGTR, fitJC) 
 @
 An alternative is to use the function \Rfunction{modelTest}  to compare different models the AIC or BIC, similar to popular program of \cite{Posada1998, Posada2008}.   %\cite{Possada}
-<<echo=TRUE>>=
+<<echo=FALSE>>=
+load("Trees.RData")
+@
+<<echo=TRUE, eval=FALSE>>=
 mt = modelTest(primates)
 @
 The results of is illustrated in table \ref{tab:modelTest}
@@ -163,7 +166,7 @@ ls(envir=env)
 @
 
 At last we may want to apply bootstrap to test how well the edges of the tree are supported: %, results=hide
-<<echo=TRUE>>=
+<<echo=TRUE, eval=FALSE>>=
 bs = bootstrap.pml(fitJC, bs=100, optNni=TRUE, 
     control = pml.control(trace = 0))
 @
@@ -194,7 +197,7 @@ options(prompt=" ")
 options(continue="  ")
 @
 <<eval=FALSE>>=
-library(multicore) # supports parallel computing
+library(parallel) # supports parallel computing
 library(phangorn)
 file="myfile"
 dat = read.phyDat(file)
@@ -219,7 +222,7 @@ bs = bootstrap.pml(fit, bs=100, optNni=TRUE, multicore=TRUE)
 
 You can specify different several models build in which you can specify, e.g. "WAG", "JTT", "Dayhoff", "LG". Optimising the rate matrix for amino acids is possible, but would take a long, a very long time. So make sure to set optBf=FALSE and optQ=FALSE in the function \Rfunction{optim.pml}, which is also the default.
 <<eval=FALSE>>=
-library(multicore) # supports parallel computing
+library(parallel) # supports parallel computing
 library(phangorn)
 file="myfile"
 dat = read.phyDat(file, type = "AA")

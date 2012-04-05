@@ -35,7 +35,7 @@ version, UNJ. in Birkin et. al. \emph{Mathematical Hierarchies and Biology},
 \seealso{  \code{\link[ape]{nj}}, \code{\link[ape]{dist.dna}}, \code{\link[phangorn]{dist.hamming}}, \code{\link[phangorn]{upgma}}, \code{\link[ape]{fastme}}}
 \examples{
 data(Laurasiatherian)
-dm <- dist.logDet(Laurasiatherian)
+dm <- dist.ml(Laurasiatherian)
 tree <- NJ(dm)
 plot(tree)
 }
