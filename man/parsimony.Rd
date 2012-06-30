@@ -12,17 +12,19 @@
 \alias{acctran}
 \description{
 
-\code{parsimony} returns the parsimony score of a tree.
+\code{parsimony} returns the parsimony score of a tree using either the sankoff or the fitch algorithm.
 \code{optim.parsimony} tries to find the maximum parsimony tree using Nearest Neighbor Interchange (NNI) 
-rearrangements. \code{pace} returns a (logical) matrix of the ancestral states
-of the root node. \code{CI} and \code{RI} computes the consistency and retention index.  
+rearrangements. \code{pratchet} uses the implements the parsimony ratchet (Nixon, 1999) and is the prefered way to search for the best tree. 
+\code{random.addition} can be used to produce starting trees. 
+\code{CI} and \code{RI} computes the consistency and retention index.  
 }
 \usage{
 parsimony(tree, data, method="fitch", ...)
-optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1,...)
-pratchet(data, start=NULL, k=20, np=1, trace=1, all=FALSE, method="fitch", multicore=FALSE, ...)
+optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, rearrangements="SPR", ...)
+pratchet(data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="SPR", ...)
 fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
+random.addition(data, method="fitch")
 CI(tree, data)
 RI(tree, data)
 acctran(tree, data)
@@ -34,14 +36,16 @@ acctran(tree, data)
   \item{method}{one of 'fitch' or 'sankoff'.}
   \item{cost}{A cost matrix for the transitions between two states.} 
   \item{site}{return either 'pscore' or 'site' wise parsimony scores.} 
-  \item{trace}{defines how much information is printed during optimisation.} 
+  \item{trace}{defines how much information is printed during optimisation.}  
+  \item{rearrangements}{SPR or NNI rearrangements.} 
   \item{start}{a starting tree can be supplied.}
-  \item{k}{number of rounds in the ratchet.}
-  \item{np}{number of (parallel) bootstraps (see details).}
-  \item{multicore}{logical, if TRUE analysis is performed in parallel (see details).}   
+  \item{maxit}{maximum number of iterations in the ratchet.}
+  \item{k}{number of rounds ratchet is stopped, when there is no improvement.}
   \item{all}{return all equally good trees or just one of them.} 
   \item{...}{Further arguments passed to or from other methods (e.g. model="sankoff" and cost matrix).} 
 }
+%  \item{np}{number of (parallel) bootstraps (see details).}
+%  \item{multicore}{logical, if TRUE analysis is performed in parallel (see details).}    
 \value{
   \code{parsimony} returns the maximum parsimony score (pscore). 
   \code{optim.parsimony} returns a tree after NNI rearrangements.
@@ -49,7 +53,8 @@ acctran(tree, data)
   \code{acctran} returns a tree with edge length according to the ACCTRAN criterion. 
 }
 \details{
-On platforms where the multicore package is avaiable the parsimony ratchet may find solutions faster. To do this set the parameter np to the number of cores available. See also details in \code{\link{bootstrap.pml}}.     
+On platforms where the multicore package is avaiable the parsimony ratchet may find solutions faster. To do this set the parameter np to the number of cores available. See also details in \code{\link{bootstrap.pml}}. 
+The "SPR" is so far only available for the "fitch" method and may not be as extensive as other implementations.      
 }
 \references{
 Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
@@ -63,12 +68,14 @@ data(Laurasiatherian)
 dm = dist.logDet(Laurasiatherian)
 tree = NJ(dm)
 parsimony(tree, Laurasiatherian)
+treeRA <- random.addition(Laurasiatherian)
 treeNNI <- optim.parsimony(tree, Laurasiatherian)
 treeRatchet <- pratchet(Laurasiatherian, start=tree)
+# assign edge length
 treeRatchet <- acctran(treeRatchet, Laurasiatherian)
 
 plot(midpoint(treeRatchet))
-add.scale.bar()
+add.scale.bar(0,0, length=100)
 
 parsimony(c(tree,treeNNI, treeRatchet), Laurasiatherian)
 }

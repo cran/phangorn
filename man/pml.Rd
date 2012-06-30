@@ -63,13 +63,12 @@ TIM1e, TIM1, TIM2e, TIM2, TIM3e, TIM3, TVMe, TVM, SYM and GTR.
 These models are specified as in Posada (2008).
 
 So far 9 amino acid models are supported ("WAG", "JTT", "Dayhoff", "LG", "cpREV", "mtmam", "mtArt", "MtZoa" and "mtREV24") 
-and additionally rate matrices and amino acid frequences can be supplied to . 
+and additionally rate matrices and amino acid frequences can be supplied. 
 
 If the option 'getRooted' is set to TRUE than the edge lengths of rooted tree are optimized.
 The tree has to be rooted and ultrametric! No tree rearrangements are yet supported.
 If 'getRooted=FALSE' any rooted tree is getting unrooted.
   
-
 \code{pml.control} controls the fitting process. \code{epsilon} and \code{maxit} are only defined 
 for the most outer loop, this affects \code{pmlCluster}, \code{pmlPart} and \code{pmlMix}. 
 \code{epsilon} is defined as (logLik(k)-logLik(k+1))/logLik(k+1), this seems to be a good 
@@ -121,7 +120,6 @@ Kosiol, C, and Goldman, N (2005) Different versions of the Dayhoff rate matrix -
 \code{\link{bootstrap.pml}}, \code{\link{modelTest}}, \code{\link{pmlPart}}, \code{\link{pmlMix}}, \code{\link{plot.phylo}}
 }
 % \note{For small trees the likelihood seems to be very similar to Paup* or PhyML.}
-% \seealso{ For a different implementation see \code{\link[ape]{mlphylo}}.} 
 \examples{
   example(NJ)
 # Jukes-Cantor (starting tree from NJ)  
