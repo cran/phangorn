@@ -1,12 +1,12 @@
 useDynLib(phangorn, .registration=TRUE)
 
-import(ape, Matrix)
+import(ape, Matrix, igraph)
 importFrom(stats, AIC, logLik, reorder) 
 
 export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UNJ, PNJ, 
     phyDat, read.phyDat, write.phyDat, as.phyDat, as.splits, as.prop.part, as.networx,
     dfactorial, ldfactorial, hadamard, nni, allSitePattern, allSplits,
-    fhm, distanceHadamard, treedist, sankoff, fitch, h2st, h4st,
+    fhm, distanceHadamard, treedist, sankoff, fitch, h2st, h4st, 
     dist.logDet, dist.hamming, dist.ml, upgma, wpgma, write.nexus.splits, write.splits, 
     pmlPart, pmlCluster, pmlMix, pmlPen, read.aa, allTrees,
     designTree, designSplits, nnls.tree, splitsNetwork, simSeq, SH.test, bootstrap.pml,
@@ -50,7 +50,7 @@ S3method(print, splits)
 S3method(print, summary.clanistics)
 S3method(reorder, networx)
 S3method(subset, phyDat)
-S3method(summary,clanistics)
+S3method(summary, clanistics)
 S3method(update, pml)
 S3method(vcov, pml)
 

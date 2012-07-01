@@ -1,3 +1,19 @@
+       CHANGES in PHANGORN VERSION 1.6-3
+
+NEW FEATURES
+
+    o optim.parsimony has a new search heuristic (SPR)
+
+BUG FIXES
+
+    o changed package to work with igraph >= 0.6 
+
+OTHER CHANGES
+
+    o arguments of pratchet changed
+
+
+
        CHANGES in PHANGORN VERSION 1.6-0
 
 NEW FEATURES

@@ -104,7 +104,7 @@ treeRatchet = pratchet(primates, trace = 0)
 parsimony(c(treePars, treeRatchet), primates)
 @
 For small datasets it is also possible to find all most parsimonious trees using a branch and bound algorithm \cite{Hendy1982}. For datasets with more than 10 taxa this can take a long time and depends strongly on how tree like the data are.  
-<<echo=TRUE>>=
+<<echo=TRUE, eval=FALSE>>=
 (trees <- bab(subset(primates,1:10)))
 @
 
@@ -144,7 +144,7 @@ or the Shimodaira-Hasegawa test.
 <<echo=TRUE>>=
 SH.test(fitGTR, fitJC) 
 @
-An alternative is to use the function \Rfunction{modelTest}  to compare different models the AIC or BIC, similar to popular program of \cite{Posada1998, Posada2008}.   %\cite{Possada}
+An alternative is to use the function \Rfunction{modelTest}  to compare different models the AIC or BIC, similar to popular program of \cite{Posada1998, Posada2008}.  
 <<echo=FALSE>>=
 load("Trees.RData")
 @
@@ -203,6 +203,8 @@ file="myfile"
 dat = read.phyDat(file)
 dm = dist.ml(dat)
 tree = NJ(dm)
+# as alternative for a starting tree:
+tree <- pratchet(dat) 
 
 # 1. alternative: estimate an GTR model
 fitStart = pml(tree, dat, k=4, inv=.2)
