@@ -1638,6 +1638,7 @@ reorderPruning <- function (x, ...)
 }
 
 
+
 add.tip <- function(phy, n, edgeLength=NULL, tip=""){ 
      ind <- which(phy$edge[,2] == n)
      phy <- new2old.phylo(phy) 
@@ -2474,7 +2475,7 @@ optim.fitch <- function(tree, data, trace=1, rearrangements = "SPR", ...) {
     if(is.rooted(tree))tree <- unroot(tree)
     if(is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise") tree <- reorderPruning(tree)  
     if (class(data)[1] != "phyDat") stop("data must be of class phyDat")
-    if(is.null(attr(data, "compressed")) || attr(data, "compressed") == FALSE) data <- compressSites(data)
+#    if(is.null(attr(data, "compressed")) || attr(data, "compressed") == FALSE) data <- compressSites(data)
 
     rt = FALSE
     dat <- prepareDataFitch(data)
@@ -2580,6 +2581,9 @@ fitch.nni <- function (tree, data, ...)
         tmp2 <- p0 - sum(psc)
         pscore[(2 * i) - 1] <- fitch.quartet(datn, p, weight, edge = c(1L, 3L, 2L, 4L, 6L)) - tmp2
         pscore[(2 * i)] <- fitch.quartet(datn, p, weight, edge = c(1L, 4L, 3L, 2L, 6L)) - tmp2
+    #    blub1 <- fitch.quartet2(datp[, ei[1]], datf[, ei[3]], datf[, ei[2]], datf[, ei[4]], p, weight) - tmp2
+    #    blub2 <- fitch.quartet2(datp[, ei[1]], datf[, ei[4]], datf[, ei[2]], datf[, ei[3]], p, weight) - tmp2  
+    #   system.time(for(i in 1:10)fitch.quartet2(datp[, ei[1]], datf[, ei[4]], datf[, ei[2]], datf[, ei[3]], p, weight))
     }
     swap <- 0
     candidates <- pscore < 0
@@ -2593,6 +2597,7 @@ fitch.nni <- function (tree, data, ...)
         tree2 <- changeEdge(tree, INDEX[(ind + 1)%/%2, swap.edge])
 #         tree2 <- changeEdge(tree, INDEX2[ind, swap.edge])
         test <- fit.fitch(tree2, data) # fast.fitch
+#        test <- fast.fitch3(tree2$edge, data, TRUE, weight, p)
         if (test >= p0) 
             candidates[ind] = FALSE
         if (test < p0) {
@@ -2614,6 +2619,11 @@ fitch.nni <- function (tree, data, ...)
 fitch.quartet = function(data, nr, weight, node = c(6L, 6L, 5L, 5L, 5L), edge = c(1L, 2L, 3L, 4L, 6L)) 
 {
     .Call("FITCH", data, as.integer(nr), node, edge, 5L, as.double(weight), 6L , 4L)[[1]]
+}
+
+# .Call ist sehr viel schneller aber gleches ergebnis!!!
+fitch.quartet2 <- function(dat1, dat2, dat3, dat4, nr, weight, node = c(6L, 6L, 5L, 5L, 5L)){ 
+    .C("fitchquartet", dat1, dat2, dat3, dat4, as.integer(nr), as.double(weight), numeric(1), DUP=FALSE)[[7]]
 }
 
 #
@@ -2928,9 +2938,8 @@ mmsNew0 <- function (x, Y)
 
 bab <- function (data, tree = NULL, trace = 1, ...) 
 {
-    if (is.null(attr(data, "compressed")) || attr(data, "compressed") == 
-        FALSE) 
-        data <- compressSites(data)
+#    if (is.null(attr(data, "compressed")) || attr(data, "compressed") == FALSE) 
+#        data <- compressSites(data)
     o = order(attr(data, "weight"), decreasing = TRUE)
     data = subset(data, , o)
     nr <- attr(data, "nr")
@@ -3085,6 +3094,20 @@ fast.fitch3 <- function (edge, data, ps = TRUE, weight, nr){
         as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
 }
 
+fast.fitchOld <- function (tree, data, ps = TRUE) 
+{
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorderPruning(tree)
+    nr = attr(data, "nr")
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+    weight = attr(data, "weight")
+    m = length(edge) + 1L #max(edge)
+    q = dim(data)[2]
+    .Call("FITCH123", data, as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), 
+        as.double(weight), as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
+}
 
 #
 # Sankoff 
@@ -3201,6 +3224,8 @@ indexNNI <- function(tree){
     pvector[child] <- parent
     tips  <- !logical(max(parent))
     tips[parent] <-  FALSE
+# bis zu 1/3 schneller!!
+#    cvector <- allCildren(tree)  
     cvector <- vector("list",max(parent))   
     for(i in 1:length(parent))  cvector[[parent[i]]] <- c(cvector[[parent[i]]], child[i]) 
     k=0
@@ -3214,6 +3239,7 @@ indexNNI <- function(tree){
             edgeMatrix[k+1, ] = c(e12,e34,p2)
             k=k+1
     } 
+# vielleicht raus
     attr(edgeMatrix, 'root') <-cvector[[min(parent)]]  
     edgeMatrix
 }
@@ -3230,6 +3256,7 @@ changeEdge <- function(tree, swap, edge=NULL, edge.length=NULL){
     }
     reorderPruning(tree) 
 }
+
 
 
 sankoff.nni = function (tree, data, cost, ...) 
@@ -3302,7 +3329,8 @@ optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, rearr
 pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="SPR", ...) 
 {
     eps = 1e-08
-    if(method=="fitch" && (is.null(attr(data, "compressed")) || attr(data, "compressed") == FALSE)) data <- compressSites(data)
+#    if(method=="fitch" && (is.null(attr(data, "compressed")) || attr(data, "compressed") == FALSE)) 
+#       data <- compressSites(data)
     trace = trace - 1
     uniquetree <- function(trees) {
         k = 1

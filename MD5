@@ -1,7 +1,7 @@
-8a2190de35f432b148f8808572d28127 *DESCRIPTION
+f3d7504096d32ea05d74f234dc677847 *DESCRIPTION
 d7bff4c8201f0969aae773ba23efbcc2 *NAMESPACE
 ecdcd09d18d1fe026bdc39ae016ecd03 *NEWS
-f33950539c69a3fbb55345aba3605ee9 *R/phylo.R
+0bdbd7497104ba0163df2429ff9926fc *R/phylo.R
 772d3c5dcd42134b162bbf1dfd2f9801 *R/sysdata.rda
 8a77580bcfdc60e0a76f608815d83c69 *Thanks
 4a92b07bcd170e85bd237e460acafa93 *data/Laurasiatherian.RData
@@ -11,10 +11,10 @@ b4d3fa3f40aae3a68846d1f28274e9a0 *inst/CITATION
 d6768fa00c5cb6053fddbfa8f22a6dae *inst/doc/Ancestral.pdf
 9608eda76927e9438fa12a63ef8692cd *inst/doc/Trees.RData
 47a34cdac1cdf0d989f4f3c782adbc96 *inst/doc/Trees.Rnw
-5d570c6fa27f9379acbe1089068d1086 *inst/doc/Trees.pdf
+98ca19aa8a2687ddf8f8037ca1320eba *inst/doc/Trees.pdf
 6af5f4d4c2e93469cc19d46a97ab5d0f *inst/doc/exdna.txt
 41f0826819e1c9ae84e0e2a18d2d0c1c *inst/doc/phangorn-specials.Rnw
-0c7dc64bf39daf12db41486394166910 *inst/doc/phangorn-specials.pdf
+56a0ced924d0fef84c05e1973538ffe1 *inst/doc/phangorn-specials.pdf
 2fa7c462ea9a9bec40340ad93c3599a0 *inst/doc/phangorn.bib
 d3069d1eff9e70bed655b8962bf4ee2b *inst/doc/primates.dna
 fdc1176d0c0f2db3de1c9dfd83d3c070 *inst/extdata/MtZoa.dat
@@ -63,5 +63,5 @@ cb81d669bba0d3248f4d04ba19daa3cb *man/pmlPart.Rd
 b97649fe8b91a0632a1ded89a6f43125 *man/yeast.Rd
 be997bf812a0c40a6dac7fdb5df07bd3 *src/Makevars
 6897dcdb0d5ecba950d71d364a7e7b23 *src/init.c
-cfe78b43835e49cf3ddda65acaa66afd *src/phangorn.c
+68d9308ddc99f56e02448f66170d6595 *src/phangorn.c
 9e44d786a9d3b461108d4716380b9793 *src/phangorn.h
