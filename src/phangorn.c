@@ -352,12 +352,12 @@ void fitch6(int *dat, int *nr, int *pars, int *node, int *edge, int *nl, double 
     for (i=0; i< *nl; i++) {
 	    if (ni == node[i]){
 	         pvec[ni-1] += pvec[edge[i]-1L];
-	         fitch43(&dat[(ni-1) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]); 
+	         fitch43(&dat[(ni-1L) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]); 
         }                  
         else {
             ni = node[i];   
             pvec[(ni-1L)] += pvec[(edge[i]-1L)];         
-            for(k = 0; k < (*nr); k++) dat[(ni-1)*(*nr) + k] = dat[(edge[i]-1)*(*nr) + k];                     
+            for(k = 0; k < (*nr); k++) dat[(ni-1L)*(*nr) + k] = dat[(edge[i]-1L)*(*nr) + k];                     
         }
     }
     pscore[0]=pvec[ni-1];
@@ -707,6 +707,29 @@ void fitchtrip(int *dat1, int *dat2, int *dat3, int nr, int m, double *weight, d
         }
     }
 }
+
+void fitchquartet(int *dat1, int *dat2, int *dat3, int *dat4, int *nr, double *weight, double *pvec){   
+    int i, k, tmp1, tmp2;  
+    pvec[0] = 0.0; // vielleicht raus
+    for(k = 0; k < *nr; k++){
+            tmp1 = dat1[k] & dat2[k];
+            tmp2 = dat3[k] & dat4[k];  
+            if(!tmp1){
+                tmp1 = dat1[k] | dat2[k];
+                pvec[0]+=weight[k];
+            }
+            if(!tmp2){
+                tmp2 = dat3[k] | dat4[k];
+                pvec[0]+=weight[k];
+            }
+            tmp1 = tmp1 & tmp2;
+            if(!tmp1){
+                 pvec[0]+=weight[k];
+            }
+    }
+}
+
+
 
 
 // Sankoff 
@@ -1515,6 +1538,17 @@ void PD(int *x, int *y, int *n, int *weight){
 }
 
 
+void tabulate(int *x, int *n, int *nbin, int *ans){
+    int i, tmp;
+    for (i=0; i < *nbin; i++) ans[i]=0L; 
+    for (i=0; i < *n; i++) {
+        tmp = x[i];
+        if( (tmp>0) & (tmp<(*nbin+1L)) )   
+        ans[tmp-1L] ++;
+    }
+}
+
+
 void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root){ 
     int i, j, sum=0, k, Nnode, ind, *ord, *csum, *tips, *stack, z=0;  // l, 
     double *parent;
@@ -1530,7 +1564,7 @@ void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root
     for(j=0;j<m;j++) tips[j] = 0;
         
     rsort_with_index(parent, ord, *n);
-    R_tabulate(from, n, sumNode, tips);
+    tabulate(from, n, sumNode, tips);
     csum[0]=0;
     for(i=0;i<(*sumNode);i++){
         sum+=tips[i];                 
@@ -1560,27 +1594,6 @@ void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root
 
 
 SEXP allChildren(SEXP children, SEXP parent, SEXP tab, SEXP m){
-    int i, j, k, l=0L;   
-    R_len_t n=length(parent); 
-    SEXP RESULT, TMP;
-    PROTECT(RESULT = allocVector(VECSXP, INTEGER(m)[0]));
-    for(i=0; i<n; i++){ 
-        k=INTEGER(tab)[i];
-        PROTECT(TMP = allocVector(INTSXP, k));  
-        for(j=0; j<k; j++){
-            INTEGER(TMP)[j] = INTEGER(children)[l];
-            l++;
-        } 
-        SET_VECTOR_ELT(RESULT, INTEGER(parent)[i]-1L, TMP);
-        UNPROTECT(1); 
-    }
-    UNPROTECT(1);
-    return(RESULT);
-}
-
-
-
-SEXP fnindex(SEXP children, SEXP parent, SEXP tab, SEXP m, SEXP node0){
     int i, j, k, l=0L;   
     R_len_t n=length(parent); 
     SEXP RESULT, TMP;
@@ -1821,7 +1834,7 @@ SEXP invSites(SEXP dlist, SEXP nr, SEXP nc, SEXP contrast, SEXP nco){
     return(result);
 }     
 
-
+// Multiplikation statt Division
 void scaleMatrix(double *X, int nr, int nc, double *result){
     int i, j; 
     double tmp;   
@@ -1829,11 +1842,13 @@ void scaleMatrix(double *X, int nr, int nc, double *result){
         tmp = 0.0; 
         for(j = 0; j < nc; j++) {
            tmp += X[i + j*nr];
-        }        
-        for(j = 0; j < nc; j++) {
-           X[i + j*nr] /= tmp;
         }
         result[i] += log(tmp);
+        tmp = 1.0/tmp;        
+        for(j = 0; j < nc; j++) {
+           X[i + j*nr] *= tmp;
+        }
+//        result[i] += log(tmp);
     } 
 }
 
