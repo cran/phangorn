@@ -1,3 +1,17 @@
+      CHANGES in PHANGORN VERSION 1.6-5
+
+NEW FEATURES
+
+    o dist.hamming handles ambigious states now as dist.ml
+
+      (request from Arne Mooers)
+
+BUG FIXES
+
+    o phangorn links properly to ape 
+
+
+
        CHANGES in PHANGORN VERSION 1.6-3
 
 NEW FEATURES

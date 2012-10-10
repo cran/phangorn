@@ -10,7 +10,7 @@ for an object of class \code{phyDat}. \code{dist.ml} fits distances
 for amino acid models.
 }
 \usage{
-dist.hamming(x, ratio = TRUE)
+dist.hamming(x, ratio = TRUE, exclude="none")
 dist.logDet(x)
 dist.ml(x, model="JC69", exclude="none", bf=NULL, Q=NULL, ...)
 }

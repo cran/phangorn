@@ -364,27 +364,6 @@ void fitch6(int *dat, int *nr, int *pars, int *node, int *edge, int *nl, double 
 }
 
 
-void fitch7(int *dat, int *nr, int *pars, int *node, int *edge, int *nl, double *weight, double *pvec, double pscore) 
-{   
-    int i, ni, k;
-    ni = 0;
-    for (i=0; i< *nl; i++) {
-	    if (ni == node[i]){
-	         pvec[ni-1] += pvec[edge[i]-1L];
-	         fitch43(&dat[(ni-1) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]); 
-        }                  
-        else {
-            ni = node[i];   
-            pvec[(ni-1L)] += (pvec[(edge[i]-1L)] + pvec[(edge[i+1L]-1L)]);
-            fitch44(&dat[(ni-1) * (*nr)], &dat[(edge[i]-1L) * (*nr)], &dat[(edge[i+1L]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]);              
-            i++;                 
-        }
-    }
-    pscore=pvec[ni-1];
-}
-
-
-
 
 /*
 ACCTRAN
@@ -609,6 +588,8 @@ SEXP FITCH(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEXP m
 
 
 
+
+
 SEXP FITCH123(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEXP mx, SEXP q, SEXP ps){   
     int *data, *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, n=INTEGER(q)[0];   //=INTEGER(dat)
     double *pvtmp;  
@@ -627,6 +608,8 @@ SEXP FITCH123(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEX
     if(INTEGER(ps)[0]==1)return(pscore);
     else return(pars); 
 }
+
+
 
 
 void FN2(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc, double *weight, double *tmpvec, double *pvec) { 
@@ -708,8 +691,10 @@ void fitchtrip(int *dat1, int *dat2, int *dat3, int nr, int m, double *weight, d
     }
 }
 
+
+// inside optNNI Ziel 3* schneller
 void fitchquartet(int *dat1, int *dat2, int *dat3, int *dat4, int *nr, double *weight, double *pvec){   
-    int i, k, tmp1, tmp2;  
+    int k, tmp1, tmp2;  
     pvec[0] = 0.0; // vielleicht raus
     for(k = 0; k < *nr; k++){
             tmp1 = dat1[k] & dat2[k];
@@ -1588,9 +1573,8 @@ void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root
             }
         z--;       
     }                
-    root[0]=Nnode;      
+    root[0]=Nnode;     
 }
-
 
 
 SEXP allChildren(SEXP children, SEXP parent, SEXP tab, SEXP m){
@@ -1611,6 +1595,47 @@ SEXP allChildren(SEXP children, SEXP parent, SEXP tab, SEXP m){
     UNPROTECT(1);
     return(RESULT);
 }
+
+
+// copy from ape 3.0-5
+void neworder_cladewise(int *n, int *edge1, int *edge2,
+			int *N, int *neworder)
+/* n: nb of tips, N: nb of edges */
+{
+    int i, j, k, node, *done, dn, *node_back, eb;
+    done = &dn;
+    node_back = &eb;
+
+    /* done: indicates whether an edge has been collected
+       node_back: the series of node from the root to `node'
+       node: the current node */
+
+    done = (int*)R_alloc(*N, sizeof(int));
+    node_back = (int*)R_alloc(*N + 2 - *n, sizeof(int));
+    memset(done, 0, *N * sizeof(int));
+
+    j = k = 0;
+    node = *n + 1;
+    while (j < *N) {
+        for (i = 0; i < *N; i++) {
+  	    if (done[i] || edge1[i] != node) continue;
+	    neworder[j] = i + 1;
+	    j++;
+	    done[i] = 1;
+	    if (edge2[i] > *n) {
+	        node_back[k] = node;
+		k++;
+		node = edge2[i];
+		/* if found a new node, reset the loop */
+		i = -1;
+	    }
+	}
+	/* if arrived at the end of `edge', go down one node */
+	k--;
+	node = node_back[k];
+    }
+}
+
 
 
 // combine two sorted vectors
@@ -1835,6 +1860,27 @@ SEXP invSites(SEXP dlist, SEXP nr, SEXP nc, SEXP contrast, SEXP nco){
 }     
 
 // Multiplikation statt Division
+void scaleMatrixNew(double *X, int *nr, int *nc, int *result){
+    int i, j, tmp; 
+    double eps = 1.0/1048576.0;
+    for(i = 0; i < *nr; i++) {    
+        tmp = 0L; 
+        for(j = 0; j < *nc; j++){
+            if(X[i + j* *nr]>eps){
+                //result[i] ++;
+                tmp+=1;   
+                break;
+                }  
+            }       
+        if(tmp < 1){
+            for(j = 0; j < *nc; j++) X[i + j* *nr] *=1048576.0;
+            result[i] ++;
+        }        
+    } 
+}
+
+
+
 void scaleMatrix(double *X, int nr, int nc, double *result){
     int i, j; 
     double tmp;   
@@ -1929,6 +1975,13 @@ SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nT
     UNPROTECT(5); // result ans 
     return(erg);
 }
+
+
+/* schnell und gut, das neue logLik!!!
+SEXP LogLik5(SEXP dlist, SEXP P, int nr, int nc, int *node, int *edge, int nTips, int mNodes, int *contrast, int nco, 
+
+){
+*/
 
 // schnell und gut, das neue logLik!!!
 SEXP LogLik5(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes, SEXP contrast, SEXP nco){

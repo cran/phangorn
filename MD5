@@ -1,7 +1,7 @@
-f3d7504096d32ea05d74f234dc677847 *DESCRIPTION
+0dc2fdf3cf27de8db9fcd947a9346161 *DESCRIPTION
 d7bff4c8201f0969aae773ba23efbcc2 *NAMESPACE
-ecdcd09d18d1fe026bdc39ae016ecd03 *NEWS
-0bdbd7497104ba0163df2429ff9926fc *R/phylo.R
+377a86e9be5d08937e57a058e58b5d9a *NEWS
+b796108fa71c0696273539fae7556acc *R/phylo.R
 772d3c5dcd42134b162bbf1dfd2f9801 *R/sysdata.rda
 8a77580bcfdc60e0a76f608815d83c69 *Thanks
 4a92b07bcd170e85bd237e460acafa93 *data/Laurasiatherian.RData
@@ -11,10 +11,10 @@ b4d3fa3f40aae3a68846d1f28274e9a0 *inst/CITATION
 d6768fa00c5cb6053fddbfa8f22a6dae *inst/doc/Ancestral.pdf
 9608eda76927e9438fa12a63ef8692cd *inst/doc/Trees.RData
 47a34cdac1cdf0d989f4f3c782adbc96 *inst/doc/Trees.Rnw
-98ca19aa8a2687ddf8f8037ca1320eba *inst/doc/Trees.pdf
+1da2fdf49e67a995c67855dfdc435c5b *inst/doc/Trees.pdf
 6af5f4d4c2e93469cc19d46a97ab5d0f *inst/doc/exdna.txt
 41f0826819e1c9ae84e0e2a18d2d0c1c *inst/doc/phangorn-specials.Rnw
-56a0ced924d0fef84c05e1973538ffe1 *inst/doc/phangorn-specials.pdf
+dfc2335e33b5e1b345b5fd76a028b6ec *inst/doc/phangorn-specials.pdf
 2fa7c462ea9a9bec40340ad93c3599a0 *inst/doc/phangorn.bib
 d3069d1eff9e70bed655b8962bf4ee2b *inst/doc/primates.dna
 fdc1176d0c0f2db3de1c9dfd83d3c070 *inst/extdata/MtZoa.dat
@@ -39,7 +39,7 @@ c080fc44f1f3101ea84d86b3d4932f17 *man/bab.Rd
 94d9830e45ba236bcc782c49fa89052f *man/consensusNet.Rd
 20f30cceced0e7188e76e70b4c947a32 *man/designTree.Rd
 924c4e906042d64ac4fc4907af8c6cf1 *man/dfactorial.Rd
-42f40dcb250d5c110f7cd5085a9809a5 *man/dist.hamming.Rd
+d9f9faa9c4048b99a1c28b76d1f73ea7 *man/dist.hamming.Rd
 dbc23facc26a85fbc08711c754894cbb *man/distanceHadamard.Rd
 72abceeb247f22b3da6560df0c20468a *man/getClans.Rd
 f62c5014070a1478e9dade5992d31c6d *man/hadamard.Rd
@@ -47,7 +47,7 @@ f62c5014070a1478e9dade5992d31c6d *man/hadamard.Rd
 77e0c0a9f38a6457caee9c005a51072e *man/midpoint.Rd
 1cfe141fa2121a5cceac9f18a09c0b7d *man/modelTest.Rd
 9734364abdb5d0122e1b4850d03b6d18 *man/nni.Rd
-2319eabe8aa5a5a9aadbf70d7dd71dac *man/parsimony.Rd
+f1f8f29aabee214808e807d60483d7d3 *man/parsimony.Rd
 06d3770fff0d07f19393875735cfa004 *man/phangorn-package.Rd
 914997fed5e378b98f8b0d5f11f1365f *man/phyDat.Rd
 45989e0c54e13280e31db6fbba9e56c3 *man/plot.networx.Rd
@@ -63,5 +63,5 @@ cb81d669bba0d3248f4d04ba19daa3cb *man/pmlPart.Rd
 b97649fe8b91a0632a1ded89a6f43125 *man/yeast.Rd
 be997bf812a0c40a6dac7fdb5df07bd3 *src/Makevars
 6897dcdb0d5ecba950d71d364a7e7b23 *src/init.c
-68d9308ddc99f56e02448f66170d6595 *src/phangorn.c
+d0af17ffd258eb7044c7783419a3fcbe *src/phangorn.c
 9e44d786a9d3b461108d4716380b9793 *src/phangorn.h

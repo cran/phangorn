@@ -498,7 +498,7 @@ PNJ <- function (data)
 }
 
 
-dist.hamming <- function (x, ratio = TRUE) 
+dist.hammingOld <- function (x, ratio = TRUE) 
 {
     if (class(x) != "phyDat") 
         stop("x has to be element of class phyDat")
@@ -539,8 +539,75 @@ dist.hamming <- function (x, ratio = TRUE)
 }
 
 
-# TODO: w und g einfuegen
-# ca. 5 (20) mal schneller fuer DNA (AA)!!! (nur noch ca 6 * langsamer als dist.dna)
+dist.hamming <- function (x, ratio = TRUE, exclude = "none") 
+{
+    if (class(x) != "phyDat") 
+        stop("x has to be element of class phyDat")
+    l = length(x)
+
+    contrast <- attr(x, "contrast")
+    nc <- as.integer(attr(x, "nc"))
+    con = rowSums(contrast > 0) < 2
+    if (exclude == "all") {
+        index = con[x[[1]]]
+        for (i in 2:l) index = index & con[x[[i]]]
+        index = which(index)
+        x = subset(x, , index)
+    }
+    weight <- attr(x, "weight")  
+    d = numeric((l * (l - 1))/2)
+
+    if(exclude == "pairwise"){
+        k=1
+        W <- numeric(l*(l-1)/2)
+        for (i in 1:(l - 1)) {
+            tmp = con[x[[i]]] 
+            for (j in (i + 1):l) {
+                W[k] = sum(weight[tmp & con[ x[[j]] ] ])
+                k = k + 1
+            }
+        }  
+             
+    } 
+
+    if(nc > 31){
+#        contrast <- attr(x, "contrast")
+        k = 1
+        for (i in 1:(l - 1)) {
+            X = contrast[x[[i]], , drop = FALSE]
+            for (j in (i + 1):l) {
+                d[k] = sum(weight * (rowSums(X * contrast[x[[j]], , drop = FALSE]) == 0))
+                k = k + 1
+            }
+        }
+    } # end if  
+    else{
+        nr <- attr(x, "nr")
+        if(exclude == "pairwise")ind <- which(con[unlist(x)]==FALSE)  
+        x <- prepareDataFitch(x) 
+        if(exclude == "pairwise")x[ind] <- as.integer(2L^nc -1L) 
+        res <- .C("distHamming", as.integer(x), as.double(weight), as.integer(nr), as.integer(l), as.double(d), PACKAGE = "phangorn")
+        d <- res[[5]]
+    }     
+
+    if (ratio){
+        if(exclude == "pairwise") d = d/W
+        else d = d/sum(weight)
+    }
+    attr(d, "Size") <- l
+    if (is.list(x)) 
+        attr(d, "Labels") <- names(x)
+    else attr(d, "Labels") <- colnames(x)
+    attr(d, "Diag") <- FALSE
+    attr(d, "Upper") <- FALSE
+    attr(d, "call") <- match.call()
+    attr(d, "method") <- "hamming"
+    class(d) <- "dist"
+    return(d)
+}
+
+
+
 dist.ml <- function (x, model = "JC69", exclude = "none", bf = NULL, Q = NULL, ...) 
 {
     if (class(x) != "phyDat") 
@@ -2403,6 +2470,32 @@ fast.fitch <- function (tree, data, ps = TRUE)
         as.double(weight), as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
 }
 
+
+
+fast.fitch3 <- function (edge, data, ps = TRUE, weight, nr){
+    l = dim(edge)[1] 
+    m = l+1L
+    q = dim(data)[2]
+    .Call("FITCH123", data, as.integer(nr), as.integer(edge[, 1]), 
+        as.integer(edge[, 2]), as.integer(l), as.double(weight), 
+        as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
+}
+
+fast.fitchOld <- function (tree, data, ps = TRUE) 
+{
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- reorderPruning(tree)
+    nr = attr(data, "nr")
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+    weight = attr(data, "weight")
+    m = length(edge) + 1L #max(edge)
+    q = dim(data)[2]
+    .Call("FITCH123", data, as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), 
+        as.double(weight), as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
+}
+
      
 fnodes <- function (tree, data, external = FALSE) 
 {
@@ -2458,6 +2551,60 @@ fnodes <- function (tree, data, external = FALSE)
         as.integer(pc) )
 }     
 
+
+fnodes2 <- function (tree, dat, weight, nr, external = FALSE) 
+{
+    if(is.rooted(tree)){
+         tree = unroot(tree)
+         warning("tree is rooted, I unrooted the tree!")
+    }
+    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
+        "cladewise") 
+        tree <- phangorn:::reorderPruning(tree)
+    if (!is.binary.tree(tree)) 
+        warning("tree is not binary, parsimony score may be wrong!!!")
+#    nr = attr(data, "nr")
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+#    weight = attr(data, "weight")
+    m = length(edge) + 1L
+    q = length(tree$tip)
+#    dat = vector("integer", m * nr)
+#    attr(dat, "dim") <- c(nr, m)
+#    dat[, 1:q] = data[, tree$tip.label]
+#    dat = data[, tree$tip.label]
+    pars <- integer(nr)
+    root <- as.integer(node[!match(node, edge, 0)][1])
+    nTips = length(tree$tip)   
+    if(external) node0 = edge
+    else node0 = node[node != root]
+    node0 = unique(node0[length(node0):1L])  
+    res = integer(2*length(node0))
+    sibs = Siblings(tree, node0)
+    anc = Ancestors(tree, node0, type = "parent")
+# fuer nicht binaere Baeume programmieren    
+    k = 1
+    for (i in 1:length(node0)) {
+        tmp = anc[i]
+        res[k] = sibs[[i]][1]
+        if (tmp == root) 
+            res[k + 1] = sibs[[i]][2]
+        else res[k + 1] = tmp
+        k = k + 2
+    }
+    node2 = rep(node0, each = 2)
+    edge2 = res
+    m2 = length(res)
+
+#    dat[(nr * (root - 1L) + 1L):(nr * root)] = 0L
+
+    pc = rep(c(0L, 1L), length = m2)   
+    pc[node2 %in% Descendants(tree, root, "children")] = 0L #res[, 1]
+    
+    .Call("FNALL", as.integer(dat), as.integer(nr), as.integer(node), as.integer(edge), as.integer(node2), as.integer(edge2),
+        as.integer(length(edge)), as.double(weight), as.integer(length(edge) + 1L), as.integer(m2), as.integer(length(tree$tip)),  
+        as.integer(pc) )
+}     
 
 
 
@@ -2596,7 +2743,8 @@ fitch.nni <- function (tree, data, ...)
         else swap.edge = c(2, 4)
         tree2 <- changeEdge(tree, INDEX[(ind + 1)%/%2, swap.edge])
 #         tree2 <- changeEdge(tree, INDEX2[ind, swap.edge])
-        test <- fit.fitch(tree2, data) # fast.fitch
+        test <- fit.fitch(tree2, data) 
+                # fast.fitch
 #        test <- fast.fitch3(tree2$edge, data, TRUE, weight, p)
         if (test >= p0) 
             candidates[ind] = FALSE
@@ -3085,29 +3233,6 @@ allAncestors <- function(x){
 }
 
 
-fast.fitch3 <- function (edge, data, ps = TRUE, weight, nr){
-    l = dim(edge)[1] 
-    m = l+1L
-    q = dim(data)[2]
-    .Call("FITCH123", data, as.integer(nr), as.integer(edge[, 1]), 
-        as.integer(edge[, 2]), as.integer(l), as.double(weight), 
-        as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
-}
-
-fast.fitchOld <- function (tree, data, ps = TRUE) 
-{
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorderPruning(tree)
-    nr = attr(data, "nr")
-    node <- tree$edge[, 1]
-    edge <- tree$edge[, 2]
-    weight = attr(data, "weight")
-    m = length(edge) + 1L #max(edge)
-    q = dim(data)[2]
-    .Call("FITCH123", data, as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), 
-        as.double(weight), as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
-}
 
 #
 # Sankoff 
@@ -3319,14 +3444,14 @@ sankoff.nni = function (tree, data, cost, ...)
 }
 
 
-optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, rearrangements="SPR", ...){
+optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, rearrangements="NNI", ...){
     if(method=='fitch') result <- optim.fitch(tree=tree, data=data, trace=trace, rearrangements=rearrangements, ...) 
     if(method=='sankoff') result <- optim.sankoff(tree=tree, data=data, cost=cost, trace=trace, ...)
     result 
 }
 
 
-pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="SPR", ...) 
+pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="NNI", ...) 
 {
     eps = 1e-08
 #    if(method=="fitch" && (is.null(attr(data, "compressed")) || attr(data, "compressed") == FALSE)) 
@@ -3442,7 +3567,7 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
         stop("data must be of class phyDat")
     if (is.null(attr(tree, "order")) || attr(tree, "order") == 
         "cladewise") 
-        tree <- ape:::reorder.phylo(tree, "pruningwise") #reorderPruning??
+        tree <- ape:::reorder.phylo(tree, "pruningwise") 
  #   if (!is.binary.tree(tree)) 
  #       stop("Tree must be binary!")
     tmp = fitch(tree, data, site = "data")
@@ -7416,7 +7541,15 @@ matchEdges = function(tree1, tree2){
 }
 
 
-plotBS <- 
+checkLabels <- function(tree, tip){
+  ind <- match(tip, tree$tip.label)
+  tree$tip.label <- tree$tip.label[ind]
+  ind2 <- match(1:length(ind), tree$edge[, 2])
+  tree$edge[ind2, 2] <- order(ind)
+  tree
+}
+
+
 plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black", 
     bs.adj = NULL, ...) 
 {
@@ -7427,6 +7560,7 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
             obj <- list(...)
             if (length(obj) == 1 && class(obj[[1]]) != "phylo") 
                 obj <- unlist(obj, recursive = FALSE)
+            if(!identical(phy$tip, obj[[1]]$tip)) obj[[1]] = checkLabels(obj[[1]], phy$tip)
             part <- prop.part(obj, check.labels = TRUE)
         }
         bp <- prop.part(phy)
@@ -7447,6 +7581,7 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
         n
     }
 
+
     if (type == "phylogram" | type == "cladogram") {
         if (!is.rooted(tree)) 
             tree2 = midpoint(tree)
@@ -7454,6 +7589,7 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
     }
     else plot(tree, type = type, ...)
 
+     
     x = prop.clades(tree, BStrees)
     x = round((x/length(BStrees)) * 100)
     tree$node.label = x
@@ -7876,9 +8012,10 @@ consensusNet <- function(obj, prob=.3, ...){
 }
 
 
+
 reorder.networx <- function (x, order = "cladewise", ...) 
 {
-    order <- match.arg(order, c("cladewise", "pruningwise"))
+    order <- match.arg(order, c("cladewise"))
     if (!is.null(attr(x, "order"))) 
         if (attr(x, "order") == order) 
             return(x)
@@ -7887,17 +8024,13 @@ reorder.networx <- function (x, order = "cladewise", ...)
         return(x)
     nb.tip <- length(x$tip.label)
     nb.edge <- dim(x$edge)[1]
-    neworder <- if (order == "cladewise") 
-        .C("neworder_cladewise", as.integer(nb.tip), as.integer(x$edge[, 
-            1]), as.integer(x$edge[, 2]), as.integer(nb.edge), 
-            integer(nb.edge), PACKAGE = "ape")[[5]]
-    else .C("neworder_pruningwise", as.integer(nb.tip), as.integer(nb.node), 
-        as.integer(x$edge[, 1]), as.integer(x$edge[, 2]), as.integer(nb.edge), 
-        integer(nb.edge), PACKAGE = "ape")[[6]]
+    #neworder <- if (order == "cladewise") 
+    neworder <- .C("neworder_cladewise", as.integer(nb.tip), as.integer(x$edge[, 1]), as.integer(x$edge[, 2]),
+               as.integer(nb.edge), integer(nb.edge), PACKAGE = "phangorn")[[5]]
+
     x$edge <- x$edge[neworder, ]
     if (!is.null(x$edge.length)) 
         x$edge.length <- x$edge.length[neworder]
-    # 
     if (!is.null(x$split))x$split <- x$split[neworder]
     attr(x, "order") <- order
     x

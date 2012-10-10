@@ -13,15 +13,15 @@
 \description{
 
 \code{parsimony} returns the parsimony score of a tree using either the sankoff or the fitch algorithm.
-\code{optim.parsimony} tries to find the maximum parsimony tree using Nearest Neighbor Interchange (NNI) 
-rearrangements. \code{pratchet} uses the implements the parsimony ratchet (Nixon, 1999) and is the prefered way to search for the best tree. 
+\code{optim.parsimony} tries to find the maximum parsimony tree using either Nearest Neighbor Interchange (NNI) 
+rearrangements or sub tree pruning and regrafting (SPR). \code{pratchet} implements the parsimony ratchet (Nixon, 1999) and is the prefered way to search for the best tree. 
 \code{random.addition} can be used to produce starting trees. 
 \code{CI} and \code{RI} computes the consistency and retention index.  
 }
 \usage{
 parsimony(tree, data, method="fitch", ...)
-optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, rearrangements="SPR", ...)
-pratchet(data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="SPR", ...)
+optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, rearrangements="NNI", ...)
+pratchet(data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="NNI", ...)
 fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
 random.addition(data, method="fitch")
