@@ -6,14 +6,15 @@
   Model to estimate phylogenies for partitioned data. 
 }
 \usage{
-pmlPart(formula, object, control = pml.control(epsilon=1e-8, maxit=10, trace=1),...)
+pmlPart(formula, object, control = pml.control(epsilon=1e-8, maxit=10, trace=1), model=NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{formula}{ a formula object (see details).}
   \item{object}{ an object of class \code{pml} or a list of objects of class  \code{pml} . }
   \item{control}{A list of parameters for controlling the fitting process.} 
-  \item{\dots}{ Further arguments passed to or from other methods. }
+  \item{model}{A vector containing the models containing a model dor each partition.} 
+  \item{\dots}{Further arguments passed to or from other methods. }
 }
 \details{
     The \code{formula} object allows to specify which parameter get     
@@ -51,13 +52,14 @@ weight=xtabs(~ index+genes,attr(yeast, "index"))[,1:10]
 sp <- pmlPart(edge ~ rate + inv, fits, weight=weight)
 sp
 
+\dontrun{
 sp2 <- pmlPart(~ edge + inv, fits, weight=weight)
 sp2
 AIC(sp2)
 
 sp3 <- pmlPen(sp2, lambda = 2) 
 AIC(sp3)
-
+}
 }
 \keyword{ cluster }
 %\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

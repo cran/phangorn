@@ -41,6 +41,7 @@ pmlMix(formula, fit, m=2, omega=rep(1/m, m), control=pml.control(epsilon=1e-08, 
 
 \seealso{  \code{\link{pml}},\code{\link{pmlPart}},\code{\link{pmlCluster}} }
 \examples{
+\dontrun{
 X <- allSitePattern(5)
 tree <- read.tree(text = "((t1:0.3,t2:0.3):0.1,(t3:0.3,t4:0.3):0.1,t5:0.5);")
 fit <- pml(tree,X, k=4)
@@ -53,7 +54,6 @@ fit2 <- update(fit, data=X)
 (fit2 <- optim.pml(fit2, optGamma=TRUE))
 
 
-\dontrun{
 data(Laurasiatherian)
 dm <- dist.logDet(Laurasiatherian)
 tree <- NJ(dm)
@@ -70,7 +70,7 @@ fitMix
 #
 # simulation of mixture models 
 #
-
+\dontrun{
 X <- allSitePattern(5)
 tree1 <- read.tree(text = "((t1:0.1,t2:0.5):0.1,(t3:0.1,t4:0.5):0.1,t5:0.5);")
 tree2 <- read.tree(text = "((t1:0.5,t2:0.1):0.1,(t3:0.5,t4:0.1):0.1,t5:0.5);")
@@ -94,7 +94,7 @@ AIC(fitMixEdge, k=log(3000))
 fit.p <- pmlPen(fitMixEdge, .25)
 logLik(fit.p)
 AIC(fit.p, k=log(3000))
-
+}
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

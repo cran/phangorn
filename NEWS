@@ -1,3 +1,27 @@
+      CHANGES in PHANGORN VERSION 1.7-0
+
+NEW FEATURES
+
+    o pmlPart got additional argument model 
+      
+      (request from Santiago Claramunt)
+
+BUG FIXES
+
+    o pmlPart should be more robust
+
+OTHER CHANGES
+
+    o started reorganising the code
+
+    o underlying code of several parsimony functions has changed and
+     
+      these are now considerably faster  
+
+    o some examples are changed to allow faster checking on CRAN
+
+
+
       CHANGES in PHANGORN VERSION 1.6-5
 
 NEW FEATURES

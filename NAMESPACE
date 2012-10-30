@@ -13,7 +13,8 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UN
     bootstrap.phyDat, RF.dist, rNNI, rSPR, plotBS, Ancestors, Descendants,
     Children, Siblings, pace, modelTest, lento, compatible, acgt2ry, 
     ancestral.pars, ancestral.pml, CI, RI, getClans, getSlices, getClips, getDiversity,
-    midpoint, pruneTree, acctran, getRoot, plotAnc, consensusNet, bab, random.addition, diversity)
+    midpoint, pruneTree, acctran, getRoot, plotAnc, consensusNet, bab, random.addition, diversity, 
+    baseFreq)
 
 S3method('[', splits)          
 S3method(as.character, phyDat)

@@ -10,6 +10,7 @@
 \alias{as.phyDat}
 \alias{subset.phyDat}
 \alias{acgt2ry}
+\alias{baseFreq}
 \title{Conversion among Sequence Formats}
 \description{
 These functions transform several DNA formats into the \code{phyDat} format. 
@@ -26,6 +27,7 @@ write.phyDat(x, file, format="phylip",...)
 \method{subset}{phyDat}(x, subset, select, site.pattern = TRUE, ...)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 acgt2ry(obj)
+baseFreq(obj, freq=FALSE, drop.unused.levels=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -43,6 +45,8 @@ acgt2ry(obj)
   \item{site.pattern}{select site pattern or sites.}
   \item{allLevels}{return original data.} 
   \item{obj}{as object of class phyDat}
+  \item{freq}{logical, if 'TRUE', frequencies or counts are returned otherwise proportions}
+  \item{drop.unused.levels}{logical, drop unused levels}  
   \item{...}{further arguments passed to or from other methods.}
 }
 \details{
@@ -79,6 +83,7 @@ the example of \code{\link{pmlMix}} for the use of \code{allSitePattern}}
 data(Laurasiatherian)
 class(Laurasiatherian)
 Laurasiatherian
+baseFreq(Laurasiatherian)
 subset(Laurasiatherian, subset=1:5)
 # transform into old ape format
 LauraChar <- as.character(Laurasiatherian)
