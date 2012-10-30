@@ -139,7 +139,7 @@ Kosiol, C, and Goldman, N (2005) Different versions of the Dayhoff rate matrix -
 # optimize shape parameter + proportion of invariant sites     
   fitJC_GI <- optim.pml(fitJC_GI, optGamma=TRUE, optInv=TRUE)
 # GTR + Gamma + I - model
-  fitGTR <- optim.pml(fitJC_GI, optNni=TRUE, optGamma=TRUE, optInv=TRUE, optBf=TRUE, optQ=TRUE) 
+  fitGTR <- optim.pml(fitJC_GI, optNni=TRUE, optGamma=TRUE, optInv=TRUE, model="GTR") 
 }
 
 

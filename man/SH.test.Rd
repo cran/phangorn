@@ -38,7 +38,8 @@ fit1 <- pml(tree1, Laurasiatherian)
 fit2 <- pml(tree2, Laurasiatherian)
 fit1 <- optim.pml(fit1) # optimize edge weights
 fit2 <- optim.pml(fit2)
-SH.test(fit1, fit2)
+SH.test(fit1, fit2, B=500)
+# in real analysis use larger B, e.g. 10000
 \dontrun{
 example(pmlPart)
 SH.test(sp, B=1000)

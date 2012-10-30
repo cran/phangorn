@@ -43,9 +43,7 @@ acctran(tree, data)
   \item{k}{number of rounds ratchet is stopped, when there is no improvement.}
   \item{all}{return all equally good trees or just one of them.} 
   \item{...}{Further arguments passed to or from other methods (e.g. model="sankoff" and cost matrix).} 
-}
-%  \item{np}{number of (parallel) bootstraps (see details).}
-%  \item{multicore}{logical, if TRUE analysis is performed in parallel (see details).}    
+}  
 \value{
   \code{parsimony} returns the maximum parsimony score (pscore). 
   \code{optim.parsimony} returns a tree after NNI rearrangements.
@@ -53,7 +51,6 @@ acctran(tree, data)
   \code{acctran} returns a tree with edge length according to the ACCTRAN criterion. 
 }
 \details{
-On platforms where the multicore package is avaiable the parsimony ratchet may find solutions faster. To do this set the parameter np to the number of cores available. See also details in \code{\link{bootstrap.pml}}. 
 The "SPR" is so far only available for the "fitch" method and may not be as extensive as other implementations.      
 }
 \references{
