@@ -80,7 +80,7 @@ MinMaxPars <- function(tree, data){
     res 
 }
 
-# add fnodes
+
 mpr <- function (tree, data, returnData = FALSE) 
 {
     data = prepareDataFitch(data)
@@ -94,60 +94,32 @@ mpr <- function (tree, data, returnData = FALSE)
     edge <- tree$edge[, 2]
     weight = as.double(attr(data, "weight"))
     m = length(edge) + 1
-    dat = integer(m * nr)
-    attr(dat, "dim") <- c(nr, m)
     q = length(tree$tip)
-    dat[, 1:q] = data[, tree$tip.label]
-    pars <- integer(nr)
     root <- as.integer(node[!match(node, edge, 0)][1])
     nTips = length(tree$tip)
     node0 = node[node != root]
     node0 = unique(node0[length(node0):1L])
-    res = integer(2 * length(node0))
-    sibs = Siblings(tree, node0)
-    anc = Ancestors(tree, node0, type = "parent")
-    k = 1
-    for (i in 1:length(node0)) {
-        tmp = anc[i]
-        res[k] = sibs[[i]][1]
-        if (tmp == root) 
-            res[k + 1] = sibs[[i]][2]
-        else res[k + 1] = tmp
-        k = k + 2
-    }
-    edge2 = res
-    node2 = rep(node0, each = 2)
-    m2 = length(res)
-    pc = rep(c(0L, 1L), length = m2)
-    pc[node2 %in% Descendants(tree, root, "children")] = 0L
-    na = which(is.na(res))
-    if (any(is.na(res))) {
-        edge2 = edge2[-na]
-        node2 = node2[-na]
-        pc = pc[-na]
-        m2 = length(node2)
-    }
-    dat[(nr * (root - 1L) + 1L):(nr * root)] = 0L
-   
-    tmp <- .Call("FNALL", dat, as.integer(nr), as.integer(node), 
-        as.integer(edge), as.integer(node2), as.integer(edge2), 
-        as.integer(length(edge)), as.double(weight), as.integer(length(edge) + 
-            1L), as.integer(m2), as.integer(length(tree$tip)), 
-        as.integer(pc), PACKAGE="phangorn")
+
+    data <- data[,tree$tip.label]
+    
+    on.exit(.C(fitch_free))
+    .C(fitch_init, as.integer(data), as.integer(nTips*nr), as.integer(nr*(2L*nTips - 2L)), as.double(weight), as.integer(nr))
+    tmp2 = fnodesNew5(tree$edge, nTips, nr)
+    tmp3 <- .Call(getData, as.integer(nr), as.integer(2L*nTips - 2L))    
 # in C
     if (!is.rooted2(tree)) {
         root = getRoot(tree)
         ind = edge[node == root]
-        rSeq = .C("fitchTriplet", integer(nr), tmp[[3]][, ind[1]], 
-            tmp[[3]][, ind[2]], tmp[[3]][, ind[3]], as.integer(nr), PACKAGE = "phangorn")
-        tmp[[3]][, root] = rSeq[[1]]
-        tmp[[4]][, root] = rSeq[[1]]
+        rSeq = .C(fitchTriplet, integer(nr), tmp3[[1]][, ind[1]], 
+            tmp3[[1]][, ind[2]], tmp3[[1]][, ind[3]], as.integer(nr))
+        tmp3[[1]][, root] = rSeq[[1]]
+        tmp3[[1]][, root] = rSeq[[1]]
     }
-    result = tmp[[3]]
+    result = tmp3[[1]]
     for (i in node0) {
         ind = Children(tree, i)
-        result[, i] = .C("fitchTriplet", integer(nr), tmp[[3]][, 
-            ind[1]], tmp[[3]][, ind[2]], tmp[[4]][, i], as.integer(nr), PACKAGE = "phangorn")[[1]]
+        result[, i] = .C(fitchTriplet, integer(nr), tmp3[[1]][, 
+            ind[1]], tmp3[[1]][, ind[2]], tmp3[[2]][, i], as.integer(nr))[[1]]
     }
     attr(result, "dim") = c(nr, m)
     row.names = node0
@@ -629,14 +601,14 @@ sankoff.nni = function (tree, data, cost, ...)
 }
 
 
-optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, rearrangements="NNI", ...){
+optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, rearrangements="SPR", ...){
     if(method=='fitch') result <- optim.fitch(tree=tree, data=data, trace=trace, rearrangements=rearrangements, ...) 
     if(method=='sankoff') result <- optim.sankoff(tree=tree, data=data, cost=cost, trace=trace, ...)
     result 
 }
 
 
-pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="NNI", ...) 
+pratchet <- function (data, start=NULL, method="fitch", maxit=100, k=5, trace=1, all=FALSE, rearrangements="SPR", ...) 
 {
     eps = 1e-08
 #    if(method=="fitch" && (is.null(attr(data, "compressed")) || attr(data, "compressed") == FALSE)) 
@@ -650,7 +622,8 @@ pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=
         k=2
         trees = trees[-1]
         while (length(trees) > 0) {
-            rf = sapply(trees, RF.dist, res, FALSE) # added FALSE 
+# change RF to do this faster RF.dist(res, trees)            
+            rf = sapply(trees, RF.dist, res, FALSE) 
             if(any(rf==0))trees = trees[-which(rf == 0)]
             if (length(trees) > 0) {
                 res = trees[[1]]

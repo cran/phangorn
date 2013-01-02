@@ -19,6 +19,8 @@ void ACCTRAN3(int *dat, int *nr, double *pars, int *node, int *edge, int *nl,
 
 /* from distSeq.R */    
 void distHamming(int *x, double *weight, int *nr, int *l, double *d);    
+//void coph(SEXP children, SEXP tips, double *nh, int *nTips, int *lch, int *lkids, int *ltips, double *dm);    
+SEXP coph(SEXP children, SEXP tips, SEXP NH, SEXP NTIPS, SEXP LCH, SEXP lkids, SEXP ltips);
 
 /* from networx*/
 void neworder_cladewise(int *n, int *edge1, int *edge2, int *N, int *neworder);
@@ -37,20 +39,23 @@ void out(double *d, double *r, int *n, int *k, int *l);
 void fhm(double *v, int *n);
 void giveIndex(int *left, int* right, int *ll, int *lr, int *n, int *res);
 
+void nodeH(int *edge, int *node, double *el, int *l,  double *res);
+
 /* called in fitch.R */
 SEXP FITCH(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEXP mx, SEXP q);   
 SEXP FITCH345(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP ps);
 SEXP FITCHTRIP3(SEXP DAT3, SEXP nrx, SEXP edge, SEXP score, SEXP PS);
 SEXP FNALL5(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP my, SEXP root);
-SEXP FNALL3(SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP mx, SEXP my, SEXP q, SEXP pc);
+// SEXP FNALL3(SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP mx, SEXP my, SEXP q, SEXP pc);
 SEXP FNALL_NNI(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP my, SEXP root);
 SEXP AddOne(SEXP edge, SEXP tip, SEXP ind, SEXP l, SEXP m);
+SEXP getData(SEXP n);
 
 /* treemanipulation phangorn.c */
 SEXP AllChildren(SEXP children, SEXP parent, SEXP M);
 
 /* called in phylo.R */
-SEXP C_bipart(SEXP parent, SEXP child, SEXP nTips, SEXP maxP, SEXP Nnode);
+SEXP C_bipart(SEXP parent, SEXP child, SEXP nTips, SEXP maxP); //, SEXP Nnode);
 
 SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips);
 SEXP C_rowMin(SEXP sdat, SEXP sn, SEXP sk);
@@ -64,7 +69,7 @@ SEXP PWI(SEXP LEFT, SEXP RIGHT, SEXP L, SEXP N, SEXP W, SEXP LI);
 SEXP LogLik2(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes, SEXP contrast, SEXP nco);
 
 /* from parsimony*/
-SEXP FNALL(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP weight, SEXP mx, SEXP my, SEXP q, SEXP pc);
+//SEXP FNALL(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP weight, SEXP mx, SEXP my, SEXP q, SEXP pc);
 
 /* from phylo.R */
 SEXP dist2spectra(SEXP dm, SEXP nx, SEXP ns);
@@ -96,18 +101,17 @@ R_CallMethodDef callMethods[] = {
 {"FITCH345", (DL_FUNC) &FITCH345, 6},
 {"FITCHTRIP3", (DL_FUNC) &FITCHTRIP3, 5},
 {"FNALL5", (DL_FUNC) &FNALL5, 7},    
-{"FNALL3", (DL_FUNC) &FNALL5, 10},
-{"FNALL_NNI", (DL_FUNC) &FNALL_NNI, 7},    
+{"FNALL_NNI", (DL_FUNC) &FNALL_NNI, 7}, 
+{"getData", (DL_FUNC) &getData, 2}, 
 {"AddOne", (DL_FUNC) &AddOne, 5},
 {"AllChildren", (DL_FUNC) &AllChildren, 3},
-{"C_bipart", (DL_FUNC) &C_bipart, 5},
+{"C_bipart", (DL_FUNC) &C_bipart, 4},
 {"sankoff3", (DL_FUNC) &sankoff3, 8},    
 {"C_rowMin", (DL_FUNC) &C_rowMin, 3},
 {"pNodes", (DL_FUNC) &pNodes, 6},
 {"sankoffQuartet", (DL_FUNC) &sankoffQuartet, 4},
 {"PWI", (DL_FUNC) &PWI, 6},
 {"LogLik2", (DL_FUNC) &LogLik2, 10},
-{"FNALL", (DL_FUNC) &FNALL, 12},
 {"dist2spectra", (DL_FUNC) &dist2spectra, 3},
 {"getdPM", (DL_FUNC) &getdPM, 4},
 {"getd2PM", (DL_FUNC) &getd2PM, 4},
@@ -130,7 +134,9 @@ R_CallMethodDef callMethods[] = {
 {"sankoff3B", (DL_FUNC) &sankoff3B, 10},
 {NULL, NULL, 0}
 };
-
+//{"FNALL3", (DL_FUNC) &FNALL5, 10},
+//{"FNALL", (DL_FUNC) &FNALL, 12},
+//{"coph", (DL_FUNC) &coph, 7},
      
 R_CMethodDef cMethods[] = { 
 {"fitch_free", (DL_FUNC) &fitch_free, 0},  
@@ -153,6 +159,7 @@ R_CMethodDef cMethods[] = {
 {"ll_init", (DL_FUNC) &ll_init, 4},
 {"C_cisort", (DL_FUNC) &cisort, 5},
 {"moveLL", (DL_FUNC) &moveLL, 6},
+{"nodeH", (DL_FUNC) &nodeH, 5},
 {NULL, NULL, 0}
 };
 

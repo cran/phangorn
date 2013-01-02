@@ -3,7 +3,6 @@
 \alias{fhm}
 \alias{h4st}
 \alias{h2st}
-\alias{write.nexus.splits}
 \title{Hadamard Matrices and Fast Hadamard Multiplication}
 \description{
 A collection of functions to perform Hadamard conjugation. 
@@ -14,7 +13,6 @@ hadamard(x)
 fhm(v)
 h2st(obj, eps=0.001)
 h4st(obj, levels = c("a","c","g","t"))
-write.nexus.splits(obj, file="", weights=NULL)
 }
 \arguments{
   \item{x}{ a vector of length \eqn{2^n}, where n is an integer. }
@@ -22,8 +20,6 @@ write.nexus.splits(obj, file="", weights=NULL)
   \item{obj}{ a data.frame or character matrix, typical a sequence alignment.}
   \item{eps}{Threshold value for splits.}
   \item{levels}{ levels of the sequences.}
-  \item{file}{ a file name.}
-  \item{weights}{ Edge weights.}
 }
 
 \details{

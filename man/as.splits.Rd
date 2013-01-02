@@ -8,6 +8,8 @@
 \alias{write.splits}
 \alias{allSplits}
 \alias{compatible}
+\alias{write.nexus.splits}
+\alias{read.nexus.splits}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Splits representation of graphs and trees.
@@ -23,6 +25,8 @@ as.splits(x, ...)
     one.print = "|", ...)
 compatible(obj)
 allSplits(k, labels = NULL)
+write.nexus.splits(obj, file="", weights=NULL)
+read.nexus.splits(file)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -33,7 +37,9 @@ allSplits(k, labels = NULL)
   \item{\dots}{Further arguments passed to or from other methods.}
   \item{obj}{an object of class splits.} 
   \item{k}{number of taxa.}
-  \item{labels}{names of taxa.} 
+  \item{labels}{names of taxa.}   
+  \item{file}{ a file name.}
+  \item{weights}{ Edge weights.}
 }
 \value{
 \code{as.splits} returns an object of class splits, which is mainly a list of splits and some attributes.
@@ -51,7 +57,8 @@ The internal representation is likely to change.
 }
 %% as.phylo.splits
 \examples{
-as.splits(rtree(5))
+(sp <- as.splits(rtree(5)))
+write.nexus.splits(sp)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -14,6 +14,39 @@ nodeHeight <- function(tree){
     max(res) - res
 }
 
+# postorder version
+nodeHeight2 <- function(tree) 
+{
+    if(is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise")
+        tree <- reorder(tree, "postorder")
+    edge = tree$edge[, 2]
+    node = tree$edge[, 1]
+    m <- max(tree$edge)
+    res = numeric(m)
+    el = numeric(m)
+    el[edge] = tree$edge.length
+    for (i in length(edge):1) {
+        ei = edge[i]
+        res[ei] = res[node[i]] + el[ei]
+    }
+    max(res) - res
+}
+
+
+nodeHeight3 <- function(tree) 
+{
+    if(is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise")
+        tree <- reorder(tree, "postorder")
+    edge = tree$edge[, 2]
+    node = tree$edge[, 1]
+    m <- max(tree$edge)
+    el = numeric(m)
+    el[edge] = tree$edge.length
+    res = .C("nodeH", edge, node, el, as.integer(length(edge)),  numeric(m))[[5]]
+    max(res) - res
+}
+
+
 
 ancstat = function(phy, x){
   contrast= attr(x, "contrast")
@@ -75,8 +108,7 @@ coalSpeciesTree <- function(tree, X, sTree=NULL){
     Y=matrix(Inf, length(NH), nrow(SST)) 
     dm = rep(Inf, m)
     for(i in 1:length(NH)){
-      ind = comp2(States[[i]],SST) 
-      #browser()       
+      ind = comp2(States[[i]],SST)  
       dm = pmin(dm, NH[[i]][ind])
       #       for(j in 1:length(ind))Y[i, ind[j]] = min(Y[i, ind[j]], NH[[i]][j])
     }

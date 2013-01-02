@@ -20,9 +20,9 @@ rearrangements or sub tree pruning and regrafting (SPR). \code{pratchet} impleme
 }
 \usage{
 parsimony(tree, data, method="fitch", ...)
-optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, rearrangements="NNI", ...)
-pratchet(data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, 
-    rearrangements="NNI", ...)
+optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, rearrangements="SPR", ...)
+pratchet(data, start=NULL, method="fitch", maxit=100, k=5, trace=1, all=FALSE, 
+    rearrangements="SPR", ...)
 fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
 random.addition(data, method="fitch")
@@ -52,7 +52,7 @@ acctran(tree, data)
   \code{acctran} returns a tree with edge length according to the ACCTRAN criterion. 
 }
 \details{
-The "SPR" is so far only available for the "fitch" method and may not be as extensive as other implementations.      
+The "SPR" rearrangements are so far only available for the "fitch" method so for "sankoff" only "NNI" are used.      
 }
 \references{
 Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.

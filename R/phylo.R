@@ -201,175 +201,6 @@ h2st <- function (obj, eps=0.001)
 
 
 #
-# tree distance functions
-#
-treedist <- function (tree1, tree2) 
-{
-    tree1 = unroot(tree1)
-    tree2 = unroot(tree2)
-    tree1 = reorder(tree1, "postorder")
-    tree2 = reorder(tree2, "postorder")
-    symmetric.difference = NULL
-    branch.score.difference = NULL
-    path.difference = NULL
-    quadratic.path.difference = NULL
-    if(!is.binary.tree(tree1) | !is.binary.tree(tree2))warning("Trees are not binary!")
-
-    o1 = order(tree1$tip.label)
-    o2 = order(tree2$tip.label)
-    ll = length(o1)
-    p1 = bipartition(tree1)
-    p2 = bipartition(tree2)
-    p = dim(p1)[1]
-    pa = dim(p1)[1]
-    pb = dim(p2)[1]
-    M1 = p1[, o1]
-    M2 = p2[, o2]
-    if (!is.null(tree1$edge.length) & !is.null(tree2$edge.length)) {
-        v1 = tree1$edge.length
-        v2 = tree2$edge.length
-
-        dv1 = crossprod(M1 * v1, 1-M1) 
-        dv1 = dv1 + t(dv1)
-        dv2 = crossprod(M2 * v2, 1-M2) 
-        dv2 = dv2 + t(dv2)
-        ind= lower.tri(dv1)
-        quadratic.path.difference = sqrt(sum((dv1[ind] - dv2[ind])^2))
-    }
-    R = M1 %*% t(M2) + (1 - M1) %*% t(1 - M2)
-    R = (R%%ll == 0)
-    r1 = rowSums(R) > 0
-    r2 = colSums(R) > 0
-    symmetric.difference = 2 * (p - sum(r1))
-    if (!is.null(tree1$edge.length) & !is.null(tree2$edge.length)) {
-        v1 = tree1$edge.length
-        v2 = tree2$edge.length
-        ind1 <- (1:p)[r1]
-        ind2 <- unlist(apply(R, 1, which, TRUE))
-        s1 = sum((v2[ind2] - v1[ind1])^2)
-        zaehler = abs(v2[ind2] - v1[ind1])
-        nenner = (v2[ind2] + v1[ind1])/2
-        difference = matrix(0, sum(r1), 4)
-        difference[, 1] = zaehler
-        difference[, 2] = nenner
-        difference[, 3] = ind1
-        difference[, 4] = ind2
-        s2 = sum((v1[(1:p)[!r1]])^2)
-        s3 = sum((v2[(1:p)[!r2]])^2)
-        branch.score.difference = sqrt(s1 + s2 + s3)
-    }
-    M1[M1 == 0] = -1
-    M2[M2 == 0] = -1
-    dt1 = (pa - t(M1) %*% M1)/2
-    dt2 = (pb - t(M2) %*% M2)/2
-    ind = lower.tri(dt1)
-    path.difference = sqrt(sum((dt1[ind] - dt2[ind])^2))
-    result = c(symmetric.difference = symmetric.difference, 
-        branch.score.difference = branch.score.difference, path.difference = path.difference, 
-        quadratic.path.difference = quadratic.path.difference)
-    result              
-}
-
-
-mRF<-function(trees){
-    SHORTwise <- function (x, nTips) 
-    {
-        v <- 1:nTips
-        l <- sapply(x, length)
-        lv = floor(nTips/2)
-        for (i in 2:length(x)) {
-            if(l[i]>lv){
-                y <- x[[i]]
-                x[[i]] <- v[-y]
-            }        
-            if(l[i]==nTips/2){ 
-                y <- x[[i]]
-                if (y[1] != 1) 
-                    x[[i]] <- v[-y]
-            }
-        }
-        x
-    }
-
-    if (class(trees) != "multiPhylo") 
-        stop("trees should be an object of class \"multiPhylo\"")
-    trees <- .compressTipLabel(trees)
-    tipLabel <- attr(trees, "TipLabel")
-    nTips <- length(tipLabel)
-    l <- length(trees)
-    RF <- numeric((l * (l - 1))/2)
-    trees <- .uncompressTipLabel(trees)
-#    n <- length(attr(trees, "TipLabel"))
-    trees <- unclass(trees)
-    if (any(sapply(trees, is.rooted))) {
-        warning("Some trees are rooted. Unrooting all trees.\n")
-        trees <- lapply(trees, unroot)
-    }
-    if (any(sapply(trees, function(x) !is.binary.tree(x)))) {
-        warning("Some trees are not binary. Result may not what you expect!")
-    }
-    trees <- lapply(trees, reorder, "postorder")
-    xx <- lapply(trees, bipart)  
-    xx <- lapply(xx, SHORTwise, nTips)
-    xx <- lapply(xx,function(x)sapply(x, paste, collapse="_")) 
-    # returns list of character vectors
-    k=1
-    for (i in 1:(l - 1)){
-        tmp = xx[[i]]        
-        for (j in (i + 1):l){
-            RF[k] <- 2 * sum(fmatch(xx[[j]], tmp, nomatch=0L)==0L)
-            k=k+1
-        }   
-    }
-    attr(RF, "Size") <- l
-    if(!is.null(names(trees)))attr(RF, "Labels") <- names(trees)
-    attr(RF, "Diag") <- FALSE
-    attr(RF, "Upper") <- FALSE
-    class(RF) <- "dist"
-    return(RF)
-    RF
-}
-
-
-
-RF.dist <- function (tree1, tree2=NULL, check.labels = TRUE)
-{
-   if(class(tree1)=="multiPhylo" && is.null(tree2))return(mRF(tree1))       
-   r1 = is.rooted(tree1)
-   r2 = is.rooted(tree2)
-   if(r1 != r2){
-       warning("one tree is unrooted, unrooted both")
-   }
-   if (check.labels) {
-       ind <- match(tree1$tip.label, tree2$tip.label)
-       if (any(is.na(ind)) | length(tree1$tip.label) !=
-       length(tree1$tip.label))
-           stop("trees have different labels")
-       tree2$tip.label <- tree2$tip.label[ind]
-#       tree2$edge[match(ind, tree2$edge[, 2]), 2] <- 1:length(ind)
-       ind2 <- match(1:length(ind), tree2$edge[, 2])
-       tree2$edge[ind2, 2] <- order(ind)
-   }
-
-   if(!r1 | !r2){
-       if(r1) tree1 = unroot(tree1)
-       if(r2) tree2 = unroot(tree2)
-       ref1 <- Ancestors(tree1, 1, "parent")
-       tree1 <- reroot(tree1, ref1)
-       ref2 <- Ancestors(tree2, 1, "parent")
-       tree2 <- reroot(tree2, ref2)
-   }
-   if(!is.binary.tree(tree1) | !is.binary.tree(tree2))warning("Trees are not binary!")
-   p1 = bipart(tree1)
-   p2 = bipart(tree2)
-   ind <- sum(p1 %in% p2)
-   l = length(tree1$tip)
-   l = l - 2 + is.rooted(tree1)
-   RF = 2 * (l-ind)
-   RF
-}
-
-#
 # UPGMA, NJ and UNJ
 #
 "upgma" <- function(D,method="average",...){
@@ -2089,12 +1920,7 @@ optimEdge <- function (tree, data, eig=eig, Q=Q, w=w, g=g, bf=bf, rate=rate, ll.
 # getDad, getPrep getDad, getPrep 
 # FS4 / FS5 , getM3 / getM4               
                X <- .Call("getPrep", dad, dat[, child[j]], eig[[2]], evi, nr, nc)
-               
-               
-               
-               
-#               browser()
-               
+                          
                newEL <- .Call("FS4", eig, as.integer(length(bf)), as.double(old.el), 
                    as.double(w), as.double(g), X, dat[, child[j]], dad, as.integer(length(w)), as.integer(length(weight)), as.double(bf), as.double(weight), 
                    as.double(ll.0), as.integer(FALSE), as.integer(TRUE))
@@ -2763,7 +2589,7 @@ bipart <- function(obj){
         obj <- reorder(obj, "postorder")
     maxP  = max(obj$edge)
     nTips = length(obj$tip)
-    res <- .Call("C_bipart", as.integer(obj$edge[,1]) , as.integer(obj$edge[,2]), as.integer(nTips), as.integer(maxP), as.integer(obj$Nnode))
+    res <- .Call("C_bipart", as.integer(obj$edge[,1]) , as.integer(obj$edge[,2]), as.integer(nTips), as.integer(maxP))  #, as.integer(obj$Nnode))
     attr(res, "nodes") = unique(obj$edge[,1])
     res    
 }
@@ -3268,8 +3094,7 @@ update.pml <- function (object, ...)
     m <- 1
     
     resll <- matrix(0, nr, k)
-    nTips = as.integer(length(tree$tip.label))
-#browser()    
+    nTips = as.integer(length(tree$tip.label))  
     on.exit(.C("ll_free"))
     .C("ll_init", nr, nTips, nc, as.integer(k))
     tmp <- pml.fit(tree, data, bf, shape = shape, k = k, Q = Q, levels = attr(data, "levels"),
@@ -4230,6 +4055,72 @@ checkLabels <- function(tree, tip){
 
 
 plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black", 
+          bs.adj = NULL, ...) 
+{
+    prop.clades <- function(phy, ..., part = NULL, rooted = FALSE) {
+        if (is.null(part)) {
+            obj <- list(...)
+            if (length(obj) == 1 && class(obj[[1]]) != "phylo") 
+                obj <- unlist(obj, recursive = FALSE)
+            if (!identical(phy$tip, obj[[1]]$tip)) 
+                obj[[1]] = checkLabels(obj[[1]], phy$tip)
+            part <- prop.part(obj, check.labels = TRUE)
+        }
+        bp <- prop.part(phy)
+        if (!rooted) {
+            bp <- postprocess.prop.part(bp)
+            part <- postprocess.prop.part(part)
+        }
+        n <- numeric(phy$Nnode)
+        for (i in seq_along(bp)) {
+            for (j in seq_along(part)) {
+                if (identical(bp[[i]], part[[j]])) {
+                    n[i] <- attr(part, "number")[j]
+                    done <- TRUE
+                    break
+                }
+            }
+        }
+        n
+    }
+    type <- match.arg(type, c("phylogram", "cladogram", "fan", 
+                              "unrooted", "radial"))
+    if (type == "phylogram" | type == "cladogram") {
+        if (!is.rooted(tree)) 
+            tree2 = midpoint(tree)
+        else tree2=tree
+        plot(tree2, type = type, ...)
+    }
+    else plot(tree, type = type, ...)
+    x = prop.clades(tree, BStrees)
+    x = round((x/length(BStrees)) * 100)
+    tree$node.label = x
+    label = c(rep("", length(tree$tip)), x)
+    ind <- get("last_plot.phylo", envir = .PlotPhyloEnv)$edge[, 
+                                                              2]
+    if (type == "phylogram" | type == "cladogram") {
+        root = getRoot(tree)
+        label = c(rep(0, length(tree$tip)), x)
+        label[root] = 0
+        ind2 = matchEdges(tree2, tree)
+        label = label[ind2]
+        ind = which(label > 0)
+        if (is.null(bs.adj)) 
+            bs.adj = c(1, 1)
+        nodelabels(text = label[ind], node = ind, frame = "none", 
+                   col = bs.col, adj = bs.adj, ...)
+    }
+    else {
+        if (is.null(bs.adj)) 
+            bs.adj = c(0.5, 0.5)
+        edgelabels(label[ind], frame = "none", col = bs.col, 
+                   adj = bs.adj, ...)
+    }
+    invisible(tree)
+}
+
+
+plotBSOld <- function (tree, BStrees, type = "unrooted", bs.col = "black", 
     bs.adj = NULL, ...) 
 {
 
@@ -4265,6 +4156,7 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
     if (type == "phylogram" | type == "cladogram") {
         if (!is.rooted(tree)) 
             tree2 = midpoint(tree)
+        else tree2=tree
         plot(tree2, type = type, ...)
     }
     else plot(tree, type = type, ...)
@@ -4613,7 +4505,6 @@ optimRooted <- function(tree, data, eig=eig, w=w, g=g, bf=bf, rate=rate, ll.0=ll
         tmptree$edge.length = kidsEl 
         
         t <- optimize(f=optRoot2,interval=c(1e-8,3), tmptree, data=data, k=k, g=g, w=w, eig=eig, bf=bf, ll.0=ll.0, INV=INV, maximum=TRUE)
-#        browser()
         optRoot2(t[[1]], tmptree, data=data, k=k, g=g, w=w, eig=eig, bf=bf, ll.0=ll.0, INV=INV)  
         
         if(control$trace>2)cat("optRoot", t[[2]], "\n")    
@@ -4627,18 +4518,14 @@ optimRooted <- function(tree, data, eig=eig, w=w, g=g, bf=bf, rate=rate, ll.0=ll
         for(i in 1:length(child2)){ # length(child2)
             dad = child2[i]
             if(dad>nTips ){ # kann raus
-                pa = anc[dad]            
-#browser()                
-                
+                pa = anc[dad]             
                 while(loli != pa){                
                     tmpKids= cvector[[loli]]
                     tmpEdge = cbind(loli, tmpKids)
                     pml.move(tmpEdge, EL[tmpKids], data, g, w, eig, k, nTips, bf)
                     loli=anc[loli] 
-                } 
-#                browser()                 
-                pml.move(edgeList[[dad]], EL[lengthList[[dad]]], data, g, w, eig, k, nTips, bf)
-                                
+                }            
+                pml.move(edgeList[[dad]], EL[lengthList[[dad]]], data, g, w, eig, k, nTips, bf)                     
                 children <- allKids[[dad]]
                 kidsEl <- EL[children]  
                 minEl = min(kidsEl) 
@@ -4653,9 +4540,7 @@ optimRooted <- function(tree, data, eig=eig, w=w, g=g, bf=bf, rate=rate, ll.0=ll
                 tmptree2$edge.length = c(EL[children], EL[dad])
                 
                 t0 = optRoot0(0, tmptree2, data, g, w, eig, bf, ll.0, k, INV)  
- #               if(t0 != ll3)browser()
-                
-                
+
                 t = optimize(f=optRoot0, interval=c(0+eps0,maxEl-eps0), tmptree, data=data, g=g, w=w, eig=eig, bf=bf, ll.0=ll.0, k=k, INV=INV, maximum=TRUE)
                 
                 if(control$trace>2) cat("edge", t[[2]], "\n")
@@ -4669,8 +4554,7 @@ optimRooted <- function(tree, data, eig=eig, w=w, g=g, bf=bf, rate=rate, ll.0=ll
                 loli = dad                
                 tree$edge.length = EL[tree$edge[, 2]]         
             }
-        }
-#browser()        
+        }      
         ll2 <- pml.fit3(tree, data, bf=bf, k=k, eig=eig, ll.0=ll.0, INV=INV, w=w, g=g)
         eps = (ll - ll2) / ll2
         
@@ -4841,10 +4725,7 @@ rooted.nni <- function(tree, data, eig, w, g, bf, rate, ll.0, INV,
         tree1 <- tree2 <- tree3 <- tree
         for(i in 1:length(child2)){
             ch <- child2[i]
-            dad <- anc[ch]
-          
-#            if(ch==873)browser() 
-            
+            dad <- anc[ch]          
             if(ch>nTips){
                 
                 EL[tree$edge[,2]] = tree$edge.length
@@ -4868,10 +4749,9 @@ rooted.nni <- function(tree, data, eig, w, g, bf, rate, ll.0, INV,
                     }
                     
                 } 
-
-# needs to be more elegant pa changed for dad           
+          
                 if(loli == rootNode && dad!= loli){                    
-#                    browser() # update all nodes
+                    # update all nodes
                     pml.fit3(tree, data, bf=bf, k=k, eig=eig, ll.0=ll.0, INV=INV, w=w, g=g)                                        
 #                    cat("move down loli", loli, "dad", dad, "pa", pa, "ch", ch, "\n")  
                     gd <- rev(Ancestors(tree, ch, "all")) 
@@ -4976,7 +4856,6 @@ rooted.nni <- function(tree, data, eig, w, g, bf, rate, ll.0, INV,
                 ll3 = max(c(res1[[2]], res2[[2]], res3[[2]]))
                 
                 if( (ll3 - 1e-5*ll3) < ll2){
-#                    browser()
                     loli = rootNode   
                     ll2 <- pml.fit3(tree, data, bf=bf, eig=eig, ll.0=ll.0, w=w, g=g)
                     nh=nodeHeight(tree)

@@ -1,7 +1,7 @@
 /* 
  * phangorn.c
  *
- * (c) 2008-2013  Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2008-2014  Klaus Schliep (klaus.schliep@gmail.com)
  * 
  * 
  * This code may be distributed under the GNU GPL
@@ -50,6 +50,15 @@ void get_two_index_integer(int *x, int *val, int *index)
 	index[1] = i2 + 1;
 }
 */
+
+
+void nodeH(int *edge, int *node, double *el, int *l,  double *res){
+    int ei, i;
+    for (i=*l-1L; i>=0; i--) {
+        ei = edge[i] - 1L;
+        res[ei] = res[node[i]-1L] + el[ei];
+    }
+}
 
 
 SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk){
@@ -584,15 +593,19 @@ void cisort2(int *x, int *y, int a, int b, int *res){
 
 
 
-SEXP C_bipart(SEXP parent, SEXP child, SEXP nTips, SEXP maxP, SEXP Nnode){
+SEXP C_bipart(SEXP parent, SEXP child, SEXP nTips, SEXP maxP){ //, SEXP Nnode){
    int eins=1L, i, j, k, l=length(child), *tmp, *tmp2, *lch, *kl, pi, ci, p, nt=INTEGER(nTips)[0], mp=INTEGER(maxP)[0], ltmp; 
    SEXP ans, ktmp;
+   int nnode=1L;
+   for(i=1; i<l; i++){
+       if(INTEGER(parent)[i-1L] != INTEGER(parent)[i])nnode+=1L;
+   }
    tmp = (int *) R_alloc(mp, sizeof(int));
    tmp2 = (int *) R_alloc(mp, sizeof(int));
    lch = (int *) R_alloc(mp+1L, sizeof(int));
    kl = (int *) R_alloc(mp+1L, sizeof(int));
- 
-   PROTECT(ans = allocVector(VECSXP, INTEGER(Nnode)[0]));  
+// Nnode  
+   PROTECT(ans = allocVector(VECSXP, nnode)); //INTEGER(Nnode)[0]));  
    p=INTEGER(parent)[0];
    k=0L;
    kl[p]=0;
@@ -619,6 +632,7 @@ SEXP C_bipart(SEXP parent, SEXP child, SEXP nTips, SEXP maxP, SEXP Nnode){
         else{
             PROTECT(ktmp = allocVector(INTSXP, ltmp));
             for(j=0; j<ltmp; j++)INTEGER(ktmp)[j] = tmp2[j];
+// k???           
             SET_VECTOR_ELT(ans, k, ktmp); 
             UNPROTECT(1); // ktmp
 
@@ -634,6 +648,7 @@ SEXP C_bipart(SEXP parent, SEXP child, SEXP nTips, SEXP maxP, SEXP Nnode){
             p = pi;
         }
    }
+// k ??   
    PROTECT(ktmp = allocVector(INTSXP, ltmp));// mp+1L
    for(j=0; j<ltmp; j++)INTEGER(ktmp)[j] = tmp2[j];
    SET_VECTOR_ELT(ans, k, ktmp);

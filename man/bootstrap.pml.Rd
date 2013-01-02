@@ -80,7 +80,9 @@ fit = optim.pml(fit,TRUE)
 
 set.seed(1)
 bs <- bootstrap.pml(fit, bs=100, optNni=TRUE)
-plotBS(fit$tree,bs)
+treeBS <- plotBS(fit$tree,bs)
+# export tree with bootstrap values as node labels
+# write.tree(treeBS)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
