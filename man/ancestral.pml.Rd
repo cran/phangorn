@@ -14,7 +14,7 @@ Marginal reconstruction of the ancestral character states.
 ancestral.pml(object, type = c("ml", "bayes"))
 ancestral.pars(tree, data, type = c("MPR", "ACCTRAN"))
 pace(tree, data, type = c("MPR", "ACCTRAN"))
-plotAnc(tree, data, i, col=NULL, ...)
+plotAnc(tree, data, i, col=NULL, cex.pie=par("cex"), pos="bottomright", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,6 +25,8 @@ plotAnc(tree, data, i, col=NULL, ...)
   \item{type}{method used to assign characters to internal nodes, see details.}  
   \item{i}{plots the i-th character of the \code{data}.}
   \item{col}{a vector containing the colors for all possible states.}
+  \item{cex.pie}{a numeric defining the size of the pie graphs}
+  \item{pos}{a character string defining the positiond of the legend}
   \item{\dots}{Further arguments passed to or from other methods.}
 }
 %  \item{eps}{a small value to prevent rounding errors}

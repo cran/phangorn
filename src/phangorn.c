@@ -1,7 +1,7 @@
 /* 
  * phangorn.c
  *
- * (c) 2012  Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2008-2013  Klaus Schliep (klaus.schliep@gmail.com)
  * 
  * 
  * This code may be distributed under the GNU GPL
@@ -15,8 +15,7 @@
 #include <R.h> 
 #include <R_ext/Lapack.h>
 #include <Rinternals.h>
-
-
+#include "phangorn.h" 
 
 
 // off-diagonal
@@ -24,9 +23,40 @@
 // with diagonal (+i), R index (+1)
 #define DINDEX2(i, j) n*(i - 1) - i * (i - 1)/2 + j - 1
 
+// index likelihood pml
+// need to define nr, nc, nTips, nNodes
+#define LINDEX(i) (i-nTips) * (nr*nc) 
+
+// index sankoff
+#define SINDEX(i) i * (nr*nc) 
+
+
 char *transa = "N", *transb = "N";
 double one = 1.0, zero = 0.0;
 int ONE = 1L;
+const double ScaleEPS = 1.0/4294967296.0; 
+const double ScaleMAX = 4294967296.0;
+//const double ScaleLOG =  (double)log(ScaleEPS);
+
+
+static double *LL;
+// static int *SC;
+
+// int nr=0L;
+// static double *weight;
+
+
+void ll_free(){
+    free(LL);
+//    free(SC);
+}
+
+// type of fitch depending on nc e.g. int, long generic C++,  int *data, int *m, 
+void ll_init(int *nr, int *nTips, int *nc, int *k)
+{
+    LL = (double *) calloc(*nr * *nc * *k * *nTips, sizeof(double));
+//    SC = (int *) calloc(*nr * *k, sizeof(int)); 
+}
 
 
 int give_index(int i, int j, int n)
@@ -264,6 +294,15 @@ SEXP rowMax(SEXP sdat, SEXP sn, SEXP sk){
     return(result);        
 }
         
+void rowMinInt(int *dat, int n,  int k, double *res){
+    int i, h;  
+    int x;
+    for(i = 0; i < n; i++){
+        x = dat[i];
+        for(h = 1; h< k; h++) {if(dat[i + h*n] < x) x=dat[i + h*n];}
+        res[i] = x;               
+        }        
+    }
 
 
 
@@ -360,7 +399,7 @@ SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SE
 void sankoffTips(int *x, double *tmp, int nr, int nc, int nrs, double *result){
     int i, j;
     for(i = 0; i < (nr); i++){ 
-        for(j = 0; j < (nc); j++) result[i + j*(nr)] = tmp[x[i] - 1L + j*(nrs)];  
+        for(j = 0; j < (nc); j++) result[i + j*(nr)] += tmp[x[i] - 1L + j*(nrs)];  
     }
 }
 
@@ -471,7 +510,13 @@ SEXP matpro(SEXP X, SEXP Y, SEXP nrx, SEXP ncx, SEXP nry, SEXP ncy) {
     return(ans);
 }
 
+// INLINE raus
+// loop unrolling??
 
+
+// res = tmp * eva
+// res = res %*% * evi ?? mit BLAS?? 
+// Ziel 100 
 static R_INLINE void getP(double *eva, double *ev, double *evi, int m, double el, double w, double *result){
     int i, j, h;
     double tmp[m], res;
@@ -799,6 +844,7 @@ void helpDAD(double *dad, double *child, double *P, int nr, int nc, double *res)
     for(int j=0; j<(nc * nr); j++) res[j]=dad[j]/res[j];               
 } 
 
+
 SEXP getDAD(SEXP dad, SEXP child, SEXP P, SEXP nr, SEXP nc){
     R_len_t i, n=length(P);
     int ncx=INTEGER(nc)[0], nrx=INTEGER(nr)[0]; //, j
@@ -885,6 +931,59 @@ SEXP getPrep(SEXP dad, SEXP child, SEXP eve, SEXP evi, SEXP nr, SEXP nc){
     UNPROTECT(1); //RESULT    
     return(RESULT);    
     }
+
+
+
+// fuer optimEdge und optimRooted (Ziel schnellere Konvergenz und robuster)
+
+void moveLL(double *LL, double *child, double *P, int *nr, int *nc, double *tmp){
+    int j;
+    F77_CALL(dgemm)(transa, transb, nr, nc, nc, &one, child, nr, P, nc, &zero, tmp, nr);
+    for(j=0; j<(*nc * *nr); j++) LL[j]/=tmp[j];               
+    F77_CALL(dgemm)(transa, transb, nr, nc, nc, &one, LL, nr, P, nc, &zero, tmp, nr);
+    for(j=0; j<(*nc * *nr); j++) tmp[j] *= child[j];
+} 
+
+void moveLLNew(double *LL, double *child, double *P, int *nr, int *nc){
+    double *tmp;
+    int j;
+    tmp = (double *) R_alloc(*nr * *nc, sizeof(double));
+    F77_CALL(dgemm)(transa, transb, nr, nc, nc, &one, child, nr, P, nc, &zero, tmp, nr);
+    for(j=0; j<(*nc * *nr); j++) LL[j]/=tmp[j];               
+    F77_CALL(dgemm)(transa, transb, nr, nc, nc, &one, LL, nr, P, nc, &zero, tmp, nr);
+    for(j=0; j<(*nc * *nr); j++) LL[j]=tmp[j] * child[j];
+} 
+
+void moveLL2(double *LL, double *child, double *P, int nr, int nc){
+    double *tmp;
+    int j;
+    tmp = (double *) R_alloc(nr*nc, sizeof(double));
+    F77_CALL(dgemm)(transa, transb, &nr, &nc, &nc, &one, child, &nr, P, &nc, &zero, tmp, &nr);
+    for(j=0; j<(nc * nr); j++) LL[j]/=tmp[j];               
+    F77_CALL(dgemm)(transa, transb, &nr, &nc, &nc, &one, LL, &nr, P, &nc, &zero, tmp, &nr);
+    for(j=0; j<(nc * nr); j++) LL[j]=tmp[j] * child[j];
+} 
+
+/*
+SEXP MoveLL(SEXP LL, SEXP child, SEXP P, SEXP nr, SEXP nc){
+    R_len_t i, n=length(LL), j;
+    int ncx=INTEGER(nc)[0], nrx=INTEGER(nr)[0];
+    double *tmp; 
+    SEXP RES, TMP;
+    PROTECT(RES = allocVector(VECSXP, n));
+    for(i=0; i<n; i++){
+        PROTECT(TMP = allocVector(REALSXP, nrx * ncx));
+        tmp = REAL(TMP);
+        for(j=0;ncx*nrx;j++)tmp[j] = REAL(VECTOR_ELT(LL, i))[j];
+        moveLL(tmp, REAL(VECTOR_ELT(child, i)), REAL(VECTOR_ELT(P, i)), nrx, ncx);     
+        SET_VECTOR_ELT(RES, i, TMP);
+        UNPROTECT(1);  
+    }
+    UNPROTECT(1); 
+    return(RES); 
+}
+*/
+
 
 
 // tmp ausserhalb nr55, nr66 initialisieren
@@ -999,7 +1098,7 @@ SEXP FS4(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP X, SEXP dad, SEXP chil
 
 
 
-// mit Varianz, abgespeckt  
+// mit Varianz, abgespeckt, eigenvalues uebergeben  
 SEXP FS5(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP X, SEXP ld, SEXP nr, SEXP basefreq, SEXP weight, SEXP f0)
 {
     SEXP RESULT; // EL, P; 
@@ -1055,7 +1154,6 @@ SEXP FS5(SEXP eig, SEXP nc, SEXP el, SEXP w, SEXP g, SEXP X, SEXP ld, SEXP nr, S
     NR555(eva, ncx-1L, edle, ws, gs, X, INTEGER(ld)[0], nrx, f, tmp);  
     lll=0.0;        
     for(i=0; i<nrx ;i++) lll+=wgt[i]*tmp[i]*tmp[i]; 
-
     REAL(RESULT)[0] = edle;
     REAL(RESULT)[1] = 1.0/ lll; // variance
 //    SET_VECTOR_ELT(RESULT, 3, ScalarReal(l1)); 
@@ -1410,247 +1508,133 @@ SEXP invSites(SEXP dlist, SEXP nr, SEXP nc, SEXP contrast, SEXP nco){
     return(result);
 }     
 
-// Multiplikation statt Division int
+
+
 void scaleMatrixNew(double *X, int *nr, int *nc, int *result){
-    int i, j, tmp; 
-    double eps = 1.0/1048576.0;
+    int i, j; 
+    double tmp;
     for(i = 0; i < *nr; i++) {    
-        tmp = 0L; 
-        for(j = 0; j < *nc; j++){
-            if(X[i + j* *nr]>eps){
-                //result[i] ++;
-                tmp+=1;   
-                break;
-                }  
-            }       
-        if(tmp < 1){
-            for(j = 0; j < *nc; j++) X[i + j* *nr] *=1048576.0;
-            result[i] ++;
-        }        
-    } 
-}
-
-
-
-void scaleMatrix(double *X, int nr, int nc, double *result){
-    int i, j; 
-    double tmp;   
-    for(i = 0; i < nr; i++) {    
         tmp = 0.0; 
-        for(j = 0; j < nc; j++) {
-           tmp += X[i + j*nr];
-        }
-        result[i] += log(tmp);
-        tmp = 1.0/tmp;        
-        for(j = 0; j < nc; j++) {
-           X[i + j*nr] *= tmp;
-        }
-//        result[i] += log(tmp);
+        for(j = 0; j < *nc; j++) tmp += X[i + j* *nr];    
+        while(tmp < ScaleEPS){
+           for(j = 0; j < *nc; j++) X[i + j* *nr] *=ScaleMAX;
+           result[i] +=1L;
+           tmp *= ScaleMAX;
+       }        
     } 
 }
 
 
 
-void scaleMatrix2(double *X, int nr, int nc, double *result, double eps){
-    int i, j; 
-    double tmp; 
-    for(i = 0; i < nr; i++) {    
-        tmp = 0.0; 
-        for(j = 0; j < nc; j++) tmp += X[i + j* nr];        
-        if(tmp < eps){
-            for(j = 0; j < nc; j++) X[i + j* nr] /= tmp;
-            result[i] += log(tmp);
-        }        
-    } 
-}
+// TODO 
+// remove SEXP dependencies to allow openMP,
+//   
+void lll(SEXP dlist, SEXP eig, double *el, double g, int *nr, int *nc, int *node, int *edge, int nTips, double *contrast, int nco, int n, int *scaleTmp, double *bf, double *TMP, double *ans){
+    int  ni, ei, j, i, rc; //    R_len_t i, n = length(node);
+    double *rtmp, *P;
+    double *eva, *eve, *evei;
+ 
+    eva = REAL(VECTOR_ELT(eig, 0));
+    eve = REAL(VECTOR_ELT(eig, 1));
+    evei = REAL(VECTOR_ELT(eig, 2));
 
-// scaleMatrixNew weniger PROTECT
-// ausserhalb Speicher reservieren
-// SEXP LogLik4(SEXP dlist, SEXP P, int nr, int nc, int *node, int *edge, int nTips, int mNodes, double *contrast, int nco)
-SEXP LogLik4(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes, SEXP contrast, SEXP nco){
-    R_len_t i, n = length(node);
-    int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], nt=INTEGER(nTips)[0], mn=INTEGER(mNodes)[0];
-    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node);
-    SEXP erg, ans, result, scVec , scTmp;  
-    double *res, *rtmp, *scaleTmp;
-    if(!isNewList(dlist)) error("'dlist' must be a list");
-    ni = nodes[0];
-    PROTECT(erg = allocVector(VECSXP, 2L));
-    PROTECT(ans = allocVector(VECSXP, mn)); 
-    PROTECT(scVec = allocVector(VECSXP, mn));
-    PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
-    PROTECT(scTmp = allocVector(REALSXP, nrx));
-    res = REAL(result);
-    rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
-    scaleTmp = REAL(scTmp);
+    ni = -1;
+    rc = *nr * *nc,
+    rtmp = (double *) R_alloc(*nr * *nc, sizeof(double));
+    P = (double *) R_alloc(*nc * *nc, sizeof(double));
 
-    for(j=0; j < nrx; j++) scaleTmp[j] = 0.0;
-    for(j=0; j < (nrx * ncx); j++) res[j] = 1.0;
+    for(j=0; j < *nr; j++) scaleTmp[j] = 0L;
+
     for(i = 0; i < n; i++) {
-        ei = edges[i]; 
-        if(ni != nodes[i]){
-//          no scalMatrix here??
-            scaleMatrix(res, nrx, ncx, scaleTmp);
-            SET_VECTOR_ELT(ans, ni, result);
-            SET_VECTOR_ELT(scVec, ni, scTmp);
-            UNPROTECT(2); //result scTmp
-            PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
-            res = REAL(result);
-            PROTECT(scTmp = allocVector(REALSXP, nrx));
-            scaleTmp = REAL(scTmp);
-            for(j=0; j < nrx; j++) scaleTmp[j] = 0.0;
-            ni = nodes[i];
-            if(ei < nt) 
-                matp(INTEGER(VECTOR_ELT(dlist, ei)), REAL(contrast), REAL(VECTOR_ELT(P, i)), INTEGER(nr), INTEGER(nc), INTEGER(nco), res); // nr, nrx, INTEGER(nr)
-            else{ 
-                F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
-                       REAL(VECTOR_ELT(P, i)), &ncx, &zero, res, &nrx);
-                for(j=0; j < nrx; j++) scaleTmp[j] += REAL(VECTOR_ELT(scVec, ei-nt))[j];
-            }     
-//          z=1L;      
+        getP(eva, eve, evei, *nc, el[i], g, P); 
+        ei = edge[i]; 
+        if(ni != node[i]){
+            if(ni>0)scaleMatrixNew(&ans[ni * rc], nr, nc, scaleTmp); // (ni-nTips)
+            ni = node[i];
+            if(ei < nTips) 
+                matp(INTEGER(VECTOR_ELT(dlist, ei)), contrast, P, nr, nc, &nco, &ans[ni * rc]); 
+            else 
+                F77_CALL(dgemm)(transa, transb, nr, nc, nc, &one, &ans[(ei-nTips) * rc], nr, P, nc, &zero, &ans[ni * rc], nr);
         }
         else {
-            if(ei < nt) 
-                matp(INTEGER(VECTOR_ELT(dlist, ei)), REAL(contrast), REAL(VECTOR_ELT(P, i)), INTEGER(nr), INTEGER(nc), INTEGER(nco), rtmp);
-            else{ 
-                F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
-                    REAL(VECTOR_ELT(P, i)), &ncx, &zero, rtmp, &nrx);
-                for(j=0; j < nrx; j++) scaleTmp[j] += REAL(VECTOR_ELT(scVec, ei-nt))[j];
-            }
-            for(j=0; j < (nrx*ncx); j++) res[j] *= rtmp[j];
+            if(ei < nTips) 
+                matp(INTEGER(VECTOR_ELT(dlist, ei)), contrast, P, nr, nc, &nco, rtmp);
+            else 
+                F77_CALL(dgemm)(transa, transb, nr, nc, nc, &one, &ans[(ei-nTips) * rc], nr, P, nc, &zero, rtmp, nr);
+            for(j=0; j < rc; j++) ans[ni * rc + j] *= rtmp[j];
         }            
     }
-    scaleMatrix(res, nrx, ncx, scaleTmp);
-    SET_VECTOR_ELT(ans, ni, result);
-    SET_VECTOR_ELT(scVec, ni, scTmp);
-    SET_VECTOR_ELT(erg, 0L, ans);
-    SET_VECTOR_ELT(erg, 1L, scVec);
-    UNPROTECT(5); // result ans 
-    return(erg);
+    scaleMatrixNew(&ans[ni * rc], nr, nc, scaleTmp);
+    F77_CALL(dgemv)(transa, nr, nc, &one, &ans[ni * rc], nr, bf, &ONE, &zero, TMP, &ONE);
 }
 
 
 
-// schnell und gut, das neue logLik!!!
-SEXP LogLik5(SEXP dlist, SEXP P, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP nTips, SEXP mNodes, SEXP contrast, SEXP nco){
-    R_len_t i, n = length(node);
-    int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], nt=INTEGER(nTips)[0], mn=INTEGER(mNodes)[0];
-    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node);
-    SEXP erg, ans, result, scTmp;  
-    double *res, *rtmp, *scaleTmp;
-    if(!isNewList(dlist)) error("'dlist' must be a list");
-    ni = nodes[0];
-    PROTECT(erg = allocVector(VECSXP, 2L));
-    PROTECT(ans = allocVector(VECSXP, mn)); 
-    PROTECT(scTmp = allocVector(REALSXP, nrx));
-    PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
+// funktioniert noch nicht
+void lll2(SEXP dlist, double *eva, double *eve, double *evi, double *el, double g, int *nr, int *nc, int *node, int *edge, int nTips, double *contrast, int nco, int n, int *scaleTmp, double *bf, double *TMP, double *ans){
+    int  ni, ei, j, i, rc; //    R_len_t i, n = length(node);
+    double *rtmp, *P;
 
-    res = REAL(result);
-    rtmp = (double *) R_alloc(nrx*ncx, sizeof(double));
-//    scaleTmp = REAL(scTmp);
+    ni = -1;
+    rc = *nr * *nc,
+    rtmp = (double *) R_alloc(*nr * *nc, sizeof(double));
+    P = (double *) R_alloc(*nc * *nc, sizeof(double));
 
-    scaleTmp = (double *) R_alloc(nrx, sizeof(double));
+    for(j=0; j < *nr; j++) scaleTmp[j] = 0L;
 
-    for(j=0; j < nrx; j++) scaleTmp[j] = 0.0;
-
-    for(j=0; j < (nrx * ncx); j++) res[j] = 1.0;
     for(i = 0; i < n; i++) {
-        ei = edges[i]; 
-        if(ni != nodes[i]){
-            scaleMatrix2(res, nrx, ncx, scaleTmp, 1e-6);
-            SET_VECTOR_ELT(ans, ni, result);
-            UNPROTECT(1); //result 
-            PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
-            res = REAL(result);
-            ni = nodes[i];
-            if(ei < nt) 
-                matp(INTEGER(VECTOR_ELT(dlist, ei)), REAL(contrast), REAL(VECTOR_ELT(P, i)), INTEGER(nr), INTEGER(nc), INTEGER(nco), res); // nr, nrx, INTEGER(nr)
-            else{ 
-                F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
-                       REAL(VECTOR_ELT(P, i)), &ncx, &zero, res, &nrx);
-            }         
+        getP(eva, eve, evi, *nc, el[i], g, P); 
+        ei = edge[i]; 
+        if(ni != node[i]){
+            if(i>0)scaleMatrixNew(&ans[ni * rc], nr, nc, scaleTmp); // (ni-nTips)
+            ni = node[i];
+            if(ei < nTips) 
+                matp(INTEGER(VECTOR_ELT(dlist, ei)), contrast, P, nr, nc, &nco, &ans[ni * rc]); 
+            else 
+                F77_CALL(dgemm)(transa, transb, nr, nc, nc, &one, &ans[(ei-nTips) * rc], nr, P, nc, &zero, &ans[ni * rc], nr);
         }
         else {
-            if(ei < nt) 
-                matp(INTEGER(VECTOR_ELT(dlist, ei)), REAL(contrast), REAL(VECTOR_ELT(P, i)), INTEGER(nr), INTEGER(nc), INTEGER(nco), rtmp);
-            else{ 
-                F77_CALL(dgemm)(transa, transb, &nrx, &ncx, &ncx, &one, REAL(VECTOR_ELT(ans, ei-nt)), &nrx, 
-                    REAL(VECTOR_ELT(P, i)), &ncx, &zero, rtmp, &nrx);
-            }
-            for(j=0; j < (nrx*ncx); j++) res[j] *= rtmp[j];
+            if(ei < nTips) 
+                matp(INTEGER(VECTOR_ELT(dlist, ei)), contrast, P, nr, nc, &nco, rtmp);
+            else 
+                F77_CALL(dgemm)(transa, transb, nr, nc, nc, &one, &ans[(ei-nTips) * rc], nr, P, nc, &zero, rtmp, nr);
+            for(j=0; j < rc; j++) ans[ni * rc + j] *= rtmp[j];
         }            
     }
-    scaleMatrix2(res, nrx, ncx, scaleTmp, 1.0);
-    for(j=0; j < nrx; j++) REAL(scTmp)[j] = scaleTmp[j];
-    SET_VECTOR_ELT(ans, ni, result);
-    SET_VECTOR_ELT(erg, 0L, ans);
-    SET_VECTOR_ELT(erg, 1L, scTmp);
-    UNPROTECT(4); 
-    return(erg);
+    scaleMatrixNew(&ans[ni * rc], nr, nc, scaleTmp);
+    F77_CALL(dgemv)(transa, nr, nc, &one, &ans[ni * rc], nr, bf, &ONE, &zero, TMP, &ONE); 
 }
 
 
+// TODO 
+// openMP pragma, requires pure C code
+// long vector support (maybe C++)
+SEXP PML(SEXP dlist, SEXP EL, SEXP W, SEXP G, SEXP NR, SEXP NC, SEXP K, SEXP eig, SEXP bf, SEXP node, SEXP edge, SEXP NTips, SEXP root, SEXP nco, SEXP contrast, SEXP N){
+    int nr=INTEGER(NR)[0], nc=INTEGER(NC)[0], k=INTEGER(K)[0], i, indLL; 
+    int nTips = INTEGER(NTips)[0];
+    double *g=REAL(G), *tmp;
+    SEXP ans, TMP, SC;
+   
+    PROTECT(ans = allocVector(VECSXP, 2L));  // 3L 
+    PROTECT(SC = allocMatrix(INTSXP, nr, k));
+    PROTECT(TMP = allocMatrix(REALSXP, nr, k)); // changed
+    tmp=REAL(TMP);
+    for(i=0; i<(k*nr); i++)tmp[i]=0.0;
+    indLL = nr * nc * nTips;
+   
+    for(i=0; i<k; i++){                  
+        lll(dlist, eig, REAL(EL), g[i], &nr, &nc, INTEGER(node), INTEGER(edge), nTips, REAL(contrast), INTEGER(nco)[0], INTEGER(N)[0], &(INTEGER(SC)[nr * i]), REAL(bf), &tmp[i*nr], &LL[indLL *i]);           
+     } 
 
-void sibs(int *node, int *n, int *start, int *end){
-    int tmp, k, i;
-    tmp=node[0]; 
-    k=node[0];     
-    start[k]=0L; 
-    for (i = 0L; i < *n; i++) {
-        tmp = node[i];
-        if(tmp!=k){
-            end[k] = i-1L;
-            start[tmp] = i; 
-            k=tmp;
-        }   
-    }
-    end[tmp] = i-1L;
+     SET_VECTOR_ELT(ans, 0L, TMP);
+     SET_VECTOR_ELT(ans, 1L, SC); 
+     UNPROTECT(3);
+     return ans;     
 }
 
 
-
-void fnindex(int *nodes, int* edges, int *nNodes,  int *start, int *end, int *root, int *res1, int *res2, int *pc){
-    int i, j, p, k, ni, nj, m;
-    k=0L;
-    for(i=0; i<*nNodes; i++){
-        m = *nNodes-(1L+i);
-        p = nodes[m];
-        ni = edges[m];
-        for(j=start[p]; j<=end[p]; j++){
-            nj = edges[j]; 
-            if(ni!=nj){
-                res1[k] = nj;
-                res2[k] = ni;
-                pc[k] = 0L;  
-                k++;
-            }
-        } 
-        if(p!=*root){
-            res1[k] = p;
-            res2[k] = ni;
-            pc[k] = 1L;                
-            k++;
-        }     
-    }
-}
-
-
-void fnhelp(int *node, int * edge, int *n, int *m, int *root, int *edge2, int *node2, int *pc){
-    int *startv, *endv, i;
-    startv = (int *) R_alloc(*m, sizeof(int));
-    endv = (int *) R_alloc(*m, sizeof(int));
-    for(i=0; i<*m; i++){
-        startv[i] = 0L;
-        endv[i] = 0L;
-    }
-    sibs(node, n, startv, endv);
-    fnindex(node, edge, n, startv, endv, root, edge2, node2, pc);         
-}
-
-
-
-
-
+// 1955 Zeilen pmlPart in pml einfuegen
+// Teile von pmlMix ermoeglichen
 
 
 
