@@ -1,4 +1,47 @@
-      CHANGES in PHANGORN VERSION 1.7-0
+      CHANGES in PHANGORN VERSION 1.7-3
+
+NEW FEATURES
+
+    o densiTree plots are available now 
+
+    o new species tree and super tree methods
+
+    o more amino acid models
+
+BUG FIXES
+
+    o phangorn now depends on rgl instead of suggests rgl,
+
+      rgl wants to be loaded before igraph, otherwise a compiling error 
+
+      on some platforms occured! 
+
+    o fixed a bug that sometimes caused in pratched to crash
+
+    o fixed a bug when using negative indices in subset.phyDat
+
+    o the search heuristic SPR in optim.parsimony evaluates now more trees
+
+      and is more likely to find better ones 
+
+OTHER CHANGES
+
+    o underlying C-code for several functions has changed.
+
+      less memory reallocations and potentially time savings
+
+      hopefully I included not too many bugs     
+
+    o optimising edge length changed from Jacobi to Gauss-Seidel method
+ 
+      and will hopefully be more robust in the long term!
+
+    o Descendants is much faster for option type="all"
+
+    o plotAnc gives user more control and produces nicer plots 
+
+
+      CHANGES in PHANGORN VERSION 1.7-1
 
 NEW FEATURES
 

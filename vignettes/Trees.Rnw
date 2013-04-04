@@ -6,6 +6,9 @@
 \usepackage{times}
 \usepackage{hyperref}
 
+
+\begin{document}
+
 \newcommand{\Rfunction}[1]{{\texttt{#1}}}
 \newcommand{\Robject}[1]{{\texttt{#1}}}
 \newcommand{\Rpackage}[1]{{\textit{#1}}}
@@ -32,7 +35,7 @@
 % leave comments in the text
 \SweaveOpts{keep.source=TRUE}
 
-\begin{document}
+
 
 % Ross Ihakas extenstion for nicer representation 
 \DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
@@ -47,7 +50,7 @@ foo <- packageDescription("phangorn")
 @
 
 
-\title{Estimating phylogenetic trees with phangorn (Version \Sexpr{foo$Version})} %$
+\title{Estimating phylogenetic trees with phangorn} %$ (Version \Sexpr{foo$Version})} 
 \author{\mref{mailto:klaus.schliep@gmail.com}{Klaus P. Schliep}}
 \maketitle
 

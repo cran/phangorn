@@ -608,15 +608,18 @@ getCols <- function (data, cols)
 }
 
 
+# allows negative indexing subset(dat,,-c(3:5))
 getRows <- function (data, rows, site.pattern = TRUE) 
 {              
-	for (i in 1:length(data)){ 
+    for (i in 1:length(data)){ 
         if(is.matrix(data[[i]]))data[[i]] = data[[i]][rows,]
         else data[[i]] = data[[i]][rows]
-        }  
-    if(site.pattern) attr(data, "weight") = attr(data, "weight")[rows]
-    else attr(data, "weight") = rep(1, length(rows))
-    attr(data, "nr") = length(rows)
+    }  
+#    if(site.pattern) attr(data, "weight") = attr(data, "weight")[rows]
+#    else attr(data, "weight") = rep(1, length(rows))
+    attr(data, "weight") = attr(data, "weight")[rows]
+    if(!site.pattern) attr(data, "weight")[] = 1
+    attr(data, "nr") = length(attr(data, "weight"))
     attr(data, "index") = NULL
     data
 }

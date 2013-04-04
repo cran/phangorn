@@ -131,9 +131,12 @@ dropTip <- function(x, i, check.binary=FALSE, check.root=TRUE){
             n = dim(edge)[1]
             newroot = edge[n-2L,1]
             newedge = edge[ind,2] 
-            edge[n-1,] <- ifelse(newedge[1]==newroot, newedge, newedge[2:1] )
+            if(newedge[1]==newroot)edge[n-1,] <- newedge
+            else edge[n-1,] <- newedge[2:1]
             edge = edge[-n,]   
             x$Nnode=x$Nnode-1L
+            edge[edge==newroot] = root
+            pa <- newroot
         }
     # todo handle unrooted trees  
     }
@@ -152,10 +155,107 @@ dropTip <- function(x, i, check.binary=FALSE, check.root=TRUE){
     x
 }
 
+# kind of works well too
+dropTip2 <- function(x, i, check.binary=FALSE, check.root=TRUE){
+  edge <- x$edge
+  root <- getRoot(x)
+  ch <- which(edge[,2] == i)
+  pa <- edge[ch,1] 
+  edge = edge[-ch,]
+  ind <- which(edge[,1] == pa) 
+  if(root == pa){
+    if(length(ind)==1){
+      edge = edge[-ind,]
+      x$Nnode=x$Nnode-1L
+    }
+    if(length(ind)==2){
+      n = dim(edge)[1]
+      newroot = edge[n-2L,1]
+      newedge = edge[ind,2] 
+      if(newedge[1]==newroot)edge[n-1,] <- newedge
+      else edge[n-1,] <- newedge[2:1]
+      edge = edge[-n,]   
+      x$Nnode=x$Nnode-1L
+      edge[edge==newroot] = root
+      pa <- newroot
+    }
+    # todo handle unrooted trees  
+  }
+  else{
+    nind <- which(edge[,2] == pa)         
+    # normal binary case
+    if(length(ind)==1){
+      edge[nind,2] = edge[ind,2]
+      edge <- edge[-ind,]
+      x$Nnode <- x$Nnode-1L           
+    }  
+  }
+  #
+#  edge[edge>pa]  = edge[edge>pa] -1L 
+  x$edge <- edge
+  x
+}
+
+
+# like drop tip and returns two trees, 
+# to be used in fitch.spr
+dropNode <- function(x, i, check.binary=FALSE, check.root=TRUE){
+  edge <- x$edge
+  root <- getRoot(x)
+  ch <- which(edge[,2] == i)
+  nTips <- length(x$tip.label)    
+  pa <- edge[ch,1] 
+  if(i>nTips){
+    kids <- Descendants(x, i, "all")
+    ind <- match(kids,edge[,2])
+    edge2 <- edge[sort(ind),]            
+    edge <- edge[-c(ch, ind),]
+  }    
+  else edge = edge[-ch,]
+  if(nrow(edge)<3)return(NULL)  
+  ind <- which(edge[,1] == pa) 
+  if(root == pa){
+    if(length(ind)==1){
+      edge = edge[-ind,]
+      x$Nnode=x$Nnode-1L
+    }
+    if(length(ind)==2){
+      n = dim(edge)[1]
+      newroot = edge[n-2L,1]
+      newedge = edge[ind,2] 
+      if(newedge[1]==newroot)edge[n-1,] <- newedge
+      else edge[n-1,] <- newedge[2:1]
+      edge = edge[-n,]   
+      x$Nnode=length(unique(edge[,1]))
+      edge[edge==newroot] = root
+      pa <- newroot
+    }
+    # todo handle unrooted trees  
+  }
+  else{
+    nind <- which(edge[,2] == pa)         
+    # normal binary case
+    if(length(ind)==1){
+      edge[nind,2] = edge[ind,2]
+      edge <- edge[-ind,]
+      x$Nnode <- length(unique(edge[,1]))          
+    }  
+  }
+  #
+#  edge[edge>pa]  = edge[edge>pa] -1L 
+  x$edge <- edge
+  y <- x
+  y$edge <- edge2
+  y$Nnode <- length(unique(edge2[,1]))
+  list(x, y, pa)
+}
+
+
+
 
 # postorder remained tip in 1:nTips
 addOne <- function (tree, tip, i){
-    nTips = length(tree$tip)
+#    nTips = length(tree$tip)
     edge = tree$edge
     parent = edge[,1]
     l = dim(edge)[1]
@@ -169,6 +269,28 @@ addOne <- function (tree, tip, i){
     tree$edge = edge 
     tree$Nnode = tree$Nnode+1
     tree
+}         
+# addOne(tree2, 1, 1)$edge
+
+# if postorder is remained has to be checked
+addOneTree <- function (tree, subtree, i, node){
+  #    nTips = length(tree$tip)
+  edge = tree$edge
+  parent = edge[,1]
+  l = dim(edge)[1]
+  m = node #max(edge)+1L 
+  p = edge[i,1]
+  k = edge[i,2] 
+  edge[i, 2] = m
+  edge2 = subtree$edge
+  ind = match(p, parent)
+  r2 = edge2[nrow(edge2),1]
+  if(ind==1) edge = rbind(edge2, matrix(c(m,m,r2,k), 2, 2), edge)
+  else edge = rbind(edge[1:(ind-1), ], edge2, matrix(c(m,m,r2,k), 2, 2), edge[ind:l, ])  
+  tree$edge = edge 
+  tree$Nnode = tree$Nnode + subtree$Nnode + 1L
+  attr(tree, "order") = NULL
+  reorder(tree, "postorder")
 }         
 # addOne(tree2, 1, 1)$edge
 
@@ -727,26 +849,27 @@ Children <- function(x, node){
 
 
 Descendants = function(x, node, type=c("tips","children","all")){
-    type <- match.arg(type)
-    if(type=="children") return(Children(x, node))
-    if(type=="tips") return(bip(x)[node])
-    ch = allChildren(x) # out of the loop
-    desc = function(x, node, type){
-        isInternal = logical(max(x$edge))
-        isInternal[ unique(x$edge[,1]) ] =TRUE       
-        if(!isInternal[node])return(node)   
-        res = NULL
-        while(length(node)>0){
-            tmp = unlist(ch[node])
-            res = c(res, tmp)
-            node = tmp[isInternal[tmp]]
-        }
-        if(type=="tips") return(res[!isInternal[res]])
-        res
+  type <- match.arg(type)
+  if(type=="children") return(Children(x, node))
+  if(type=="tips") return(bip(x)[node])
+  ch = allChildren(x) # out of the loop
+  isInternal = logical(max(x$edge))
+  isInternal[ unique(x$edge[,1]) ] =TRUE  
+  desc = function(x, node, isInternal){     
+    if(!isInternal[node])return(node)   
+    res = NULL
+    while(length(node)>0){
+      tmp = unlist(ch[node])
+      res = c(res, tmp)
+      node = tmp[isInternal[tmp]]
     }
-    if(length(node)>1) return(lapply(node, desc, x=x, type=type))
-    desc(x,node, type)
+    res
+  }
+  if(length(node)>1) return(lapply(node, desc, x=x, isInternal))
+  desc(x,node, isInternal)
 }
+
+
 
 
 Siblings = function (x, node, include.self = FALSE) 
@@ -777,4 +900,18 @@ Siblings = function (x, node, include.self = FALSE)
     }
     res
 }
+
+
+
+mrca.phylo <- function(x, node){
+    anc <- Ancestors(x, node, type = "all")
+    res <- Reduce(intersect, anc)[1]
+    res
+}
+
+# mrca.phylo <- getMRCA
+
+
+
+
 

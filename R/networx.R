@@ -24,7 +24,7 @@ as.matrix.splits <- function(x, zero.print = 0L, one.print=1L, ...){
 }
 
 
-as.Matrix.splits <- function(x){
+as.Matrix.splits <- function(x, ...){
     l = length(x)
     j = unlist(x)
     i = rep(1:l, sapply(x, length))
@@ -543,7 +543,7 @@ plotRGL <- function(coords, net, show.tip.label=TRUE, show.edge.label=FALSE, sho
     z = coords[,3]
      
     nTips = length(net$tip.label)
-
+    
 #    for(i in 1:dim(edge)[1]){
 #        segments3d(x[edge[i,]],y[edge[i,]],z[edge[i,]], col=edge.color, lwd=edge.width)
 #    }

@@ -156,13 +156,14 @@ mpr <- function (tree, data, returnData = FALSE)
 }
 
 
-plotAnc <- function (tree, data, i = 1, col=NULL, ...)
+plotAnc <- function (tree, data, i = 1, col=NULL, cex.pie=par("cex"), pos="bottomright", ...)
 {
    y = subset(data, , i)
-   args <- list(...)
-   CEX <- if ("cex" %in% names(args))
-       args$cex
-   else par("cex")
+#   args <- list(...)
+#   CEX <- if ("cex" %in% names(args))
+#       args$cex
+#   else par("cex")
+   CEX = cex.pie
    xrad <- CEX * diff(par("usr")[1:2])/50
    levels = attr(data, "levels")
    nc = attr(data, "nc")
@@ -183,10 +184,11 @@ plotAnc <- function (tree, data, i = 1, col=NULL, ...)
        frame = "rect", pch = NULL, sel = 1:length(XX), thermo = NULL,
        piecol = col, col = "black", bg = "lightblue", horiz = FALSE,
        width = NULL, height = NULL)
-   legend("bottomright", levels, text.col = col)
+   legend(pos, levels, text.col = col)
 }
 
 
+# add fitch_init
 prepareDataFitch <- function (data) 
 {
     lev <- attr(data, "levels")
@@ -238,100 +240,6 @@ compressSites <- function(data){
 }
 
 
-  
-fitch <- function (tree, data, site="pscore") 
-{ 
-    if (class(data) != "phyDat") 
-        stop("data must be of class phyDat")
-    levels <- attr(data, "levels")
-    if (!is.null(tree$TipLabel)) data = subset(data, tree$TipLabel[[1]])
-    data <- prepareDataFitch(data)
-    d = attributes(data)
-    data <- as.integer(data)
-    attributes(data) <- d
-    if(class(tree)=="phylo") return(fit.fitch(tree, data, site))
-    if(class(tree)=="multiPhylo"){
-        if(is.null(tree$TipLabel)){
-            tree = unclass(tree)
-            return(sapply(tree, fit.fitch, data, site))
-        }    
-        else{
-#            data <- data[, tree$TipLabel]
-            tree = unclass(tree)
-            site = ifelse(site == "pscore", 1L, 0L) #ifelse(site=="pscore", 1L, 0L)
-            return(sapply(tree, fast.fitch, data, site)) # 50% schneller??? 
-        }       
-    }
-}
-
-
-# durch fast.fitch ersetzen
-fit.fitch <- function (tree, data, returnData = c("pscore", "site", "data")) 
-{
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorder(tree, "postorder")
-    returnData <- match.arg(returnData)
-    nr = attr(data, "nr")
-    node <- tree$edge[, 1]
-    edge <- tree$edge[, 2]
-    weight = attr(data, "weight")
-    # sparse trees
-    m = max(tree$edge) #length(edge) + 1 2*Nips - 1??
-    q = length(tree$tip)
-    result <- .Call("FITCH", data[, tree$tip.label], as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), as.double(weight), as.integer(m), as.integer(q), PACKAGE = "phangorn")
-    if (returnData == "site") return(result[[2]])
-    pscore <- result[[1]]
-    res = pscore
-    if (returnData == "data") 
-        res <- list(pscore = pscore, dat = result[[3]], site = result[[2]])
-    res
-}   
-
-
-fast.fitchOld <- function (tree, data, ps = TRUE) 
-{
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorder(tree, "postorder")
-    nr = attr(data, "nr")
-    node <- tree$edge[, 1]
-    edge <- tree$edge[, 2]
-    weight = attr(data, "weight")
-    m = max(tree$edge) #length(edge) + 1L
-    q = dim(data)[2]
-    .Call("FITCH123", data, as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), 
-        as.double(weight), as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
-}
-
-
-# Ziel 
-fast.fitch3 <- function (edge, data, ps = TRUE, weight, nr){
-    l = dim(edge)[1] 
-    m = max(edge) #l+1L
-    q = dim(data)[2]
-    .Call("FITCH123", data, as.integer(nr), as.integer(edge[, 1]), 
-        as.integer(edge[, 2]), as.integer(l), as.double(weight), 
-        as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
-}
-
-fast.fitch4Old <- function (tree, data, ps = TRUE) 
-{
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
-        tree <- reorder(tree, "postorder")
-    nr = attr(data, "nr")
-    node <- tree$edge[, 1]
-    edge <- tree$edge[, 2]
-    weight = attr(data, "weight")
-    m = max(edge) #ength(edge) + 1L #
-    q = dim(data)[2]
-    .Call("FITCH123", data, as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), 
-        as.double(weight), as.integer(m), as.integer(q), as.integer(ps), PACKAGE = "phangorn")
-}
-
-
-
 
 is.rooted2 = function(tree){
     length(tree$edge[, 1][!match(tree$edge[, 1], tree$edge[, 2], 0)]) < 3
@@ -364,16 +272,22 @@ lowerBound <- function(x, cost=NULL){
  
     y <- as.character(x)
     states <- apply(y, 2, unique.default)
+# duplicated function(x)x[duplicated(x)]="?" avoids looping
     if(nr==1) nst <- length(states)   
     else nst <- sapply(states, length)
 
     res = numeric(nr)
     ust = sort(unique(nst))
+
+    if(is.null(cost))cost <- 1 - diag(nc)
+
+
+
     if(any(ust>1)){ 
         ust = ust[ust>1]
         m <- max(ust)    
         tips = paste("t", 1:m, sep="") 
-        if(is.null(cost))cost <- 1 - diag(nc) 
+#         
         for(i in ust){
             dat = matrix(unlist(states[nst==i]), nrow=i, dimnames=list(tips[1:i], NULL))
             dat = phyDat(dat, type="USER", contrast=contrast)      
@@ -600,13 +514,13 @@ prepareDataSankoff <- function(data){
 
 
 # schneller 
-prepareDataSankoffNew <- function(data){
-    contrast = attr(data, "contrast")
-    contrast[contrast == 0] = 1e+06
-    contrast[contrast == 1] <- 0
-    attr(data, "contrast") <- contrast
-    data
-}
+# prepareDataSankoffNew <- function(data){
+#    contrast = attr(data, "contrast")
+#    contrast[contrast == 0] = 1e+06
+#    contrast[contrast == 1] <- 0
+#    attr(data, "contrast") <- contrast
+#    data
+#}
 
 
 sankoff <- function (tree, data, cost = NULL, site = 'pscore') 
@@ -835,7 +749,7 @@ pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=
     result[[1]] = tree
     kmax = 1
     for (i in 1:maxit) {
-        bstrees <- bootstrap.phyDat(data, FUN, tree = tree, bs = 1, trace = trace, method=method, rearrangements="NNI", ...)
+        bstrees <- bootstrap.phyDat(data, FUN, tree = tree, bs = 1, trace = trace, method=method, rearrangements=rearrangements, ...)
         trees <- lapply(bstrees, optim.parsimony, data, trace = trace, method=method, rearrangements=rearrangements, ...)
         if(class(result)=="phylo")m=1
         else m = length(result)
