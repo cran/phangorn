@@ -1,5 +1,3 @@
-
- 
 #
 # Maximum Parsimony 
 #
@@ -130,6 +128,9 @@ mpr <- function (tree, data, returnData = FALSE)
         m2 = length(node2)
     }
     dat[(nr * (root - 1L) + 1L):(nr * root)] = 0L
+# fnhelp: schneller und kompakter    
+#    tmp0 <- .C("fnhelp", as.integer(node), as.integer(edge), as.integer(n), as.integer(m), root, integer(2L*n), integer(2L*n), integer(2L*n))
+    
     tmp <- .Call("FNALL", dat, as.integer(nr), as.integer(node), 
         as.integer(edge), as.integer(node2), as.integer(edge2), 
         as.integer(length(edge)), as.double(weight), as.integer(length(edge) + 
@@ -306,25 +307,27 @@ upperBound <- function(x, cost=NULL){
 }
 
 
-CI <- function (tree, data){
-    pscore = sankoff(tree, data)
+CI <- function (tree, data, cost=NULL){
+    pscore = sankoff(tree, data, cost=cost)
     weight = attr(data, "weight")
     data = subset(data, tree$tip.label) 
-    m = lowerBound(data)    
+    m = lowerBound(data, cost=cost)    
     sum(m * weight)/pscore
 }
 
 
-RI <- function (tree, data){
-    pscore = sankoff(tree, data)
-    data = subset(data, tree$tip.label) 
+RI <- function (tree, data, cost=NULL)
+{
+    pscore = sankoff(tree, data, cost=cost)
+    data = subset(data, tree$tip.label)
     weight = attr(data, "weight")
-    m = lowerBound(data)
+    m = lowerBound(data, cost=cost)
     m = sum(m * weight)
-    g = upperBound(data)
+    g = upperBound(data, cost=cost)
     g = sum(g * weight)
     (g - pscore)/(g - m)
 }
+
 
 
 add.everywhere <- function(tree,tip.name, rooted = FALSE){
@@ -606,7 +609,6 @@ indexNNI <- function(tree){
     pvector[child] <- parent
     tips  <- !logical(max(parent))
     tips[parent] <-  FALSE
-# bis zu 1/3 schneller!!
 #    cvector <- allCildren(tree)  
     cvector <- vector("list",max(parent))   
     for(i in 1:length(parent))  cvector[[parent[i]]] <- c(cvector[[parent[i]]], child[i]) 
@@ -825,7 +827,7 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
         stop("data must be of class phyDat")
     if (is.null(attr(tree, "order")) || attr(tree, "order") == 
         "cladewise") 
-        tree <- ape:::reorder.phylo(tree, "pruningwise") 
+        tree <- reorder(tree, "pruningwise") 
  #   if (!is.binary.tree(tree)) 
  #       stop("Tree must be binary!")
     tmp = fitch(tree, data, site = "data")

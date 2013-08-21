@@ -7,7 +7,8 @@
   Stochastic Partitioning of genes into p cluster. 
 }
 \usage{
-pmlCluster(formula, fit, weight, p=1:5, part=NULL, nrep = 10, control=pml.control(epsilon=1e-8, maxit=10, trace=1),...)
+pmlCluster(formula, fit, weight, p=1:5, part=NULL, nrep = 10, 
+    control=pml.control(epsilon=1e-8, maxit=10, trace=1),...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

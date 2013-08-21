@@ -326,7 +326,7 @@ as.phyDat.alignment <- function (x, type="DNA",...)
 }
 
 
-as.alignment.phyDat <- function(x, ...) ape:::as.alignment(as.character(x))
+as.alignment.phyDat <- function(x, ...) as.alignment(as.character(x))
 
 
 as.phyDat.matrix <- function (x, ...) phyDat(data=x, ...)
@@ -429,7 +429,7 @@ as.character.phyDat2 <- function (x, ...)
 # TODO as stringsAsFactors=FALSE
 # result[[i]] <- x[[i]] + factor levels setzen
 # 
-as.data.frame.phyDat <- function(x, ...){
+as.data.frame.phyDatOld <- function(x, ...){
     nr <- attr(x, "nr")
     nc <- attr(x, "nc")
     labels <- attr(x, "allLevels")
@@ -441,6 +441,25 @@ as.data.frame.phyDat <- function(x, ...){
     result
 }
 
+
+as.data.frame.phyDat <- function(x, ...){
+  nr <- attr(x, "nr")
+  nc <- attr(x, "nc")
+  labels <- attr(x, "allLevels")
+  result <- vector("list", length(x))
+  if (is.null(attr(x, "index"))) 
+    index = rep(1:nr, attr(x, "weight"))
+  else {
+    index = attr(x, "index")
+    if (is.data.frame(index)) 
+      index <- index[, 1]
+  }
+  for (i in 1:length(x)) result[[i]] <- labels[x[[i]][index]]
+  attr(result, "names") <- names(x)
+  attr(result, "row.names") <- 1:length(index)
+  attr(result, "class") <- "data.frame"
+  result
+}
 
 
 as.DNAbin.phyDat <- function(x,...) {
@@ -552,7 +571,7 @@ write.phyDat <- function(x, file, format="phylip",...){
     if(format=="phylip") write.dna(as.character(x), file, format="sequential", ...)    
     if(format=="nexus"){   
          type = attr(x, "type")
-         if(type=="DNA") write.nexus.data(as.character(x), file, format = "dna",...)
+         if(type=="DNA") write.nexus.data(as.list(as.data.frame(x)), file, format = "dna",...)
          else write.nexus.data(as.list(as.data.frame(x)), file, format = "protein", ...)
          }
     }
@@ -566,6 +585,7 @@ read.phyDat <- function(file, format="phylip", type="DNA", ...){
             data = read.dna(file, format, as.character = TRUE, ...)
         }
         if (type == "AA") data = read.aa(file, format=format, ...)
+        # raus
     }
     phyDat(data, type, return.index = TRUE)
 }
@@ -579,7 +599,7 @@ baseFreq <- function(obj, freq=FALSE, drop.unused.levels = FALSE){
     n <- length(obj)    
     res <- numeric(length(labels))  
     D = diag(length(labels))   
-    for(i in 1:n)res <- res + colSums(D[obj[[i]],]*weight)      
+    for(i in 1:n)res <- res + colSums(D[obj[[i]],, drop=FALSE]*weight)      
     if(!freq)res <- res/sum(res)
     names(res) <- labels
     if(drop.unused.levels) return(res[res>0])    

@@ -8,7 +8,8 @@ Plots a densiTree.
 An R function to plot trees similar to those produced by DensiTree. 
 }
 \usage{
-densiTree(x, type = "cladogram", alpha = 1/length(x), consensus = NULL, optim = FALSE, scaleX = FALSE, col = 1, width = 1, cex = 0.8, ...)
+densiTree(x, type = "cladogram", alpha = 1/length(x), consensus = NULL, optim = FALSE, 
+    scaleX = FALSE, col = 1, width = 1, cex = 0.8, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -59,10 +60,11 @@ Klaus Schliep \email{klaus.schliep@gmail.com}
 \seealso{
 \code{\link{plot.phylo}}, \code{\link{plot.networx}} 
 }
-\examples{
+\examples{  
 data(Laurasiatherian)
 set.seed(1)
-bs <- bootstrap.phyDat(Laurasiatherian, FUN = function(x)upgma(dist.hamming(x)), bs=100, multicore=FALSE)
+bs <- bootstrap.phyDat(Laurasiatherian, FUN = 
+   function(x)upgma(dist.hamming(x)), bs=100)
 class(bs) <- 'multiPhylo'
 bs = .compressTipLabel(bs)
 # cladogram nice to show topological differences

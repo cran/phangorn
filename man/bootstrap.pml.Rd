@@ -55,7 +55,7 @@ However it will speed up nicely from the command line ("X11").
 }
 \value{
 \code{bootstrap.pml} returns an object of class \code{multi.phylo} or a list where each 
-element is an object of class \code{pml}. 
+element is an object of class \code{pml}. \code{plotBS} returns silently a tree, i.e. an object of class \code{multi.phylo} with the bootstrap values as node labels.
 }
 \references{
 Felsenstein J. (1985) Confidence limits on phylogenies. An approach using the bootstrap. \emph{Evolution} \bold{39}, 783--791

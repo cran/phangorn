@@ -517,14 +517,14 @@ plot.networx = function(x, type="3D", show.tip.label=TRUE, show.edge.label=FALSE
     
     plot.success <- FALSE
     if (!plot.success & type=="3D") {
-        if (!require(rgl)) {
-            warning("package 'rgl' not found, can only plot in 2D")
-        } else {       
+#        if (!require(rgl)) {
+#            warning("package 'rgl' not found, can only plot in 2D")
+#        } else {       
              coord <- coords(x, dim="3D")
              plotRGL(coord, x, show.tip.label=show.tip.label, show.edge.label=show.edge.label, show.nodes=show.nodes, tip.color = tip.color,
              edge.color=edge.color, edge.width = edge.width, font = font, cex = cex)
              plot.success <- TRUE
-        } 
+#        } 
     }
     if (!plot.success){
 	    coord <- coords(x, dim="2D")

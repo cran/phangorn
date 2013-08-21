@@ -8,7 +8,8 @@ Lento plot
 The lento plot represents support and conflict of splits/bipartitions. 
 }
 \usage{
-lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot", sub = NULL, xlab = NULL, ylab = NULL, bipart=TRUE, trivial=FALSE,...)
+lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot", sub = NULL, xlab = NULL, 
+    ylab = NULL, bipart=TRUE, trivial=FALSE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

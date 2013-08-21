@@ -1,4 +1,32 @@
-      CHANGES in PHANGORN VERSION 1.7-3
+      CHANGES in PHANGORN VERSION 1.99-0
+
+NEW FEATURES
+
+    o new function dist.p to estimate pairwise polymorphism 
+
+      p-distances from DNA sequences
+
+BUG FIXES 
+
+    o as.data.frame.phyDat returned only site patterns and so did 
+
+      write.phyDat for nexus files
+
+    o some of the recently introduced (1.7-4) amino acid models were not known by all
+
+      functions and contained NAs 
+
+OTHER CHANGES
+
+    o changed package imports and depends structure aviod error messages, 
+
+      thanks to Brian Ripley
+
+    o a lot of the internal C-code has changed 
+
+
+
+      CHANGES in PHANGORN VERSION 1.7-4
 
 NEW FEATURES
 
