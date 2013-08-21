@@ -7,7 +7,9 @@ ModelTest
 Comparison of different substition models 
 }
 \usage{
-modelTest(object, tree=NULL, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4, control = pml.control(epsilon = 1e-08, maxit = 3, trace = 1), multicore = FALSE)
+modelTest(object, tree=NULL, model = c("JC", "F81", "K80", "HKY", "SYM", "GTR"), 
+    G = TRUE, I = TRUE, k = 4, control = pml.control(epsilon = 1e-08, maxit = 3, 
+    trace = 1), multicore = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -34,6 +36,8 @@ The data.frame has an attributes "env" which is an environment which contains al
 Posada, D. and Crandall, K.A. (1998) MODELTEST: testing the model of DNA substitution. \emph{Bioinformatics} \bold{14(9)}: 817-818
 
 Posada, D. (2008) jModelTest: Phylogenetic Model Averaging. \emph{Molecular Biology and Evolution} \bold{25}: 1253-1256
+
+Darriba D., Taboada G.L., Doallo R and Posada D. (2011) ProtTest 3: fast selection of best-fit models of protein evolution. . \emph{Bioinformatics} \bold{27}: 1164-1165
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 

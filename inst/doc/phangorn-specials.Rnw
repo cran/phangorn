@@ -2,7 +2,7 @@
 %\VignetteKeywords{Documentation}
 %\VignettePackage{phangorn}
 \documentclass[12pt]{article}
-% setwd("/home/kschliep/Desktop/phangorn/inst/doc")
+% setwd("/home/kschliep/Desktop/phangorn/vignettes")
 % Sweave("phangorn-specials.Rnw")
 % tools::texi2dvi("phangorn-specials.tex", pdf=TRUE)
 \usepackage{times}
@@ -52,15 +52,18 @@ foo <- packageDescription("phangorn")
 \author{\mref{mailto:klaus.schliep@gmail.com}{Klaus P. Schliep}}
 \maketitle
 
-\nocite{Paradis2006}
-\section{Introduction}
+\nocite{Paradis2012}
+\section*{Introduction}
 This document illustrates some of the \phangorn{} \cite{Schliep2011} specialised features which are useful but maybe not as wellknown or just not (yet) described elsewhere. This is mainly interesting for someone who wants to explore different models or set up some simulation studies. We show how to construct data objects for different character states other than nucleotides or amino acids or how to set up different models to estimate transition rate. 
-\section{User defined data formats}\label{sec:USER}
+
 The vignette \emph{Trees} describes in detail how to estimate phylogenies from nucleotide or amino acids. 
 
-To better understand how to define our own data type it is useful to know a bit about the internal representation of \Robject{phyDat} objects. The internal representation of \Robject{phyDat} object is very similar to \Robject{factor} objects. 
+
+\section{User defined data formats}\label{sec:USER}
+
+To better understand how to define our own data type it is useful to know a bit more about the internal representation of \Robject{phyDat} objects. The internal representation of \Robject{phyDat} object is very similar to \Robject{factor} objects. 
   
-As an example we will show here several possibilities to define nucleotide data with gaps defined as a fifth state. When the number of gaps is low and the are missing at random this may be not important. 
+As an example we will show here several possibilities to define nucleotide data with gaps defined as a fifth state. Ignoring gaps or coding them as ambigious sites - as ity is done in most programs, also in phangorn as default - may be misleading (see Warnow(2012)\cite{Warnow2012}). When the number of gaps is low and the gaps are missing at random coding gaps as seperate state may be not important. 
  
 Let assume we have given a matrix where each row contains a character vector of a taxonomixcal unit:
 <<echo=TRUE>>=
@@ -107,12 +110,12 @@ These data can be used in all functions available in \phangorn{} to compute dist
 
 
 \section{Estimation of non-standard transition rate matrices}
-In the last section~\ref{sec:USER} we described how to set up user defined data formats. Now we describe how to estimate transition matrices with pml. 
+In the last section \ref{sec:USER} we described how to set up user defined data formats. Now we describe how to estimate transition matrices with pml. 
 
-Again for nucleotide data the most common models can be called directly in the optim.pml function (e.g. "JC69", "HKY", "GTR" to name a few). Table \ref{models} lists all the available nucleotide models, which can estimated directly in \Robject{optim.pml}. For amino acids several transition matrices are available ("WAG", "JTT", "Dayhoff", "LG", "cpREV", "mtmam", "mtArt", "MtZoa" and "mtREV24") or can be estimated with optim.pml, e.g. Mathews et al. (2010) \cite{Mathews2010} used this function to estimate a phytochrome amino acid transition matrix. 
+Again for nucleotide data the most common models can be called directly in the \Rfunction{optim.pml} function (e.g. "JC69", "HKY", "GTR" to name a few). Table \ref{models} lists all the available nucleotide models, which can estimated directly in \Rfunction{optim.pml}. For amino acids several transition matrices are available ("WAG", "JTT", "LG", "Dayhoff", "cpREV", "mtmam", "mtArt", "MtZoa", "mtREV24", "VT","RtREV", "HIVw", "HIVb", "FLU", "Blossum62", "Dayhoff\_DCMut" and "JTT-DCMut") or can be estimated with \Rfunction{optim.pml}. For example Mathews et al. (2010) \cite{Mathews2010} used this function to estimate a phytochrome amino acid transition matrix. 
 
 
-We will now show how to estimate a rate matrix with different transition ($\alpha$) and transversion ratio ($\beta$) and a fixed rate to the gap state ($\gamma$) - a kind of Kimura two-parameter model (K81) for nucleotide data with gaps as fifth state (see table ~\ref{gaps}). 
+We will now show how to estimate a rate matrix with different transition ($\alpha$) and transversion ratio ($\beta$) and a fixed rate to the gap state ($\gamma$) - a kind of Kimura two-parameter model (K81) for nucleotide data with gaps as fifth state (see table \ref{gaps}). 
 
 \begin{table}[htbp]
    \centering
@@ -147,36 +150,36 @@ If optQ=TRUE and neither a model or subs are supplied than a symmetric (optBf=FA
  
 \begin{table}[htbp]
    \centering
-   \begin{tabular}{|llll|}
+   \begin{tabular}{|llllr|}
    \hline
-   model & optQ & optBf & subs \\
+   model & optQ & optBf & subs & df \\
    \hline
-         JC & FALSE & FALSE & $c(0, 0, 0, 0, 0, 0)$ \\
-         F81 & FALSE & TRUE & $c(0, 0, 0, 0, 0, 0)$ \\
-         K80 & TRUE & FALSE & $c(0, 1, 0, 0, 1, 0)$ \\
-         HKY & TRUE & TRUE  & $c(0, 1, 0, 0, 1, 0)$ \\
-         TrNe & TRUE & FALSE & $c(0, 1, 0, 0, 2, 0)$ \\
-         TrN & TRUE & TRUE  & $c(0, 1, 0, 0, 2, 0)$ \\
-         TPM1 & TRUE & FALSE & $c(0, 1, 2, 2, 1, 0)$ \\
-         K81 & TRUE & FALSE & $c(0, 1, 2, 2, 1, 0)$ \\
-         TPM1u & TRUE & TRUE & $c(0, 1, 2, 2, 1, 0)$ \\
-         TPM2 & TRUE & FALSE & $c(1, 2, 1, 0, 2, 0)$ \\
-         TPM2u & TRUE & TRUE & $c(1, 2, 1, 0, 2, 0)$ \\
-         TPM3 & TRUE & FALSE & $c(1, 2, 0, 1, 2, 0)$ \\
-         TPM3u & TRUE & TRUE & $c(1, 2, 0, 1, 2, 0)$ \\
-         TIM1e & TRUE & FALSE & $c(0, 1, 2, 2, 3, 0)$ \\
-         TIM1 & TRUE & TRUE & $c(0, 1, 2, 2, 3, 0)$ \\
-         TIM2e & TRUE & FALSE & $c(1, 2, 1, 0, 3, 0)$ \\
-         TIM2 & TRUE & TRUE & $c(1, 2, 1, 0, 3, 0)$ \\
-         TIM3e & TRUE & FALSE & $c(1, 2, 0, 1, 3, 0)$ \\
-         TIM3 & TRUE & TRUE & $c(1, 2, 0, 1, 3, 0)$ \\
-         TVMe & TRUE & FALSE & $c(1, 2, 3, 4, 2, 0)$ \\
-         TVM & TRUE & TRUE & $c(1, 2, 3, 4, 2, 0)$ \\
-         SYM & TRUE & FALSE & $c(1, 2, 3, 4, 5, 0)$ \\
-         GTR & TRUE & TRUE & $c(1, 2, 3, 4, 5, 0)$ \\
+         JC & FALSE & FALSE & $c(0, 0, 0, 0, 0, 0)$ & 0 \\
+         F81 & FALSE & TRUE & $c(0, 0, 0, 0, 0, 0)$ & 3 \\
+         K80 & TRUE & FALSE & $c(0, 1, 0, 0, 1, 0)$ & 1 \\
+         HKY & TRUE & TRUE  & $c(0, 1, 0, 0, 1, 0)$ & 4 \\
+         TrNe & TRUE & FALSE & $c(0, 1, 0, 0, 2, 0)$ & 2 \\
+         TrN & TRUE & TRUE  & $c(0, 1, 0, 0, 2, 0)$ & 5 \\
+         TPM1 & TRUE & FALSE & $c(0, 1, 2, 2, 1, 0)$ & 2 \\
+         K81 & TRUE & FALSE & $c(0, 1, 2, 2, 1, 0)$ & 2 \\
+         TPM1u & TRUE & TRUE & $c(0, 1, 2, 2, 1, 0)$ & 5 \\
+         TPM2 & TRUE & FALSE & $c(1, 2, 1, 0, 2, 0)$ & 2 \\
+         TPM2u & TRUE & TRUE & $c(1, 2, 1, 0, 2, 0)$ & 5 \\
+         TPM3 & TRUE & FALSE & $c(1, 2, 0, 1, 2, 0)$ & 2 \\
+         TPM3u & TRUE & TRUE & $c(1, 2, 0, 1, 2, 0)$ & 5 \\
+         TIM1e & TRUE & FALSE & $c(0, 1, 2, 2, 3, 0)$ & 3 \\
+         TIM1 & TRUE & TRUE & $c(0, 1, 2, 2, 3, 0)$ & 6 \\
+         TIM2e & TRUE & FALSE & $c(1, 2, 1, 0, 3, 0)$ & 3 \\
+         TIM2 & TRUE & TRUE & $c(1, 2, 1, 0, 3, 0)$ & 6 \\
+         TIM3e & TRUE & FALSE & $c(1, 2, 0, 1, 3, 0)$ & 3 \\
+         TIM3 & TRUE & TRUE & $c(1, 2, 0, 1, 3, 0)$ & 6 \\
+         TVMe & TRUE & FALSE & $c(1, 2, 3, 4, 2, 0)$ & 4 \\
+         TVM & TRUE & TRUE & $c(1, 2, 3, 4, 2, 0)$ & 7 \\
+         SYM & TRUE & FALSE & $c(1, 2, 3, 4, 5, 0)$ & 5 \\
+         GTR & TRUE & TRUE & $c(1, 2, 3, 4, 5, 0)$ & 8 \\
          \hline
    \end{tabular}
-   \caption{DNA models available in phangorn and how they are defined. }\label{models} 
+   \caption{DNA models available in phangorn, how they are defined and number of parameters to estimate. }\label{models} 
 \end{table}
 
 \section{Codon substitution models}
@@ -213,12 +216,13 @@ anova(fit0, fit2, fit3, fit1)
 The models described here all assume equal frequencies for each codon (=1/61). One can optime the codon frequencies setting the option to optBf=TRUE. As the convergence of the 61 parameters the convergence is likely slow set the maximal iterations to a higher value than the default (e.g. control = pml.control(maxit=50)).  
 
 \section{Generating trees}
-\phangorn{} has a few functions to generate trees, which may are interesting for simulation studies. \Rfunction{allTrees} computes all possible bifurcating tree topologies either rooted or unrooted for up to 10 taxa (one has to keep in mind that the number of trees is growing exponentially). 
+\phangorn{} has several functions to generate tree topotlogies, which may are interesting for simulation studies. \Rfunction{allTrees} computes all possible bifurcating tree topologies either rooted or unrooted for up to 10 taxa. One has to keep in mind that the number of trees is growing exponentially, use \Rfunction(howmanytrees) from \ape{} as a reminder. 
 
-<<echo=TRUE>>=
-trees = allTrees(5)
-@
+%<<echo=TRUE>>=
+%trees = allTrees(5)
+%@
 <<label=plotAll,include=FALSE>>=
+trees = allTrees(5)
 par(mfrow=c(3,5), mar=rep(0,4)) 
 for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 @
@@ -233,7 +237,10 @@ for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 \end{figure}
 
 
-
+\Rfunction{nni} returns a list of all trees which are one nearest neighbor interchange away. 
+<<echo=TRUE>>=
+trees = nni(trees[[1]])
+@
 \Rfunction{rNNI} and \Rfunction{rSPR} generate trees which are a defined number of NNI (nearest neighbor interchange) or SPR (subtree pruning and regrafting) away.
   
 

@@ -10,9 +10,9 @@ different model parameters.
 }
 \usage{
 pml(tree, data, bf=NULL, Q=NULL, inv=0, k=1, shape=1, rate=1, model="", ...)     
-optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE,
-    optInv=FALSE, optGamma=FALSE, optEdge=TRUE, optRate=FALSE, optRooted=FALSE, 
-    control = pml.control(epsilon=1e-08, maxit=10, trace=1), model = NULL, subs = NULL, ...)  
+optim.pml(object, optNni=FALSE, optBf=FALSE, optQ=FALSE, optInv=FALSE, optGamma=FALSE,
+    optEdge=TRUE, optRate=FALSE, optRooted=FALSE, control = pml.control(epsilon=1e-08, 
+    maxit=10, trace=1), model = NULL, subs = NULL, ...)  
 pml.control(epsilon = 1e-08, maxit = 10, trace = 1)
 }
 \arguments{
@@ -65,15 +65,15 @@ These models are specified as in Posada (2008).
 So far 17 amino acid models are supported ("WAG", "JTT", "LG", "Dayhoff", "cpREV", "mtmam", "mtArt", "MtZoa", "mtREV24", "VT","RtREV", "HIVw", "HIVb", "FLU", "Blossum62", "Dayhoff_DCMut" and "JTT-DCMut") and additionally rate matrices and amino acid frequences can be supplied. 
 
 If the option 'getRooted' is set to TRUE than the edge lengths of rooted tree are optimized.
-The tree has to be rooted and ultrametric! No tree rearrangements are yet supported.
-If 'getRooted=FALSE' any rooted tree is getting unrooted.
+The tree has to be rooted and by now ultrametric! Optimising rooted trees is generally much slower.
+With the default 'getRooted=FALSE' any rooted tree is getting unrooted at the beginning.
   
 \code{pml.control} controls the fitting process. \code{epsilon} and \code{maxit} are only defined 
 for the most outer loop, this affects \code{pmlCluster}, \code{pmlPart} and \code{pmlMix}. 
 \code{epsilon} is defined as (logLik(k)-logLik(k+1))/logLik(k+1), this seems to be a good 
 heuristics which works reasonalby for small and large trees or alignments. 
 If \code{trace} is set to zero than no out put is shown, if functions are called internally 
-than the trace is decreased by one. 
+than the trace is decreased by one, so a higher of trace produces more feedback. 
 }
 \value{
 Returns a list of class \code{ll.phylo}
@@ -116,7 +116,7 @@ Kosiol, C, and Goldman, N (2005) Different versions of the Dayhoff rate matrix -
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \seealso{
-\code{\link{bootstrap.pml}}, \code{\link{modelTest}}, \code{\link{pmlPart}}, \code{\link{pmlMix}}, \code{\link{plot.phylo}}
+\code{\link{bootstrap.pml}}, \code{\link{modelTest}}, \code{\link{pmlPart}}, \code{\link{pmlMix}}, \code{\link{plot.phylo}}, \code{\link{SH.test}}
 }
 % \note{For small trees the likelihood seems to be very similar to Paup* or PhyML.}
 \examples{

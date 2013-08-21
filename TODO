@@ -1,0 +1,50 @@
+      CHANGES in PHANGORN VERSION 2.0-0
+
+NEW FEATURES
+
+    o hclustNNI upgma automatically used improved 
+
+    o NNI now available for pml for rooted trees
+
+    o species tree coalescent models (Rannala & Yang 2003)
+
+BUG FIXES 
+
+    o as.data.frame.phyDat returned only site patterns and so did 
+
+      write.phyDat for nexus files
+
+    o some of the recently introduced (1.7-4) amino acid models were not known by all
+
+      functions and contained NAs (Thanks to JJ )
+
+OTHER CHANGES
+
+    o pmlPart is more flexible and has an additional parameter weight
+
+    o faster code for ML methods with rooted topology
+
+    o improved partition models 
+
+         * easier to set up 
+  
+         * optimisation of global parameters is much faster       
+
+
+TODO
+
+upgma NNI
+
+write.data.frame, which affects also write.phyDat
+optimEdge incl. partitions 
+optimRooted incl. partitions
+NNI for rooted and unrooted
+
+NNI and parameter for 
+
+optim.parsimony SPR for fitch as default
+pratchet rearrangement=SPR 5 statt 10 als Wert. 
+
+Ziel: 
+Partition models 10x faster to model gene trees
+

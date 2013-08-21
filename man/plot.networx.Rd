@@ -8,7 +8,9 @@ Plot phylogenetic networks
 \code{plot.networx} plot phylogenetic network or split graphs. 
 }
 \usage{
-\method{plot}{networx}(x, type = "3D", show.tip.label = TRUE, show.edge.label=FALSE, show.nodes = FALSE, tip.color = "blue", edge.color = "grey", edge.width = 3, font = 3, cex = 1, ...)
+\method{plot}{networx}(x, type="3D", show.tip.label=TRUE, show.edge.label=FALSE, 
+    show.nodes=FALSE, tip.color="blue", edge.color="grey", edge.width=3, font=3, cex=1, 
+    ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

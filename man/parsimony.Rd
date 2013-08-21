@@ -21,12 +21,13 @@ rearrangements or sub tree pruning and regrafting (SPR). \code{pratchet} impleme
 \usage{
 parsimony(tree, data, method="fitch", ...)
 optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, rearrangements="NNI", ...)
-pratchet(data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="NNI", ...)
+pratchet(data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, 
+    rearrangements="NNI", ...)
 fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
 random.addition(data, method="fitch")
-CI(tree, data)
-RI(tree, data)
+CI(tree, data, cost = NULL)
+RI(tree, data, cost = NULL)
 acctran(tree, data)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -56,7 +57,7 @@ The "SPR" is so far only available for the "fitch" method and may not be as exte
 \references{
 Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer Associates, Sunderland.
 
-Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Rarsimony Analysis. \emph{Cladistics} \bold{15}, 407-414
+Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Parsimony Analysis. \emph{Cladistics} \bold{15}, 407-414
 }
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \seealso{\code{\link{bab}}, \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}} ,\code{\link{ancestral.pars}}, \code{\link{bootstrap.pml}}}

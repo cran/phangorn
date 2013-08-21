@@ -60,7 +60,7 @@ Emmanuel Paradies
 \examples{
 data(Laurasiatherian)
 set.seed(1)
-bs <- bootstrap.phyDat(Laurasiatherian, FUN = function(x)upgma(dist.hamming(x)), bs=50, multicore=FALSE)
+bs <- bootstrap.phyDat(Laurasiatherian, FUN = function(x)upgma(dist.hamming(x)), bs=50)
 class(bs) <- 'multiPhylo'
 plot(superTree(bs))
 }
