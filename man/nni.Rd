@@ -9,13 +9,14 @@
 }
 \usage{
 nni(tree)
-rSPR(tree, moves=1, n=1, k=NULL)
-rNNI(tree, moves=1, n=1)
+rSPR(tree, moves=1, n=length(moves), k=NULL)
+rNNI(tree, moves=1, n=length(moves))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{tree}{A phylogenetic \code{tree}, object of class \code{phylo}.}
-  \item{moves}{Number of tree rearrangements to be transformed on a tree.}
+  \item{moves}{Number of tree rearrangements to be transformed on a tree.
+  Can be a vector}
   \item{n}{Number of trees to be simulated.}
   \item{k}{If defined just SPR of distance k are performed.}
 }

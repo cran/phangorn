@@ -3,34 +3,14 @@
 #include <Rmath.h>
 #include <math.h>
 #include <R.h> 
-
 #include <Rinternals.h>
 
 
 // use R_len_t stat int, e.g. nr
-
 double huge = 1.0e300;
 static int *data1, *data2;
-//int nr=0L;
 static double *weight;
 
-
-// type of fitch depending on nc e.g. int, long generic C++
-
-/*
-void fitch_free(){
-    free(data1);
-    free(data2);
-}
-
-void fitch_init(int *data, int *m, int *n)
-{
-    int i;
-    data1 = (int *) calloc(*n, sizeof(int));
-    data2 = (int *) calloc(*n, sizeof(int));
-    for(i=0; i<*m; i++)data1[i] = data[i]; 
-}
-*/
 
 void fitch_free(){
     free(data1);
@@ -42,7 +22,6 @@ void fitch_free(){
 void fitch_init(int *data, int *m, int *n, double *weights, int *nr)
 {
     int i;
- //   nr = nrx[0];
     data1 = (int *) calloc(*n, sizeof(int));
     data2 = (int *) calloc(*n, sizeof(int));  
     weight = (double *) calloc(*nr, sizeof(double));   
@@ -50,21 +29,6 @@ void fitch_init(int *data, int *m, int *n, double *weights, int *nr)
     for(i=0; i<*nr; i++) weight[i] = weights[i];
 }
 
-// weight ist nicht wichtig
-/*
-void weights_free(){
-    free(weight);
-}
-
-
-void weights_init(double *weights, int *nrx)
-{
-    int i, nr;
-    nr = nrx[0]; 
-    weight = (double *) calloc(nr, sizeof(double)); 
-    for(i=0; i<nr; i++)weight[i] = weights[i];
-}
-*/
 
 SEXP getData(SEXP n){
     int i, m=INTEGER(n)[0];  
@@ -79,7 +43,6 @@ SEXP getData(SEXP n){
     UNPROTECT(3);
     return(RESULT); 
 }
-
 
 
 SEXP getWeight(SEXP n){
@@ -138,7 +101,6 @@ SEXP AddOne(SEXP edge, SEXP tip, SEXP ind, SEXP l, SEXP m){
 }
 
 
-
 void fitch43(int *dat1, int *dat2, int *nr, int *pars, double *weight, double *w){
     int k, tmp;
     for(k = 0; k < (*nr); k++){
@@ -193,8 +155,6 @@ void fitch54(int *res, int *dat1, int *dat2, int *nr, double *weight, double *w)
 }
 
 
-
-// besser als FITCHTRIP2 25 statt 35 sekunden  //, SEXP weight
 SEXP FITCHTRIP3(SEXP DAT3, SEXP nrx, SEXP edge, SEXP score, SEXP PS){ 
     R_len_t i, m = length(edge);  
     int nr=INTEGER(nrx)[0], k, tmp, ei;  
@@ -230,27 +190,6 @@ SEXP FITCHTRIP3(SEXP DAT3, SEXP nrx, SEXP edge, SEXP score, SEXP PS){
 }
 
 
-// fitch8 / fitch9 raus
-/*
-void fitch6(int *dat, int *nr, int *pars, int *node, int *edge, int *nl, double *weight, double *pvec, double *pscore) 
-{   
-    int i, ni, k;
-    ni = 0;
-    for (i=0; i< *nl; i++) {
-    if (ni == node[i]){
-	         pvec[ni-1L] += pvec[edge[i]-1L];
-	         fitch43(&dat[(ni-1L) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]); 
-        }                  
-        else {
-            ni = node[i];   
-            pvec[(ni-1L)] += pvec[(edge[i]-1L)];         
-            for(k = 0; k < (*nr); k++) dat[(ni-1L)*(*nr) + k] = dat[(edge[i]-1L)*(*nr) + k];                     
-        }
-    }
-    pscore[0]=pvec[ni-1];
-}
-*/
-// requires binary tree
 
 void fitch8(int *dat, int *nr, int *pars, int *node, int *edge, int *nl, double *weight, double *pvec, double *pscore) 
 {   
@@ -519,29 +458,7 @@ void fitchTripletACC4(int *root, int *dat1, int *dat2, int *dat3, int *nr, doubl
 }
 
 
-// raus 
-/*
-SEXP FITCH123(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEXP mx, SEXP q, SEXP ps){   
-    int *data, *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, n=INTEGER(q)[0];   //=INTEGER(dat)
-    double *pvtmp;  
-    SEXP pars, pscore; 
-    PROTECT(pars = allocVector(INTSXP, *nr));
-    PROTECT(pscore = allocVector(REALSXP, 1L));
-    pvtmp = (double *) R_alloc(m, sizeof(double)); 
-    data = (int *) R_alloc(nr[0]*m, sizeof(int)); 
-    for(i=0; i<m; i++) pvtmp[i] = 0.0;
-    for(i=0; i<*nr; i++) INTEGER(pars)[i] = 0L;
-    REAL(pscore)[0]=0.0;
-    for(i=0; i<(*nr * n); i++)data[i] = INTEGER(dat)[i];
-    for(i=(*nr * n); i<(*nr * m); i++)data[i] = 0L;
-    fitch6(data, nr, INTEGER(pars), INTEGER(node), INTEGER(edge), INTEGER(l), REAL(weight), pvtmp, REAL(pscore));
-    UNPROTECT(2);
-    if(INTEGER(ps)[0]==1)return(pscore);
-    else return(pars); 
-}
-*/
 
-// raus fitch6 statt fitch8 in fast.fitch , SEXP weight
 SEXP FITCH345(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP ps){   
     int *nr=INTEGER(nrx), m=INTEGER(mx)[0], i;  
     double *pvtmp;  
@@ -559,9 +476,6 @@ SEXP FITCH345(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP ps){
     else return(pars); 
 }
 
-
-// kein dat notwendig??
-//void FN2(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc, double *weight, double *tmpvec, double *pvec) { 
 
 void FN3(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc, double *weight, double *tmpvec, double *pvec) { 
     int i=0L, ni, le, ri;
@@ -602,124 +516,6 @@ void FN4(int *dat, int *res, int *nr, int *node, int *edge, int *nl, int *pc, do
         i++;
     }
 }
-
-
-/*
-void FN2(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc, double *weight, double *tmpvec, double *pvec) { 
-    int i, ni, k;
-    ni = 0L;
-    for (i=0; i< *nl; i++) {
-        if (ni == node[i]){
-              if(pc[i]==0L){
-	              pvec[(ni-1L)] += tmpvec[(edge[i]-1L)];
-	              fitch43(&res[(ni-1L) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]);              
-              }    
-              else{ 
-                  pvec[(ni-1L)] += pvec[(edge[i]-1L)];
-	              fitch43(&res[(ni-1L) * (*nr)], &res[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]);   
-              }
-        }                      
-        else {
-            ni = node[i];
-            pvec[(ni-1L)] += tmpvec[(edge[i]-1L)];
-            for(k = 0; k < (*nr); k++) res[(ni-1L)*(*nr) + k] = dat[(edge[i]-1L)*(*nr) + k];                 
-        }
-    }
-}
-*/
-
-// raus?!? 
-SEXP FNALL(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP weight, SEXP mx, SEXP my, SEXP q, SEXP pc){   
-    int *data=INTEGER(dat), *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, n=INTEGER(q)[0], *pars2, *dat2;  
-    double *pvtmp, *pvtmp2;  
-    SEXP DAT, DAT2, pars, pvec, pvec2, pscore, RESULT;
-  
-    pars2 = (int *) R_alloc(*nr, sizeof(int));    
-
-    PROTECT(RESULT = allocVector(VECSXP, 6L));
-    PROTECT(pars = allocVector(INTSXP, *nr));
-    PROTECT(pscore = allocVector(REALSXP, 1L));
-    PROTECT(DAT = allocMatrix(INTSXP, nr[0], m));
-    PROTECT(DAT2 = allocMatrix(INTSXP, nr[0], m));
-    PROTECT(pvec = allocVector(REALSXP, m));
-    PROTECT(pvec2 = allocVector(REALSXP, m)); 
-    for(i=0; i<*nr; i++) INTEGER(pars)[i] = 0L;
-    pvtmp = REAL(pvec);
-    for(i=0; i<m; i++) pvtmp[i] = 0.0;
-    pvtmp2 = REAL(pvec2);
-    for(i=0; i<m; i++) pvtmp2[i] = 0.0;
-    REAL(pscore)[0]=0.0;
-    for(i=0; i<(*nr * n); i++)INTEGER(DAT)[i] = data[i];
-    dat2 = INTEGER(DAT2); // without, wired things happen
-    for(i=0; i<(*nr * m); i++)dat2[i] = 0L;
-    fitch8(INTEGER(DAT), nr, INTEGER(pars), INTEGER(node), INTEGER(edge), INTEGER(l), REAL(weight), pvtmp, REAL(pscore));   
-    FN3(INTEGER(DAT), dat2, nr, pars2, INTEGER(node2), INTEGER(edge2), INTEGER(my), INTEGER(pc), REAL(weight), pvtmp, pvtmp2);
-
-    SET_VECTOR_ELT(RESULT, 0, pscore);
-    SET_VECTOR_ELT(RESULT, 1, pars);
-    SET_VECTOR_ELT(RESULT, 2, DAT);
-    SET_VECTOR_ELT(RESULT, 3, DAT2);
-    SET_VECTOR_ELT(RESULT, 4, pvec);
-    SET_VECTOR_ELT(RESULT, 5, pvec2);
-    UNPROTECT(7);
-    return(RESULT); 
-}
-
-// fitch6 statt fitch8 , SEXP weight
-SEXP FNALL3(SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP mx, SEXP my, SEXP q, SEXP pc){   
-    int *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, *pars2;  
-    double *pvtmp, *pvtmp2;  
-    SEXP pars, pvec, pvec2, pscore, RESULT;
-  
-    pars2 = (int *) R_alloc(*nr, sizeof(int));    
-
-    PROTECT(RESULT = allocVector(VECSXP, 4L));
-    PROTECT(pars = allocVector(INTSXP, *nr));
-    PROTECT(pscore = allocVector(REALSXP, 1L));
-    PROTECT(pvec = allocVector(REALSXP, m));
-    PROTECT(pvec2 = allocVector(REALSXP, m)); 
-
-    for(i=0; i<*nr; i++) INTEGER(pars)[i] = 0L;
-    pvtmp = REAL(pvec);
-    for(i=0; i<m; i++) pvtmp[i] = 0.0;
-    pvtmp2 = REAL(pvec2);
-    for(i=0; i<m; i++) pvtmp2[i] = 0.0;
-    REAL(pscore)[0]=0.0;
-    // fitch8 -> fitch6
-    fitch8(data1, nr, INTEGER(pars), INTEGER(node), INTEGER(edge), INTEGER(l), weight, pvtmp, REAL(pscore));   
-    FN3(data1, data2, nr, pars2, INTEGER(node2), INTEGER(edge2), INTEGER(my), INTEGER(pc), weight, pvtmp, pvtmp2);
-
-    SET_VECTOR_ELT(RESULT, 0, pscore);
-    SET_VECTOR_ELT(RESULT, 1, pars);
-    SET_VECTOR_ELT(RESULT, 2, pvec);
-    SET_VECTOR_ELT(RESULT, 3, pvec2);
-    UNPROTECT(5);
-    return(RESULT); 
-}
-
-// raus?? , SEXP weight
-SEXP FNALL4(SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP mx, SEXP my, SEXP q, SEXP pc){   
-    int *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, *pars;  
-    double *pvtmp, *pvtmp2, pscore=0.0;  
-    SEXP pvec; //, pvec2, pscore, RESULT;
-  
-    pars = (int *) R_alloc(*nr, sizeof(int)); // raus     
-    pvtmp2 = (double *) R_alloc(m, sizeof(double));
-    PROTECT(pvec = allocVector(REALSXP, m));
-
-    pvtmp = REAL(pvec);
-    for(i=0; i<m; i++){
-        pvtmp[i] = 0.0;
-        pvtmp2[i] = 0.0;
-    }
-    // fitch8 -> fitch6
-    fitch8(data1, nr, pars, INTEGER(node), INTEGER(edge), INTEGER(l), weight, pvtmp, &pscore);   
-    FN3(data1, data2, nr, pars, INTEGER(node2), INTEGER(edge2), INTEGER(my), INTEGER(pc), weight, pvtmp, pvtmp2);
-    for(i=0; i<m; i++) pvtmp[i] += pvtmp2[i];
-    UNPROTECT(1);
-    return(pvec); 
-}
-
 
 
 void sibs(int *node, int *n, int *start, int *end){
@@ -778,6 +574,71 @@ void fnhelp(int *node, int * edge, int *n, int *m, int *root, int *edge2, int *n
 }
 
 
+SEXP FNALL_NNI(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP my, SEXP root){   
+    int *nr=INTEGER(nrx), m=INTEGER(mx)[0], i,  *n=INTEGER(l);  //*pars,
+    double *pvtmp, *pvtmp2, pscore=0.0;  
+    SEXP pvec1, pvec2, res; 
+    int *pc, *edge2, *node2;
+/* edge2, node2, pc ausserhalb definieren? */        
+    edge2 = (int *) R_alloc(2L * *n, sizeof(int));
+    node2 = (int *) R_alloc(2L * *n, sizeof(int));
+    pc = (int *) R_alloc(2L * *n, sizeof(int));
+    
+//    pvtmp2 = (double *) R_alloc(m, sizeof(double));
+    PROTECT(res = allocVector(VECSXP, 2L));
+    PROTECT(pvec1 = allocVector(REALSXP, m));
+    PROTECT(pvec2 = allocVector(REALSXP, m));
+    
+    pvtmp2 = REAL(pvec2);
+    pvtmp = REAL(pvec1);
+    for(i=0; i<m; i++){
+        pvtmp[i] = 0.0;
+        pvtmp2[i] = 0.0;
+    }
+    fnhelp(INTEGER(node), INTEGER(edge),  n, &m, INTEGER(root), edge2, node2, pc); 
+    fitch9(data1, nr, INTEGER(node), INTEGER(edge), INTEGER(l), weight, pvtmp, &pscore); 
+    FN4(data1, data2, nr, node2, edge2, INTEGER(my), pc, weight, pvtmp, pvtmp2); // pars,
+    
+    SET_VECTOR_ELT(res, 0, pvec1);
+    SET_VECTOR_ELT(res, 1, pvec2);    
+    UNPROTECT(3);
+    return(res); 
+}
+
+// SEXP FNALL5(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP my, SEXP root)
+SEXP FNALL3(SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP mx, SEXP my, SEXP q, SEXP pc){   
+    int *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, *pars2;  
+    double *pvtmp, *pvtmp2;  
+    SEXP pars, pvec, pvec2, pscore, RESULT;
+  
+    pars2 = (int *) R_alloc(*nr, sizeof(int));    
+
+    PROTECT(RESULT = allocVector(VECSXP, 4L));
+    PROTECT(pars = allocVector(INTSXP, *nr));
+    PROTECT(pscore = allocVector(REALSXP, 1L));
+    PROTECT(pvec = allocVector(REALSXP, m));
+    PROTECT(pvec2 = allocVector(REALSXP, m)); 
+
+    for(i=0; i<*nr; i++) INTEGER(pars)[i] = 0L;
+    pvtmp = REAL(pvec);
+    for(i=0; i<m; i++) pvtmp[i] = 0.0;
+    pvtmp2 = REAL(pvec2);
+    for(i=0; i<m; i++) pvtmp2[i] = 0.0;
+    REAL(pscore)[0]=0.0;
+    // fitch8 -> fitch6
+    fitch8(data1, nr, INTEGER(pars), INTEGER(node), INTEGER(edge), INTEGER(l), weight, pvtmp, REAL(pscore));   
+    FN3(data1, data2, nr, pars2, INTEGER(node2), INTEGER(edge2), INTEGER(my), INTEGER(pc), weight, pvtmp, pvtmp2);
+
+    SET_VECTOR_ELT(RESULT, 0, pscore);
+    SET_VECTOR_ELT(RESULT, 1, pars);
+    SET_VECTOR_ELT(RESULT, 2, pvec);
+    SET_VECTOR_ELT(RESULT, 3, pvec2);
+    UNPROTECT(5);
+    return(RESULT); 
+}
+
+
+
 SEXP FNALL5(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP my, SEXP root){   
     int *nr=INTEGER(nrx), m=INTEGER(mx)[0], i,  *n=INTEGER(l);  //*pars,
     double *pvtmp, *pvtmp2, pscore=0.0;  
@@ -832,7 +693,7 @@ void fitchquartet(int *dat1, int *dat2, int *dat3, int *dat4, int *nr, double *w
     }
 }
 
-
+// weight raus  double *weight,
 void fitchQuartet(int *index, int *n, int *nr, double *psc1, double *psc2, double *weight, double *res){
     int i, e1, e2, e3, e4;
     for(i=0; i<*n; i++){ 
@@ -855,7 +716,7 @@ void fitchQuartet(int *index, int *n, int *nr, double *psc1, double *psc2, doubl
 
 
 
-// 815 Zeilen, Ziel: 700 oder weniger 500 waere gut     FNALL etc. 500 realistisch!!
+// 858 Zeilen, Ziel: 700 oder weniger 500 waere gut     FNALL etc. 500 realistisch!!
 // kleinere dll
 // init.c schreiben
 // Ziel 30-200% schneller
@@ -864,5 +725,85 @@ void fitchQuartet(int *index, int *n, int *nr, double *psc1, double *psc2, doubl
 // weight nur einmal verschieben
 
 
+
+
+// for parsimony.R
+void FN2(int *dat, int *res, int *nr, int *pars, int *node, int *edge, int *nl, int *pc, double *weight, double *tmpvec, double *pvec) { 
+    int i, ni, k;
+    ni = 0L;
+    for (i=0; i< *nl; i++) {
+        if (ni == node[i]){
+              if(pc[i]==0L){
+                  pvec[(ni-1L)] += tmpvec[(edge[i]-1L)];
+	              fitch43(&res[(ni-1L) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]);              
+              }    
+              else{ 
+                      pvec[(ni-1L)] += pvec[(edge[i]-1L)];
+	              fitch43(&res[(ni-1L) * (*nr)], &res[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]);   
+              }
+        }                      
+        else {
+            ni = node[i];
+            pvec[(ni-1L)] += tmpvec[(edge[i]-1L)];
+            for(k = 0; k < (*nr); k++) res[(ni-1L)*(*nr) + k] = dat[(edge[i]-1L)*(*nr) + k];                 
+        }
+    }
+}
+
+
+void fitch6(int *dat, int *nr, int *pars, int *node, int *edge, int *nl, double *weight, double *pvec, double *pscore) 
+{   
+    int i, ni, k;
+    ni = 0;
+    for (i=0; i< *nl; i++) {
+    if (ni == node[i]){
+	         pvec[ni-1L] += pvec[edge[i]-1L];
+	         fitch43(&dat[(ni-1L) * (*nr)], &dat[(edge[i]-1L) * (*nr)], nr, pars, weight, &pvec[(ni-1L)]); 
+        }                  
+        else {
+            ni = node[i];   
+            pvec[(ni-1L)] += pvec[(edge[i]-1L)];         
+            for(k = 0; k < (*nr); k++) dat[(ni-1L)*(*nr) + k] = dat[(edge[i]-1L)*(*nr) + k];                     
+        }
+    }
+    pscore[0]=pvec[ni-1];
+}
+
+SEXP FNALL(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP node2, SEXP edge2, SEXP l, SEXP weight, SEXP mx, SEXP my, SEXP q, SEXP pc){   
+    int *data=INTEGER(dat), *nr=INTEGER(nrx), m=INTEGER(mx)[0], i, n=INTEGER(q)[0], *pars2, *dat2;  
+    double *pvtmp, *pvtmp2;  
+    SEXP DAT, DAT2, pars, pvec, pvec2, pscore, RESULT;
+  
+    pars2 = (int *) R_alloc(*nr, sizeof(int));    
+
+    PROTECT(RESULT = allocVector(VECSXP, 6L));
+    PROTECT(pars = allocVector(INTSXP, *nr));
+    PROTECT(pscore = allocVector(REALSXP, 1L));
+    PROTECT(DAT = allocMatrix(INTSXP, nr[0], m));
+    PROTECT(DAT2 = allocMatrix(INTSXP, nr[0], m));
+    PROTECT(pvec = allocVector(REALSXP, m));
+    PROTECT(pvec2 = allocVector(REALSXP, m)); 
+    for(i=0; i<*nr; i++) INTEGER(pars)[i] = 0L;
+    pvtmp = REAL(pvec);
+    for(i=0; i<m; i++) pvtmp[i] = 0.0;
+    pvtmp2 = REAL(pvec2);
+    for(i=0; i<m; i++) pvtmp2[i] = 0.0;
+    REAL(pscore)[0]=0.0;
+    for(i=0; i<(*nr * n); i++)INTEGER(DAT)[i] = data[i];
+    dat2 = INTEGER(DAT2); // without, wired things happen
+    for(i=0; i<(*nr * m); i++)dat2[i] = 0L;
+    fitch6(INTEGER(DAT), nr, INTEGER(pars), INTEGER(node), INTEGER(edge), INTEGER(l), REAL(weight), pvtmp, REAL(pscore));   
+
+    FN2(INTEGER(DAT), dat2, nr, pars2, INTEGER(node2), INTEGER(edge2), INTEGER(my), INTEGER(pc), REAL(weight), pvtmp, pvtmp2);
+
+    SET_VECTOR_ELT(RESULT, 0, pscore);
+    SET_VECTOR_ELT(RESULT, 1, pars);
+    SET_VECTOR_ELT(RESULT, 2, DAT);
+    SET_VECTOR_ELT(RESULT, 3, DAT2);
+    SET_VECTOR_ELT(RESULT, 4, pvec);
+    SET_VECTOR_ELT(RESULT, 5, pvec2);
+    UNPROTECT(7);
+    return(RESULT); 
+}
 
 

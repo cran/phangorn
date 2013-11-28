@@ -37,16 +37,16 @@ sankoffNew <- function (tree, data, cost = NULL, site = 'pscore')
     l <- length(data)
     nr <- attr(data, "nr")
  
-    on.exit(.C("sankoff_free"))
-    .C("sankoff_init", as.integer())
+#    on.exit(.C("sankoff_free"))
+#    .C("sankoff_init", as.integer())
 
 
 #    for (i in 1:length(data)) storage.mode(data[[i]]) = "double"
 
-    if(class(tree)=="phylo") return(fit.sankoff(tree, data, cost, returnData =site))
+    if(class(tree)=="phylo") return(fit.sankoffNew(tree, data, cost, returnData =site))
     if(class(tree)=="multiPhylo"){
 	    if(is.null(tree$TipLabel))tree = unclass(tree)
-	    return(sapply(tree, fit.sankoff, data, cost, site))
+	    return(sapply(tree, fit.sankoffNew, data, cost, site))
     }    
 }
 
@@ -61,6 +61,9 @@ fit.sankoffNew <- function (tree, data, cost, returnData = c("pscore", "site", "
     edge <- tree$edge[, 2]
     weight = attr(data, "weight")
     nr = p = attr(data, "nr")
+    
+    contr = attr(data, "contrast")
+    
     q = length(tree$tip.label)
     nc = l = attr(data, "nc")
     m = length(edge) + 1
@@ -70,11 +73,11 @@ fit.sankoffNew <- function (tree, data, cost, returnData = c("pscore", "site", "
     edge = as.integer(edge - 1)
     nTips = as.integer(length(tree$tip))
     mNodes = as.integer(max(node) + 1)
-    tips = as.integer((1:length(tree$tip))-1)
-    res <- .Call("sankoff3", dat, as.numeric(cost), as.integer(nr),as.integer(nc),
-         node, edge, mNodes, tips, PACKAGE="phangorn")  
+#    tips = as.integer((1:length(tree$tip))-1)
+    res <- .Call("sankoff3B", dat, as.numeric(cost), as.integer(nr),as.integer(nc), 
+         node, edge, mNodes, nTips, as.double(contr), as.integer(nrow(contr)), PACKAGE="phangorn")  
     root <- getRoot(tree) 
-    erg <- .Call("rowMin", res[[root]], as.integer(nr), as.integer(nc), PACKAGE = "phangorn")
+    erg <- .Call("C_rowMin", res[[root]], as.integer(nr), as.integer(nc), PACKAGE = "phangorn")
     if (returnData=='site') return(erg)
     pscore <- sum(weight * erg)
     result = pscore

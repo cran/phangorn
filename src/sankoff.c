@@ -20,7 +20,7 @@
 
 
      
-SEXP rowMin(SEXP sdat, SEXP sn, SEXP sk){
+SEXP C_rowMin(SEXP sdat, SEXP sn, SEXP sk){
     int i, h, n=INTEGER(sn)[0], k=INTEGER(sk)[0];  
     double x, *res, *dat;
     SEXP result;
@@ -63,7 +63,8 @@ void rowMinInt(int *dat, int n,  int k, double *res){
 
 
 // Sankoff 
-static R_INLINE void sankoff4(double *dat, int n, double *cost, int k, double *result){
+// static R_INLINE 
+void sankoff4(double *dat, int n, double *cost, int k, double *result){
     int i, j, h; 
     double tmp[k], x;
     for(i = 0; i < n; i++){
@@ -159,14 +160,27 @@ void sankoffTips(int *x, double *tmp, int nr, int nc, int nrs, double *result){
 }
 
 // faster und memory efficient, aehnlich wie logLik2
+//SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips)
+/*
+ * 
+library(phangorn) 
+data(Laurasiatherian)
+tree = NJ(dist.hamming(Laurasiatherian))
+sankoffNew(tree, Laurasiatherian)
+ 
+ */
+
+
+
 SEXP sankoff3B(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips, SEXP contrast, SEXP nrs){
-    R_len_t i, n = length(node), nt = length(tips);
+    R_len_t i, n = length(node); //, nt = length(tips);
     int nrx=INTEGER(nr)[0], ncx=INTEGER(nc)[0], mn=INTEGER(mNodes)[0], nrc = INTEGER(nrs)[0];
-    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node);
+    int  ni, ei, j, *edges=INTEGER(edge), *nodes=INTEGER(node), ntips=INTEGER(tips)[0];
     SEXP result, dlist2; //tmp, 
     double *res, *cost, *tmp; // *rtmp,
-    tmp = (double *) R_alloc(ncx * nrc, sizeof(double)); 
-    cost = REAL(scost);
+    tmp = (double *) R_alloc(ncx * nrc, sizeof(double));
+    for(j=0; j<(ncx * nrc); j++) tmp[j] = 0.0;
+    cost = REAL(scost);  
     sankoff4(REAL(contrast), nrc, cost, ncx, tmp); 
 
     if(!isNewList(dlist)) error("'dlist' must be a list");
@@ -175,13 +189,13 @@ SEXP sankoff3B(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, S
     PROTECT(result = allocMatrix(REALSXP, nrx, ncx));
     res = REAL(result);
 // die naechte Zeile vielleicht raus
-    for(i = 0; i < nt; i++) SET_VECTOR_ELT(dlist2, INTEGER(tips)[i], VECTOR_ELT(dlist, INTEGER(tips)[i]));
+//    for(i = 0; i < nt; i++) SET_VECTOR_ELT(dlist2, INTEGER(tips)[i], VECTOR_ELT(dlist, INTEGER(tips)[i]));
     for(j=0; j<(nrx * ncx); j++) res[j] = 0.0; 
  
     for(i = 0; i < n; i++) {
         ei = edges[i]; 
         if(ni == nodes[i]){            
-            if(ei < nt) sankoffTips(INTEGER(VECTOR_ELT(dlist,ei)), tmp, nrx, ncx, nrc, res);
+            if(ei < ntips) sankoffTips(INTEGER(VECTOR_ELT(dlist,ei)), tmp, nrx, ncx, nrc, res);
             else sankoff4(REAL(VECTOR_ELT(dlist2,ei)), nrx, cost, ncx, res);
             }
         else{          
@@ -191,7 +205,7 @@ SEXP sankoff3B(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, S
             res = REAL(result);
             for(j=0; j<(nrx * ncx); j++) res[j] = 0.0; 
             ni = nodes[i];
-            if(ei < nt) sankoffTips(INTEGER(VECTOR_ELT(dlist,ei)), tmp, nrx, ncx, nrc, res);
+            if(ei < ntips) sankoffTips(INTEGER(VECTOR_ELT(dlist,ei)), tmp, nrx, ncx, nrc, res);
             else sankoff4(REAL(VECTOR_ELT(dlist2,ei)), nrx, cost, ncx, res); 
             }
     }
@@ -241,17 +255,14 @@ SEXP pNodes(SEXP data, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge){
 
 
 /*
-Ziel weniger memory und schneller
 
 static double *data1;
 static double *weight;
 
-
-
-void sankoff_init(int *n, double *weights, int *nr)
+void sankoff_init(double *weights, int *nr, int *nc, int *nTips)
 {
     int i;
-    data1 = (double *) calloc(*n, sizeof(double));
+    data1 = (double *) calloc(*nr * *nc * *nTips, sizeof(double));
     weight = (double *) calloc(*nr, sizeof(double));
     for(i=0; i<*nr; i++)weight[i] = weights[i]; 
 }
@@ -261,6 +272,11 @@ void sankoff_free(){
     free(data1);
     free(weight);
 }
+
+
+
+
+Ziel weniger memory und schneller
 
 static R_INLINE void sankoff4(double *dat, int n, double *cost, int k, double *result){
     int i, j, h; 

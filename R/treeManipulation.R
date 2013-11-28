@@ -44,7 +44,9 @@ reroot <-  function (tree, node)
     tree$edge[tree$edge == 0L] = node
 # needed for unrooted trees    
     tree <- collapse.singles(tree)
-    reorderPruning(tree)
+#    reorderPruning(tree)
+    attr(tree, "order") <- NULL
+    reorder(tree, "postorder")
 }
 
 
@@ -54,8 +56,30 @@ reroot2 <- function(tree, node) {
     l = length(anc)
     ind = match(c(node, anc[-l]), tree$edge[, 2])
     tree$edge[ind, c(1, 2)] = tree$edge[ind, c(2, 1)]
-    reorderPruning(tree) 
+    reorderPruning(tree)   
 }    
+
+
+changeEdge = function (tree, swap, edge = NULL, edge.length = NULL) 
+{
+    attr(tree, "order") = NULL
+    child <- tree$edge[, 2]
+    tmp = numeric(max(child))
+    tmp[child] = 1:length(child)
+    tree$edge[tmp[swap[1]], 2] = swap[2]
+    tree$edge[tmp[swap[2]], 2] = swap[1]
+    if (!is.null(edge)) {
+        tree$edge.length[tmp[edge]] = edge.length
+    }
+    reorder(tree, "postorder")
+}
+
+
+changeEdgeLength = function (tree, edge, edge.length) 
+{
+    tree$edge.length[match(edge, tree$edge[,2])] = edge.length
+    tree
+}
 
 
 # O(n) statt O(n^2) Speicher und Geschwindigkeit
@@ -281,10 +305,9 @@ dropNodeNew <- function(edge, i, nTips, check.binary=FALSE, check.root=TRUE){
     # einfachere allChildren Variante 2*schneller
     allKids = function (edge, nTips) 
     {
-        parent = unique(edge[, 1])
-        tab = tabulate(edge[, 1])[parent]
+        parent = edge[, 1]
         children = edge[, 2]
-        .Call("allChildren", as.integer(children), as.integer(parent), as.integer(tab), as.integer(max(edge)), PACKAGE = "phangorn")
+        .Call("AllChildren", as.integer(children), as.integer(parent), as.integer(max(edge)), PACKAGE = "phangorn")
     }
     
     descAll = function (edge, node, nTips) 
@@ -427,7 +450,7 @@ reorderPruning <- function (x, ...)
         stop("more than 1 root found")
     n = length(parents)    
     m = max(x$edge)  # edge  parents 
-    neworder = .C("reorder", parents, child, as.integer(n), as.integer(m), integer(n), as.integer(root-1L), DUP=FALSE, PACKAGE = "phangorn")[[5]]    
+    neworder = .C("C_reorder", parents, child, as.integer(n), as.integer(m), integer(n), as.integer(root-1L), DUP=FALSE, PACKAGE = "phangorn")[[5]]    
     x$edge = x$edge[neworder,]
     x$edge.length = x$edge.length[neworder]
     attr(x, "order") <- "pruningwise"
@@ -455,6 +478,7 @@ add.tip <- function(phy, n, edgeLength=NULL, tip=""){
 
 nnin <- function (tree, n) 
 {
+    attr(tree, "order") = NULL 
     tree1 = tree
     tree2 = tree
     edge = matrix(tree$edge, ncol = 2)
@@ -481,7 +505,7 @@ nnin <- function (tree, n)
         }
     tree1 <- reorder(tree1, "postorder")  #reorderPruning(tree1) 
     tree2 <- reorder(tree2, "postorder")  #reorderPruning(tree2) 
-    tree1$tip.label <- tree1$tip.label <- NULL    
+#    tree1$tip.label <- tree2$tip.label <- NULL    
     result = list(tree1, tree2)
     result
 } 
@@ -496,7 +520,9 @@ nni <- function (tree)
     result = vector("list", 2*n)
     l=1
     for (i in 1:n) {
-          result[c(l, l+1)] = nnin(tree, i)
+          tmp = nnin(tree, i)
+          tmp[[1]]$tip.label <- tmp[[2]]$tip.label <- NULL
+          result[c(l, l+1)] = tmp
           l = l + 2
           }
     attr(result, "TipLabel") <- tip.label
@@ -677,7 +703,7 @@ dn <- function (x){
 }
 
 
-rSPR = function (tree, moves = 1, n = 1, k=NULL) 
+rSPR = function (tree, moves = 1, n = length(moves), k=NULL) 
 {
     if (n == 1) {
         trees = tree
@@ -685,9 +711,13 @@ rSPR = function (tree, moves = 1, n = 1, k=NULL)
     }
     else {
         trees = vector("list", n)
+        if(length(moves)==1) moves = rep(moves, n)
+        
         for (j in 1:n) {
             tmp = tree
-            for (i in 1:moves) tmp = kSPR(tmp, k=k)
+            if(moves[j]>0){
+               for (i in 1:moves[j]) tmp = kSPR(tmp, k=k)
+            }
             tmp$tip.label = NULL
             trees[[j]] = tmp
         }
@@ -878,11 +908,12 @@ sprMove <- function(tree, m){
 }
  
 
-rNNI <- function(tree, moves=1, n=1){   
+rNNI_Old <- function(tree, moves=1, n=1){   
     k = length(na.omit(match(tree$edge[,2], tree$edge[,1])))   
     if(n==1){
         trees = tree
         for(i in 1:moves) trees = nnin(trees,sample(k,1))[[sample(2,1)]] 
+        trees$tip.label <- tree$tip.label
     }  
     else{
         trees = vector("list", n)
@@ -899,6 +930,32 @@ rNNI <- function(tree, moves=1, n=1){
 }
 
 
+rNNI <- function (tree, moves = 1, n = length(moves)) 
+{
+    k = length(na.omit(match(tree$edge[, 2], tree$edge[, 1])))
+    if (n == 1) {
+        trees = tree
+        if(moves>0){
+            for (i in 1:moves) trees = nnin(trees, sample(k, 1))[[sample(2,1)]]
+        }
+        trees$tip.label <- tree$tip.label
+    }
+    else {
+        trees = vector("list", n)
+        if(length(moves)==1) moves = rep(moves, n)
+        for (j in 1:n) {
+            tmp = tree
+            if(moves[j]>0){
+                for (i in 1:moves[j]) tmp = nnin(tmp, sample(k, 1))[[sample(2,1)]]
+            }
+            tmp$tip.label = NULL
+            trees[[j]] = tmp
+        }
+        attr(trees, "TipLabel") <- tree$tip.label
+        class(trees) <- "multiPhylo"
+    }
+    trees
+}
 
 
 #
@@ -954,10 +1011,9 @@ allChildren <- function(x){
    else{
        if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
            x <- reorder(x, "postorder")
-       parent = unique(x$edge[,1])
-       tab = tabulate(x$edge[,1])[parent]
+       parent = x$edge[,1]
        children = x$edge[,2]
-       res <- .Call("allChildren", as.integer(children), as.integer(parent), as.integer(tab), as.integer(max(x$edge)), PACKAGE="phangorn") 
+       res <- .Call("AllChildren", as.integer(children), as.integer(parent), as.integer(max(x$edge)), PACKAGE="phangorn") 
        return(res)
    }
 }

@@ -17,7 +17,7 @@ pml.control(epsilon = 1e-08, maxit = 10, trace = 1)
 }
 \arguments{
   \item{tree}{A phylogenetic \code{tree}, object of class \code{phylo}. }
-  \item{data}{The (DNA) alignment.}
+  \item{data}{An alignment, object of class \code{phyDat}.}
   \item{bf}{Base frequencies.}
   \item{Q}{A vector containing the lower triangular part of the rate matrix.}
   \item{inv}{Proportion of invariable sites.}
@@ -64,9 +64,8 @@ These models are specified as in Posada (2008).
 
 So far 17 amino acid models are supported ("WAG", "JTT", "LG", "Dayhoff", "cpREV", "mtmam", "mtArt", "MtZoa", "mtREV24", "VT","RtREV", "HIVw", "HIVb", "FLU", "Blossum62", "Dayhoff_DCMut" and "JTT-DCMut") and additionally rate matrices and amino acid frequences can be supplied. 
 
-If the option 'getRooted' is set to TRUE than the edge lengths of rooted tree are optimized.
+If the option 'optRooted' is set to TRUE than the edge lengths of rooted tree are optimized.
 The tree has to be rooted and by now ultrametric! Optimising rooted trees is generally much slower.
-With the default 'getRooted=FALSE' any rooted tree is getting unrooted at the beginning.
   
 \code{pml.control} controls the fitting process. \code{epsilon} and \code{maxit} are only defined 
 for the most outer loop, this affects \code{pmlCluster}, \code{pmlPart} and \code{pmlMix}. 
