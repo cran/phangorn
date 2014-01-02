@@ -3,7 +3,7 @@
 #
 rowMin = function(X){
     d=dim(X)
-    .Call("rowMin", X, as.integer(d[1]), as.integer(d[2]), PACKAGE = "phangorn") 
+    .Call("C_rowMin", X, as.integer(d[1]), as.integer(d[2]), PACKAGE = "phangorn") 
 }
 
 
@@ -128,14 +128,12 @@ mpr <- function (tree, data, returnData = FALSE)
         m2 = length(node2)
     }
     dat[(nr * (root - 1L) + 1L):(nr * root)] = 0L
-# fnhelp: schneller und kompakter    
-#    tmp0 <- .C("fnhelp", as.integer(node), as.integer(edge), as.integer(n), as.integer(m), root, integer(2L*n), integer(2L*n), integer(2L*n))
-    
+   
     tmp <- .Call("FNALL", dat, as.integer(nr), as.integer(node), 
         as.integer(edge), as.integer(node2), as.integer(edge2), 
         as.integer(length(edge)), as.double(weight), as.integer(length(edge) + 
             1L), as.integer(m2), as.integer(length(tree$tip)), 
-        as.integer(pc))
+        as.integer(pc), PACKAGE="phangorn")
 # in C
     if (!is.rooted2(tree)) {
         root = getRoot(tree)
@@ -162,7 +160,7 @@ plotAnc <- function (tree, data, i = 1, col=NULL, cex.pie=par("cex"), pos="botto
    y = subset(data, , i)
 #   args <- list(...)
 #   CEX <- if ("cex" %in% names(args))
-#       args$cex
+#       args$cex 
 #   else par("cex")
    CEX = cex.pie
    xrad <- CEX * diff(par("usr")[1:2])/50
@@ -189,7 +187,6 @@ plotAnc <- function (tree, data, i = 1, col=NULL, cex.pie=par("cex"), pos="botto
 }
 
 
-# add fitch_init
 prepareDataFitch <- function (data) 
 {
     lev <- attr(data, "levels")
@@ -293,7 +290,7 @@ lowerBound <- function(x, cost=NULL){
             dat = matrix(unlist(states[nst==i]), nrow=i, dimnames=list(tips[1:i], NULL))
             dat = phyDat(dat, type="USER", contrast=contrast)      
             tree = stree(i)
-            res[nst==i] = sankoff(tree, dat, cost=cost, site="site")[attr(dat, "index")]
+            res[nst==i] = sankoffNew(tree, dat, cost=cost, site="site")[attr(dat, "index")]
         }
     }
     res
@@ -303,7 +300,7 @@ lowerBound <- function(x, cost=NULL){
 upperBound <- function(x, cost=NULL){
     tree = stree(length(x), tip.label=names(x))
     if(is.null(cost))cost <- 1 - diag(attr(x, "nc")) 
-    sankoff(tree, x, cost=cost, site="site")
+    sankoffNew(tree, x, cost=cost, site="site")
 }
 
 
@@ -318,7 +315,7 @@ CI <- function (tree, data, cost=NULL){
 
 RI <- function (tree, data, cost=NULL)
 {
-    pscore = sankoff(tree, data, cost=cost)
+    pscore = sankoffNew(tree, data, cost=cost)
     data = subset(data, tree$tip.label)
     weight = attr(data, "weight")
     m = lowerBound(data, cost=cost)
@@ -326,35 +323,6 @@ RI <- function (tree, data, cost=NULL)
     g = upperBound(data, cost=cost)
     g = sum(g * weight)
     (g - pscore)/(g - m)
-}
-
-
-
-add.everywhere <- function(tree,tip.name, rooted = FALSE){
-       if(class(tree)!="phylo") stop("tree should be an object of class 'phylo.'")
-#       if(!rooted)tree = unroot(tree)
-       nTips = length(tree$tip)
-       tmpedge = tree$edge 
-       m = max(tmpedge)
-       l = nrow(tmpedge)
-       trees<-vector("list", l) 
-       tmp = tree
-       tmp$tip.label = c(tree$tip.label, tip.name)
-       tmpedge[tmpedge>nTips] <- tmpedge[tmpedge>nTips] + 1L
-
-       tmp$Nnode = tmp$Nnode + 1L
-       tmp$edge.length <- NULL
-       tmpedge = rbind(tmpedge, matrix(c(m+2L, m+2L, 0L, nTips+1L),2,2))
-       for(i in 1:l){
-            edge = tmpedge
-            edge[l+1L,2] <- edge[i,2]
-            edge[i, 2] <- m+2L
-            neworder = .C("reorder", edge[,1], edge[,2], as.integer(l+2L), as.integer(m+2L), 
-                integer(l+2L), as.integer(nTips+1L), DUP = FALSE, PACKAGE = "phangorn")[[5]]
-            tmp$edge <- edge[neworder,]
-            trees[[i]] = tmp
-       }
-       return(trees)
 }
 
 
@@ -375,7 +343,7 @@ add.one <- function (tree, tip.name, i){
     edge = tmpedge
     edge[l + 1L, 2] <- edge[i, 2]
     edge[i, 2] <- m + 2L
-    neworder = .C("reorder", edge[, 1], edge[, 2], as.integer(l + 
+    neworder = .C("C_reorder", edge[, 1], edge[, 2], as.integer(l + 
            2L), as.integer(m + 2L), integer(l + 2L), as.integer(nTips + 
            1L), DUP = FALSE, PACKAGE = "phangorn")[[5]]
     tmp$edge <- edge[neworder, ]
@@ -465,34 +433,6 @@ mmsNew0 <- function (x, Y)
 }
 
 
-
-add.every <- function (tmpedge, Nnode) 
-{
-    m = max(tmpedge)
-    nTips = as.integer(m - Nnode)
-    l = nrow(tmpedge)
-    result <- vector("list", l)
-    tmpedge[tmpedge > nTips] <- tmpedge[tmpedge > nTips] + 1L
-    newE = matrix(c(m + 2L, m + 2L, 0L, nTips + 1L), 2, 2)
-    edge0 = matrix(0L, l+2L, 2L)
-    l2= l-3L
-    ind = c(rep( 0L : (l2/2L),  each = 2)*2L, l2)
-    for (i in 1:l) {
-        edge1 <- newE
-        edge2 <- tmpedge
-        edge1[1,2] <- tmpedge[i, 2]
-        edge2[i,2] <- m + 2L
-        k = ind[i]    
-        edge = edge0      
-        if(k>0) edge[1:k,] = edge2[1:k,]
-        edge[(k+1L):(k+2L),] = edge1
-        edge[(k+3L):(l+2L),] = edge2[(k+1):l,]
-        result[[i]] <- edge
-    }
-    return(result)
-}
-
-
 #
 # Sankoff 
 #
@@ -570,7 +510,7 @@ fit.sankoff <- function (tree, data, cost, returnData = c("pscore", "site", "dat
     res <- .Call("sankoff3", dat, as.numeric(cost), as.integer(nr),as.integer(nc),
          node, edge, mNodes, tips, PACKAGE="phangorn")  
     root <- getRoot(tree) 
-    erg <- .Call("rowMin", res[[root]], as.integer(nr), as.integer(nc), PACKAGE = "phangorn")
+    erg <- .Call("C_rowMin", res[[root]], as.integer(nr), as.integer(nc), PACKAGE = "phangorn")
     if (returnData=='site') return(erg)
     pscore <- sum(weight * erg)
     result = pscore
@@ -629,21 +569,6 @@ indexNNI <- function(tree){
 }
                    
         
-changeEdge <- function(tree, swap, edge=NULL, edge.length=NULL){
-    child <- tree$edge[,2]
-    tmp = numeric(max(child))
-    tmp[child] = 1:length(child)
-    tree$edge[tmp[swap[1]], 2] = swap[2]
-    tree$edge[tmp[swap[2]], 2] = swap[1]
-    if(!is.null(edge)){
-        tree$edge.length[tmp[edge]] = edge.length
-    }
-#    attr(tree, "order") <- NULL
-    reorderPruning(tree) 
-}
-
-
-
 sankoff.nni = function (tree, data, cost, ...) 
 {   
     if(is.rooted(tree))tree<- reorder(unroot(tree), "postorder")     

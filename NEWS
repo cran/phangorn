@@ -1,3 +1,35 @@
+      CHANGES in PHANGORN VERSION 1.99-5 
+
+NEW FEATURES
+
+    o RF.dist works also on "multiPhylo" objects and is quite fast
+
+    o optim.pml can now handle NNI tree arrangements for rooted trees,
+
+      still experimental but useful for dating etc.
+
+BUG FIXES
+
+    o rNNI did return sometimes trees without tip labels 
+
+    o SH.test did not work for pmlCluster objects
+
+    o df for rooted rooted/ultrametric trees are correctly computed
+
+OTHER CHANGES
+
+    o lots of internal code C-code changed 
+
+    o exports of some of the internal ML function, this should speed up in
+
+      future other packages e.g. the colescentMCMC package, which use them
+
+      considerably (interface may changes in the future)
+
+    o registered C routines 
+
+
+
       CHANGES in PHANGORN VERSION 1.99-0
 
 NEW FEATURES
@@ -18,7 +50,7 @@ BUG FIXES
 
 OTHER CHANGES
 
-    o changed package imports and depends structure aviod error messages, 
+    o changed package imports and depends structure to aviod error messages, 
 
       thanks to Brian Ripley
 
