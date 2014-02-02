@@ -75,6 +75,17 @@ c.splits <- function (..., recursive=FALSE)
 
 
 # computes splits from phylo
+#as.splits.phylo <- function(x, ...){
+#    result = bip(x)[x$edge[,2]]
+#    attr(result, "weights") = x$edge.length
+#    attr(result, "labels") <- x$tip
+#    class(result) = c('splits', 'prop.part')
+#    result 
+#}
+
+
+
+# computes splits from phylo
 as.splits.phylo <- function(x, ...){
     result = bip(x)
     edge.weights = numeric(max(x$edge))
@@ -84,6 +95,8 @@ as.splits.phylo <- function(x, ...){
     class(result) = c('splits', 'prop.part')
     result 
 }
+
+
 
 
 # computes splits from multiPhylo object (e.g. bootstrap, MCMC etc.)
@@ -135,8 +148,10 @@ as.phylo.splits <- function (x, result = "phylo", ...)
 {
     result <- match.arg(result, c("phylo", "all"))
     labels = attr(x, "labels")
+    nTips = length(labels)
     weights = attr(x, "weights")
     nTips = length(labels)
+    x = SHORTwise(x, nTips)
     dm = as.matrix(compatible(x))
     rs = rowSums(dm)
     ind = which(rs == 0)
@@ -157,11 +172,14 @@ as.phylo.splits <- function (x, result = "phylo", ...)
     dm2 = dm2 + t(dm2)
     dimnames(dm2) = list(labels, labels)
     tree <- di2multi(NJ(dm2), tol = 1e-08)
+    attr(tree, "order") = NULL
     tree <- reorder(tree, "postorder")
     if (result == "phylo") 
         return(tree)  
-    tree = reroot(tree, Ancestors(tree, 1, "parent")) 
-    list(tree = tree, index = tree$edge[, 2], split = as.splits(tree), rest = x[-ind])
+#    tree = reroot(tree, Ancestors(tree, 1, "parent")) 
+    spl = as.splits(tree)
+    spl = SHORTwise(spl, nTips)
+    list(tree = tree, index = tree$edge[, 2], split = spl, rest = x[-ind])
 }
 
 
@@ -284,50 +302,50 @@ addEdge <- function(network, desc, split){
     edge = network[[1]]$edge
     parent = edge[,1]
     child = edge[,2]
-
+    
     l = length(attr(split, "labels"))
     if(split[[1]][1]==1) split[[1]] <- c(1:l)[-split[[1]]] # ==1
- 
+    
     index = network[[2]]
     ind = which(compatible2(split, desc[index]) == 1)
     if(is.null(ind)) return(network)
     add = TRUE
-
+    
     while(add){
         tmp = ind
         for(i in ind){
-             tmp2 = which(compatible2(desc[index][i], desc[index]) == 1)
-             tmp = union(tmp, tmp2)
+            tmp2 = which(compatible2(desc[index][i], desc[index]) == 1)
+            tmp = union(tmp, tmp2)
         }
         if(identical(ind, tmp)){add=FALSE}
         ind=tmp 
     }    
-
+    
     oldNodes = unique(as.vector(edge[ind,]))
     newNodes = (max(parent)+1L) : (max(parent)+length(oldNodes))
-
+    
     ind2 = index[-ind]
     edge2 = edge[-ind,, drop=FALSE] 
-
+    
     for(i in 1:length(oldNodes)){
         ind3 = which(edge2[,1] == oldNodes[i])
-#        ind3 = which(edge2 == oldNodes[i],arr=TRUE)[,1]
+        #        ind3 = which(edge2 == oldNodes[i],arr=TRUE)[,1]
         for(j in ind3) {
-             if(any( desc[[ ind2[j] ]] %in% split[[1]])){
-                   edge2[j,edge2[j,]==oldNodes[i]] = newNodes[i]
-             }
+            if(any( desc[[ ind2[j] ]] %in% split[[1]])){
+                edge2[j,edge2[j,]==oldNodes[i]] = newNodes[i]
+            }
         } 
     } 
     edge[-ind,] = edge2
-
-#alle Splits verdoppeln
+    
+    #alle Splits verdoppeln
     dSpl = edge[ind,]
     for(i in 1:length(oldNodes)) dSpl[dSpl==oldNodes[i]] = newNodes[i]
     edge = rbind(edge, dSpl, deparse.level = 0) # experimental: no labels
     network[[1]]$edge.length = c(network[[1]]$edge.length, network[[1]]$edge.length[ind])   
     index = c(index, index[ind])
-
-#neu zu alt verbinden   
+    
+    #neu zu alt verbinden   
     edge = rbind(edge, cbind(oldNodes, newNodes), deparse.level = 0) #  rbind(edge, cbind(oldNodes, newNodes), deparse.level = 0)# experimental: no labels
     network[[1]]$edge.length = c(network[[1]]$edge.length, rep(attr(split,"weights"), length(oldNodes)))
     index = c(index, rep(max(index)+1, length(oldNodes)) )
@@ -349,6 +367,37 @@ as.networx <- function (x, ...)
 }
 
 
+as.networx.splitsNew <- function (x, ...) 
+{
+    tmp = as.phylo(x, "all")
+    obj = tmp[1:2]
+    nTips = length(obj[[1]]$tip.label)
+#    browser()    
+    x = SHORTwise(x, nTips)
+    splitsOld = SHORTwise(tmp[[3]], nTips)
+    oldInd = match(splitsOld, x)    
+    if (length(tmp[[4]]) > 0) {
+        splitsNew = SHORTwise(tmp[[4]], nTips)
+        ord <- order(colSums(compatible2(c(splitsOld, splitsNew), 
+                                         splitsNew)))
+        splitsNew = splitsNew[ord]
+        oldInd = c(oldInd, match(splitsNew, x))
+        for (i in 1:length(splitsNew)) {
+            tmp = addEdge(obj, splitsOld, splitsNew[i])
+            splitsOld = tmp[[3]]
+            obj = tmp[1:2]
+        }
+    }
+    res = obj[[1]]
+#    res$Nnode = max(res$edge) - nTips
+    res$Nnode = length(unique(res$edge[,1]))
+    res$split = oldInd[obj[[2]]]
+    class(res) = c("networx", "phylo")
+    res
+}
+
+
+
 as.networx.splits <- function(x, ...){   
     tmp = as.phylo(x, "all")
     obj = tmp[1:2]
@@ -356,10 +405,7 @@ as.networx.splits <- function(x, ...){
     splitsNew = tmp[[4]]  
     if(length(splitsNew)>0){  
         ord <- order(colSums(compatible2(c(splitsOld,splitsNew), splitsNew)))
-        ord2 <- order(colSums(compatible2(splitsOld, splitsNew)))
-        ord3 <- order(colSums(compatible2(splitsNew, splitsNew)))
-        splitsNew = splitsNew[ord]
-
+        splitsNew = splitsNew[ord]        
         for(i in 1:length(splitsNew)){
             tmp = addEdge(obj, splitsOld, splitsNew[i])
             splitsOld = tmp[[3]]
@@ -368,21 +414,37 @@ as.networx.splits <- function(x, ...){
     }
     res = obj[[1]]    
     nTips = length(res$tip.label)
-    res$Nnode = max(res$edge) - nTips # raus in addEdge
     res$split = obj[[2]]
     class(res) = c("networx", "phylo")
     res
 }
 
 
-consensusNet <- function(obj, prob=.3, ...){
+#consensusNet <- function(obj, prob=.3, ...){
+#    l = length(obj)
+#    spl = as.splits(obj)
+#    w = attr(spl, "weight")
+#    ind = (w/l) > prob 
+#    spl = spl[ind] 
+#    as.networx(spl)
+#}
+
+consensusNet <- function (obj, prob = 0.3, ...) 
+{
     l = length(obj)
     spl = as.splits(obj)
     w = attr(spl, "weight")
-    ind = (w/l) > prob 
-    spl = spl[ind] 
-    as.networx(spl)
+    ind = (w/l) > prob
+    spl = spl[ind]
+    edge.labels = as.character(round((w/l)[ind]*100))
+    edge.labels[1:length(attr(spl,"labels"))]=""
+    spl = as.networx(spl)
+    spl$edge.labels = as.character(spl$edge.length / l * 100)
+    spl$edge.labels[spl$edge[,2]<=length(spl$tip.label)] = ""
+    spl
 }
+
+
 
 
 
@@ -404,6 +466,8 @@ reorder.networx <- function (x, order = "cladewise", ...)
     x$edge <- x$edge[neworder, ]
     if (!is.null(x$edge.length)) 
         x$edge.length <- x$edge.length[neworder]
+    if (!is.null(x$edge.labels)) 
+        x$edge.labels <- x$edge.labels[neworder]  
     if (!is.null(x$split))x$split <- x$split[neworder]
     attr(x, "order") <- order
     x
@@ -515,18 +579,20 @@ plot.networx = function(x, type="3D", show.tip.label=TRUE, show.edge.label=FALSE
     adj = spMatrix(n, n, i = x$edge[,2], j = x$edge[,1], x = rep(1, length(x$edge.length)))
     g = graph.adjacency(adj, "undirected")
     
-    plot.success <- FALSE
-    if (!plot.success & type=="3D") {
-#        if (!require(rgl)) {
-#            warning("package 'rgl' not found, can only plot in 2D")
-#        } else {       
+#    plot.success <- FALSE
+#    if (!plot.success & type=="3D") {
+    if (require(rgl) & type=="3D") {
+  #     if (!require(rgl)) {
+  #          warning("package 'rgl' not found, can only plot in 2D")
+  #      } else {       
              coord <- coords(x, dim="3D")
              plotRGL(coord, x, show.tip.label=show.tip.label, show.edge.label=show.edge.label, show.nodes=show.nodes, tip.color = tip.color,
              edge.color=edge.color, edge.width = edge.width, font = font, cex = cex)
              plot.success <- TRUE
 #        } 
     }
-    if (!plot.success){
+    #if (!plot.success){
+   else{
 	    coord <- coords(x, dim="2D")
 	    plot2D(coord, x, show.tip.label=show.tip.label, show.edge.label=show.edge.label, tip.color = tip.color, edge.color=edge.color, 
 	    edge.width = edge.width, font = font, cex = cex, add=FALSE)
@@ -544,9 +610,6 @@ plotRGL <- function(coords, net, show.tip.label=TRUE, show.edge.label=FALSE, sho
      
     nTips = length(net$tip.label)
     
-#    for(i in 1:dim(edge)[1]){
-#        segments3d(x[edge[i,]],y[edge[i,]],z[edge[i,]], col=edge.color, lwd=edge.width)
-#    }
     segments3d(x[t(edge)],y[t(edge)],z[t(edge)], col=edge.color, lwd=edge.width) 
     radius=0
     if(show.nodes){
@@ -559,7 +622,9 @@ plotRGL <- function(coords, net, show.tip.label=TRUE, show.edge.label=FALSE, sho
     }
     if(show.edge.label){
 	    ec = edgeLabels(x, y, z, edge)
-	    rgl.texts(ec[,1], ec[,2], ec[,3], net$split, color=tip.color, cex=cex, font=font)     
+        if(!is.null(net$edge.labels)) edge.labels = net$edge.labels
+        else edge.labels = net$split    
+	    rgl.texts(ec[,1], ec[,2], ec[,3], edge.labels, color=tip.color, cex=cex, font=font)     
     } 
 }
 
@@ -600,7 +665,8 @@ plot2D <- function(coords, net, show.tip.label=TRUE, show.edge.label=FALSE, tip.
     }
     if(show.edge.label){
 	    ec = edgeLabels(xx,yy, edge=edge)
-	    text(ec[,1], ec[,2], labels=net$split, col=tip.color, cex=cex, font=font)     
+	    if(is.null(net$edge.labels))net$edge.labels = net$split
+	    text(ec[,1], ec[,2], labels=net$edge.labels, col=tip.color, cex=cex, font=font)     
 	    } 
 }   
    
@@ -721,9 +787,51 @@ write.nexus.splits <- function (obj, file = "", weights=NULL)
         ";\n", sep = ""), file = file, append = TRUE)
     cat("\tFORMAT LABELS WEIGHTS;\n\tMATRIX\n", file = file, 
         append = TRUE)
-    for (i in 1:nsplits) cat("\t\t", i, weight[i], paste(obj[[i]]), 
+    for (i in 1:nsplits) cat("\t\t", i, "\t", weight[i], "\t", paste(obj[[i]]), 
         ",\n", file = file, append = TRUE)
     cat("\t;\nEND;\n", file = file, append = TRUE)
+}
+
+
+
+read.nexus.splits <- function(file)
+{
+    
+    X <- scan(file = file, what = "", sep = "\n", quiet = TRUE)
+    semico <- grep(";", X)
+    X=gsub("\\[(.*?)\\]", "", X) # get rid of comments
+    i1 <- grep("TAXLABELS", X, ignore.case = TRUE)    
+    taxlab <- TRUE 
+    if (taxlab) {
+        end <- semico[semico > i1][1]
+        x <- X[(i1 + 1):end] # assumes there's a 'new line' after "TRANSLATE"
+        ## x <- gsub("TRANSLATE", "", x, ignore.case = TRUE)
+        x <- unlist(strsplit(x, "[,; \t]"))   
+        x <- x[nzchar(x)]
+        x <- gsub("['\"]", "", x)
+        xntaxa <- length(x)
+    }
+    sp <- grep("SPLITS;", X, ignore.case = TRUE)
+    dims <- grep("DIMENSION", X, ignore.case = TRUE)
+    matr <- grep("MATRIX", X, ignore.case = TRUE)
+    start <- matr[matr>sp][1] + 1
+    end <- semico[semico>start][1] -1 
+    res <- vector("list", end - start + 1)
+    weights = numeric(end - start + 1)
+    j=1
+    for(i in start:end){
+        tmp = X[i]
+        tmp = strsplit(tmp, "\t")[[1]]
+        weights[j] = as.numeric(tmp[length(tmp)-1])
+        tmp = tmp[length(tmp)]
+        tmp = gsub("\\,", "", tmp)
+        res[[j]] = as.numeric(na.omit(as.numeric(strsplit(tmp, " ")[[1]])))
+        j=j+1
+    }
+    attr(res, "labels") = x
+    attr(res, "weights") = weights
+    class(res) = c("splits", "prop.part")
+    res
 }
 
 

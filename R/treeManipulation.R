@@ -615,55 +615,6 @@ allTrees <- function (n, rooted = FALSE, tip.label = NULL)
     trees
 }
 
- 
-# dn sehr viel schneller
-# dist.nodes ape replacement   
-bipi <- function (x)
-{
-   if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise")
-       x = reorder(x, "postorder")
-   nNode = x$Nnode
-   nTips = length(x$tip)
-   parent <- as.integer(x$edge[, 1])
-   child <- as.integer(x$edge[, 2])
-   res = vector("list", max(x$edge))
-   p = parent[1]
-   tmp = p
-   for (i in 1:nTips) res[[i]] = i
-   for (i in 1:length(parent)) {
-       pi = parent[i]
-       ci = child[i]
-       if (pi == p) {
-           if (ci < (nTips + 1))
-               tmp = cisort(tmp, ci)
-           else tmp = cisort(tmp, res[[ci]])
-       }
-       else {
-           res[[p]] = (tmp)
-           if (ci < (nTips + 1))
-               tmp = c(ci, pi)
-           else tmp = cisort(pi, res[[ci]])
-           p = pi
-       }
-   }
-   res[[p]] = (tmp)
-   res
-}
-
-
-all.dist <- function (tree, edge.length = FALSE)
-{
-   lab = tree$tip.label
-   l = dim(tree$edge)[1]
-   bp = bipi(tree)
-   m = length(bp)
-   b1 = matrix(0L, m, m)
-   for (i in 1:m) b1[i, bp[[i]]] = 1L
-   b2 = (1 - b1)
-   res1 = crossprod(b1, b2)
-   res2 = crossprod(b2, b1)
-   res1 + res2
-}
 
 
 dn <- function (x){
@@ -874,7 +825,7 @@ sprMove <- function(tree, m){
         newroot = cp[cp!=ch]
         
         newroot = newroot[newroot>nTips][1]
-        if(length(newroot)==0)browser()
+#        if(length(newroot)==0)browser()
         #!newroot = cp[cp>nTips][1]
         tree = reroot2(tree, newroot)
         edge = tree$edge
@@ -907,28 +858,6 @@ sprMove <- function(tree, m){
     tree    
 }
  
-
-rNNI_Old <- function(tree, moves=1, n=1){   
-    k = length(na.omit(match(tree$edge[,2], tree$edge[,1])))   
-    if(n==1){
-        trees = tree
-        for(i in 1:moves) trees = nnin(trees,sample(k,1))[[sample(2,1)]] 
-        trees$tip.label <- tree$tip.label
-    }  
-    else{
-        trees = vector("list", n)
-        for(j in 1:n){
-            tmp = tree 
-            for(i in 1:moves) tmp = nnin(tmp, sample(k,1))[[sample(2,1)]]
-            tmp$tip.label=NULL
-            trees[[j]] = tmp
-        }
-        attr(trees, "TipLabel") <- tree$tip.label
-        class(trees) <- "multiPhylo"   
-    }
-    trees
-}
-
 
 rNNI <- function (tree, moves = 1, n = length(moves)) 
 {
@@ -1087,6 +1016,26 @@ mrca.phylo <- function(x, node){
 # mrca.phylo <- getMRCA
 
 
-
+# 1090
+rNNI_Old <- function(tree, moves=1, n=1){   
+    k = length(na.omit(match(tree$edge[,2], tree$edge[,1])))   
+    if(n==1){
+        trees = tree
+        for(i in 1:moves) trees = nnin(trees,sample(k,1))[[sample(2,1)]] 
+        trees$tip.label <- tree$tip.label
+    }  
+    else{
+        trees = vector("list", n)
+        for(j in 1:n){
+            tmp = tree 
+            for(i in 1:moves) tmp = nnin(tmp, sample(k,1))[[sample(2,1)]]
+            tmp$tip.label=NULL
+            trees[[j]] = tmp
+        }
+        attr(trees, "TipLabel") <- tree$tip.label
+        class(trees) <- "multiPhylo"   
+    }
+    trees
+}
 
 

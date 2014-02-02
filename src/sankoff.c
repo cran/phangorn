@@ -60,10 +60,6 @@ void rowMinInt(int *dat, int n,  int k, double *res){
     }
 
 
-
-
-// Sankoff 
-// static R_INLINE 
 void sankoff4(double *dat, int n, double *cost, int k, double *result){
     int i, j, h; 
     double tmp[k], x;
@@ -76,7 +72,6 @@ void sankoff4(double *dat, int n, double *cost, int k, double *result){
         }                   
     }        
 }    
-
 
 
 SEXP sankoffQuartet(SEXP dat, SEXP sn, SEXP scost, SEXP sk){

@@ -199,8 +199,8 @@ indexNNI2 <- function(tree){
     cbind(edgeMatrix[c(1,3,2,4,5,6),], edgeMatrix[c(1,4,2,3,5,6),])
 }
        
-# nr statt data uebergeben
-# weniger Speicher 2 Zeilen weinger
+# nr statt data uebergeben, fitchQuartet ohne weight
+# weniger Speicher 2 Zeilen weinger 
 fitch.nni <- function (tree, data, ...) 
 {
     nTips = as.integer(length(tree$tip)) # auskommentieren?
@@ -273,7 +273,7 @@ optim.fitch <- function(tree, data, trace=1, rearrangements = "SPR", ...) {
     while (iter) {
         res <- fitch.nni(tree, dat, ...)
         tree <- res$tree
-        if(trace>1)cat("optimize topology: ", pscore , "-->", res$pscore, 
+        if(trace>1)cat("optimize topology: ", pscore + p0, "-->", res$pscore + p0, 
             "\n")
         pscore = res$pscore
         swap = swap + res$swap
@@ -281,16 +281,16 @@ optim.fitch <- function(tree, data, trace=1, rearrangements = "SPR", ...) {
             if(rearrangements=="SPR"){
                 tree <- fitch.spr(tree, dat)             
                 psc <- fast.fitch(tree, nr)
-                if(trace>1)cat("optimize topology (SPR): ", pscore , "-->", psc, "\n")
+                if(trace>1)cat("optimize topology (SPR): ", pscore + p0 , "-->", psc + p0, "\n")
                 if(pscore < psc+1e-6) iter=FALSE
                 pscore <- psc
             } 
             else iter = FALSE
         }
     }
-    if(trace>0)cat("Final p-score",pscore,"after ",swap, "nni operations \n") 
+    if(trace>0)cat("Final p-score",pscore + p0,"after ",swap, "nni operations \n") 
     if(rt)tree <- ptree(tree, data)  
-    attr(tree, "pscore") = pscore
+    attr(tree, "pscore") = pscore + p0
     tree
 }
 
