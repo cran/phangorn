@@ -1,7 +1,7 @@
 /* 
  * dist.c
  *
- * (c) 2008-2013  Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2008-2014 Klaus Schliep (klaus.schliep@gmail.com)
  * 
  * 
  * This code may be distributed under the GNU GPL
@@ -63,6 +63,8 @@ void giveIndex2(int *left, int* right, int *ll, int *lr, int *n, int *res){
              }    
         }
     }
+
+
 
 
 void PD(int *x, int *y, int *n, int *weight){

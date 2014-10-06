@@ -7,13 +7,12 @@ getIndexEdge <- function(tip, edge)
     ## 'integer(1)' mustn't be substituted by '0L' except if 'DUP = TRUE':
     .C("get_single_index_integer", as.integer(edge[, 2L]),
        as.integer(tip), integer(1L), PACKAGE = "phangorn",
-       NAOK = TRUE, DUP = FALSE)[[3L]]
+       NAOK = TRUE)[[3L]]
 
 getIndexEdge2 <- function(node, edge)
     .C("get_two_index_integer", as.integer(edge[, 1L]),
        as.integer(node), integer(2L), PACKAGE = "phangorn",
-       NAOK = TRUE, DUP = FALSE)[[3L]]
-
+       NAOK = TRUE)[[3L]]
 
 # no checks for postorder
 getRoot <- function (tree) 
@@ -437,7 +436,16 @@ addOneTree <- function (tree, subtree, i, node){
   tree$edge = edge 
   tree$Nnode = tree$Nnode + subtree$Nnode + 1L
   attr(tree, "order") = NULL
-  reorder(tree, "postorder")
+  tips1 = as.integer(length(tree$tip) + 1L)
+  tmproot = getRoot(tree)
+  if(tmproot!=tips1){
+      tree$edge[tree$edge==tmproot] = 0L
+      tree$edge[tree$edge==tips1] = tmproot
+      tree$edge[tree$edge==0L] = tips1    
+  }
+  tree <- reorder(tree, "postorder")
+  if(tmproot!=tips1) tree <- unroot(tree)
+  tree
 }         
 
 
@@ -450,7 +458,7 @@ reorderPruning <- function (x, ...)
         stop("more than 1 root found")
     n = length(parents)    
     m = max(x$edge)  # edge  parents 
-    neworder = .C("C_reorder", parents, child, as.integer(n), as.integer(m), integer(n), as.integer(root-1L), DUP=FALSE, PACKAGE = "phangorn")[[5]]    
+    neworder = .C("C_reorder", parents, child, as.integer(n), as.integer(m), integer(n), as.integer(root-1L), PACKAGE = "phangorn")[[5]]    
     x$edge = x$edge[neworder,]
     x$edge.length = x$edge.length[neworder]
     attr(x, "order") <- "pruningwise"
@@ -942,7 +950,7 @@ allChildren <- function(x){
            x <- reorder(x, "postorder")
        parent = x$edge[,1]
        children = x$edge[,2]
-       res <- .Call("AllChildren", as.integer(children), as.integer(parent), as.integer(max(x$edge)), PACKAGE="phangorn") 
+       res <- .Call("AllChildren", as.integer(children), as.integer(parent), as.integer(max(x$edge))) # , PACKAGE="phangorn"
        return(res)
    }
 }

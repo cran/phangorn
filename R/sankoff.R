@@ -1,15 +1,3 @@
-
-
-#prepareDataSankoff <- function(data){
-#    contrast = attr(data, "contrast")
-#    contrast[contrast == 0] = 1e+06
-#    contrast[contrast == 1] <- 0
-#    for (i in 1:length(data)) data[[i]] = contrast[data[[i]], , drop = FALSE]
-#    data
-#}
-
-
-# schneller weniger Speicher
 prepareDataSankoffNew <- function(data){
     contrast = attr(data, "contrast")
     contrast[contrast == 0] = 1.0e+06

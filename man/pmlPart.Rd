@@ -7,7 +7,7 @@
 }
 \usage{
 pmlPart(formula, object, control = pml.control(epsilon=1e-8, maxit=10, trace=1), 
-    model=NULL, ...)
+    model=NULL, rooted=FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -15,6 +15,7 @@ pmlPart(formula, object, control = pml.control(epsilon=1e-8, maxit=10, trace=1),
   \item{object}{ an object of class \code{pml} or a list of objects of class  \code{pml} . }
   \item{control}{A list of parameters for controlling the fitting process.} 
   \item{model}{A vector containing the models containing a model for each partition.} 
+  \item{rooted}{Are the gene trees rooted (ultrametric) or unrooted.} 
   \item{\dots}{Further arguments passed to or from other methods. }
 }
 \details{

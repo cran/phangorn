@@ -27,8 +27,8 @@ fitch <- function (tree, data, site="pscore")
             tree = unclass(tree)
 #            tree = lapply(tree, reorder, "postorder")
             site = ifelse(site == "pscore", 1L, 0L) 
-            on.exit(.C("fitch_free"))
-            .C("fitch_init", as.integer(data), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr)) 
+            on.exit(.C(fitch_free))
+            .C(fitch_init, as.integer(data), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr)) 
             return(sapply(tree, fast.fitch, nr, site)) 
         }       
     }
@@ -47,7 +47,7 @@ fit.fitch <- function (tree, data, returnData = c("pscore", "site", "data"))
     weight = attr(data, "weight")
     m = max(tree$edge) 
     q = length(tree$tip)
-    result <- .Call("FITCH", data[, tree$tip.label], as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), as.double(weight), as.integer(m), as.integer(q), PACKAGE = "phangorn")
+    result <- .Call(FITCH, data[, tree$tip.label], as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), as.double(weight), as.integer(m), as.integer(q))
     if (returnData == "site") return(result[[2]])
     pscore <- result[[1]]
     res = pscore
@@ -66,7 +66,7 @@ fnodesNew2 <- function (EDGE, nTips, nr)
     m= as.integer(max(EDGE)+1L)
     m2 = 2L*n
     root0 <- as.integer(node[n]) 
-    .Call("FNALL_NNI", as.integer(nr), node, edge, as.integer(n), as.integer(m), as.integer(m2), as.integer(root0))
+    .Call(FNALL_NNI, as.integer(nr), node, edge, as.integer(n), as.integer(m), as.integer(m2), as.integer(root0))
 }   
 
 
@@ -79,7 +79,7 @@ fnodesNew5 <- function (EDGE, nTips, nr)
     m= as.integer(max(EDGE)+1L)
     m2 = 2L*n
     root0 <- as.integer(node[n]) 
-    .Call("FNALL5", as.integer(nr), node, edge, as.integer(n), as.integer(m), as.integer(m2), as.integer(root0), PACKAGE="phangorn")
+    .Call(FNALL5, as.integer(nr), node, edge, as.integer(n), as.integer(m), as.integer(m2), as.integer(root0))
 }   
 
 
@@ -104,16 +104,15 @@ random.addition <- function(data, method="fitch")
 
     m = nr*(2L*nTips - 2L)
 
-    on.exit(.C("fitch_free"))
-    .C("fitch_init", as.integer(data), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr))
+    on.exit(.C(fitch_free))
+    .C(fitch_init, as.integer(data), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr))
     
     storage.mode(weight) <- "double"
 
     for (i in remaining) {               
         edge = tree$edge[,2]   
         score = fnodesNew5(tree$edge, nTips, nr)[edge]      
-        score <- .Call("FITCHTRIP3", as.integer(i), as.integer(nr), as.integer(edge), as.double(score), as.double(Inf), PACKAGE="phangorn")    
-        
+        score <- .Call(FITCHTRIP3, as.integer(i), as.integer(nr), as.integer(edge), as.double(score), as.double(Inf))    
         res = min(score) 
         nt = which.min(score)  
         tree = addOne(tree, i, nt) 
@@ -128,7 +127,7 @@ fast.fitch <- function (tree,  nr, ps = TRUE)
     node <- tree$edge[, 1]
     edge <- tree$edge[, 2]
     m = max(tree$edge) 
-    .Call("FITCH345", as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), as.integer(m), as.integer(ps), PACKAGE = "phangorn")
+    .Call(FITCH345, as.integer(nr), as.integer(node), as.integer(edge), as.integer(length(edge)), as.integer(m), as.integer(ps))
 }
 
 
@@ -140,9 +139,8 @@ fitch.spr <- function(tree, data){
   for(i in 1:nTips){
     treetmp = dropTip(tree, i)   
     edge = treetmp$edge[,2] 
-    score = fnodesNew5(treetmp$edge, nTips, nr)[edge]
-    
-    score <- .Call("FITCHTRIP3", as.integer(i), as.integer(nr), as.integer(edge),  as.double(score), as.double(minp), PACKAGE="phangorn")  
+    score = fnodesNew5(treetmp$edge, nTips, nr)[edge]   
+    score <- .Call(FITCHTRIP3, as.integer(i), as.integer(nr), as.integer(edge),  as.double(score), as.double(minp))  
     
     if(min(score)<minp){
       nt = which.min(score)
@@ -155,23 +153,90 @@ fitch.spr <- function(tree, data){
   root <- getRoot(tree) 
   for(i in (nTips+1L):m){
       if(i!=root){
-        tmp = dropNode(tree, i)
-        if(is.null(tmp))break()
-        edge = tmp[[1]]$edge[,2]                          
-        blub = fast.fitch(tmp[[2]], nr, TRUE)
-        score = fnodesNew5(tmp[[1]]$edge, nTips, nr)[edge] + blub
-        score <- .Call("FITCHTRIP3", as.integer(i), as.integer(nr), as.integer(edge), as.double(score), as.double(minp), PACKAGE="phangorn")    
-        if(min(score)<minp){
-            nt = which.min(score)
-            tree = addOneTree(tmp[[1]], tmp[[2]], nt, tmp[[3]])
-            minp <- min(score)
+          tmp = dropNode(tree, i)
+          if(!is.null(tmp)){
+          edge = tmp[[1]]$edge[,2]                          
+          blub = fast.fitch(tmp[[2]], nr, TRUE)
+          score = fnodesNew5(tmp[[1]]$edge, nTips, nr)[edge] + blub
+          score <- .Call(FITCHTRIP3, as.integer(i), as.integer(nr), as.integer(edge), as.double(score), as.double(minp))    
+          if(min(score)<minp){
+              nt = which.min(score)
+              tree = addOneTree(tmp[[1]], tmp[[2]], nt, tmp[[3]])
+              minp <- min(score)
+            }
         }
       }
   }
   tree
 }
 
-
+# raus 
+fitch.spr2 <- function(tree, data){
+    nTips = as.integer(length(tree$tip))
+    nr = attr(data, "nr")
+    minp = fast.fitch(tree, nr, TRUE)
+    
+    changeIndex <- function(x, i, j){
+        x$edge[x$edge == i] = 0L
+        x$edge[x$edge == j] = i
+        x$edge[x$edge == 0L] = j
+        x
+    }
+    
+    
+    for(i in 1:nTips){
+        treetmp = dropTip(tree, i)   
+        edge = treetmp$edge[,2] 
+        score = fnodesNew5(treetmp$edge, nTips, nr)[edge]   
+        score <- .Call(FITCHTRIP3, as.integer(i), as.integer(nr), as.integer(edge),  as.double(score), as.double(minp))  
+        
+        if(min(score)<minp){
+            nt = which.min(score)
+            tree = addOne(treetmp, i, nt) 
+            minp=min(score)
+            #            print(paste("new",minp))
+        }
+    }
+    m=max(tree$edge)
+    
+    root <- getRoot(tree) 
+    for(i in (nTips+1L):m){
+        if(i!=root){
+            tmp = dropNode(tree, i)
+            print(i)
+            if(!is.null(tmp)){
+            edge = tmp[[1]]$edge[,2]                          
+            blub = fast.fitch(tmp[[2]], nr, TRUE)
+            score = fnodesNew5(tmp[[1]]$edge, nTips, nr)[edge] + blub
+            score <- .Call(FITCHTRIP3, as.integer(i), as.integer(nr), as.integer(edge), as.double(score), as.double(minp))    
+            if(min(score)<minp){
+                nt = which.min(score)
+                tree = addOneTree(tmp[[1]], tmp[[2]], nt, tmp[[3]])
+                minp <- min(score)
+            }
+            }
+#            browser()
+#            j = Ancestors(tree, i, "parent")
+#            tree2 = reroot(tree, node=i)
+#            tree2 = unroot(tree2)
+#            tree2 = reorder(tree2, "postorder")
+#         if(j == (nTips+1L)) tree2 = changeIndex(tree2, as.integer(nTips+1L), as.integer(i))
+#            tmp = dropNode(tree2, j)
+#            if(!is.null(tmp)){
+#            edge = tmp[[1]]$edge[,2]                          
+#            blub = fast.fitch(tmp[[2]], nr, TRUE)
+#            score = fnodesNew5(tmp[[1]]$edge, nTips, nr)[edge] + blub
+#            score <- .Call("FITCHTRIP3", as.integer(j), as.integer(nr), as.integer(edge), as.double(score), as.double(minp), PACKAGE="phangorn")    
+#            if(min(score)<minp){
+#                nt = which.min(score)
+#                tree = addOneTree(tmp[[1]], tmp[[2]], nt, tmp[[3]])
+#                minp <- min(score)
+#            }
+#            }
+        }
+    }
+    tree
+}
            
 indexNNI2 <- function(tree){
     parent = tree$edge[, 1]
@@ -208,10 +273,9 @@ fitch.nni <- function (tree, data, ...)
     nr = attr(data, "nr")
     weight <- attr(data, "weight")
     p0 <- fast.fitch(tree, nr)
+    m <- dim(INDEX)[2]    
     tmp = fnodesNew2(tree$edge, nTips, nr)
-        
-    m <- dim(INDEX)[2]
-    pscore <- .C("fitchQuartet", as.integer(INDEX), as.integer(m), as.integer(nr), as.double(tmp[[1]]), as.double(tmp[[2]]), as.double(weight), double(m), PACKAGE = "phangorn")[[7]]    
+    pscore <- .C(fitchQuartet, as.integer(INDEX), as.integer(m), as.integer(nr), as.double(tmp[[1]]), as.double(tmp[[2]]), as.double(weight), double(m))[[7]]    
     swap <- 0
     candidates <- pscore < p0
     while (any(candidates)) {
@@ -263,8 +327,8 @@ optim.fitch <- function(tree, data, trace=1, rearrangements = "SPR", ...) {
     weight <- attr(data, "weight")
 
     m = nr*(2L*nTips - 2L)
-    on.exit(.C("fitch_free"))
-    .C("fitch_init", as.integer(dat), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr))
+    on.exit(.C(fitch_free))
+    .C(fitch_init, as.integer(dat), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr))
 
     tree$edge.length=NULL
     swap = 0
@@ -319,8 +383,8 @@ getOrder <- function (x)
 
     m = nr*(2L*nTips - 2L)
 
-    on.exit(.C("fitch_free"))
-    .C("fitch_init", as.integer(data), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr))
+    on.exit(.C(fitch_free))
+    .C(fitch_init, as.integer(data), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr))
 
     for(i in 1:length(remaining)){
         tree$edge[3,2]= remaining[i]     
@@ -340,7 +404,7 @@ getOrder <- function (x)
         nt = numeric(l)
         k = length(added)+1L
         for(j in 1:l){
-            score <- .Call("FITCHTRIP3", as.integer(remaining[j]), as.integer(nr), as.integer(edge), as.double(score0), as.double(Inf), PACKAGE="phangorn")   
+            score <- .Call(FITCHTRIP3, as.integer(remaining[j]), as.integer(nr), as.integer(edge), as.double(score0), as.double(Inf))   
             
 #            score = score0[edge] + psc
             res[j] = min(score) 
@@ -381,8 +445,8 @@ bab <- function (data, tree = NULL, trace = 1, ...)
     weight <- as.double(attr(data, "weight"))
     data <- prepareDataFitch(data)
     m = nr*(2L*nTips - 2L)
-    on.exit(.C("fitch_free"))
-    .C("fitch_init", as.integer(data), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr))
+    on.exit(.C(fitch_free))
+    .C(fitch_init, as.integer(data), as.integer(nTips*nr), as.integer(m), as.double(weight), as.integer(nr))
     mmsAmb = 0
     mmsAmb = TMP %*% weight  
     mmsAmb = mmsAmb[nTips] - mmsAmb
@@ -426,13 +490,13 @@ bab <- function (data, tree = NULL, trace = 1, ...)
         tmpTree <- trees[[a]][[b]]
         edge = tmpTree[,2]  
         score = fnodesNew5(tmpTree, nTips, nr)[edge] + mms0[a+1L] 
-        score <- .Call("FITCHTRIP3", as.integer(inord[a+1L]), as.integer(nr), as.integer(edge), as.double(score), as.double(bound), PACKAGE="phangorn")    
+        score <- .Call(FITCHTRIP3, as.integer(inord[a+1L]), as.integer(nr), as.integer(edge), as.double(score), as.double(bound))    
                    
         ms = min(score)
         if(ms<=bound){
             if((a+1L)<nTips){
                 ind = (1:L[a])[score<=bound]
-                for(i in 1:length(ind))trees[[a+1]][[i]] <- .Call("AddOne", tmpTree, as.integer(inord[a+1L]), as.integer(ind[i]), as.integer(L[a]), as.integer(M[a]), PACKAGE="phangorn") 
+                for(i in 1:length(ind))trees[[a+1]][[i]] <- .Call(AddOne, tmpTree, as.integer(inord[a+1L]), as.integer(ind[i]), as.integer(L[a]), as.integer(M[a])) 
                 l = length(ind)
                 os = order(score[ind], decreasing=TRUE)                 
                 PSC = rbind(PSC, cbind(rep(a+1, l), os, score[ind][os] ))
@@ -440,7 +504,7 @@ bab <- function (data, tree = NULL, trace = 1, ...)
             else{
                 ind = which(score==ms) 
                 tmp <- vector("list", length(ind)) 
-                for(i in 1:length(ind))tmp[[i]] <- .Call("AddOne", tmpTree, as.integer(inord[a+1L]), as.integer(ind[i]), as.integer(L[a]), as.integer(M[a]), PACKAGE="phangorn")
+                for(i in 1:length(ind))tmp[[i]] <- .Call(AddOne, tmpTree, as.integer(inord[a+1L]), as.integer(ind[i]), as.integer(L[a]), as.integer(M[a]))
 
                 if(ms < bound){
                      bound = ms

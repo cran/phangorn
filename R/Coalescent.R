@@ -1,48 +1,13 @@
-# similar to node.depth.edge.length  
-nodeHeight <- function(tree){
-    tree <- reorder(tree)
-    edge = tree$edge[,2]
-    node = tree$edge[,1]
-    m <- max(tree$edge)
-    res = numeric(m)
-    el  = numeric(m)
-    el[edge] = tree$edge.length
-    for(i in 1:length(edge)){
-         ei = edge[i]   
-         res[ei] = res[node[i]] + el[ei]
-    }
-    max(res) - res
-}
-
-# postorder version
-nodeHeight2 <- function(tree) 
+nodeHeight <- function(tree) 
 {
     if(is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise")
         tree <- reorder(tree, "postorder")
     edge = tree$edge[, 2]
     node = tree$edge[, 1]
     m <- max(tree$edge)
-    res = numeric(m)
-    el = numeric(m)
+    el = double(m)
     el[edge] = tree$edge.length
-    for (i in length(edge):1) {
-        ei = edge[i]
-        res[ei] = res[node[i]] + el[ei]
-    }
-    max(res) - res
-}
-
-
-nodeHeight3 <- function(tree) 
-{
-    if(is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise")
-        tree <- reorder(tree, "postorder")
-    edge = tree$edge[, 2]
-    node = tree$edge[, 1]
-    m <- max(tree$edge)
-    el = numeric(m)
-    el[edge] = tree$edge.length
-    res = .C("nodeH", edge, node, el, as.integer(length(edge)),  numeric(m))[[5]]
+    res = .C("nodeH", as.integer(edge), as.integer(node), el, as.integer(length(edge)), double(m))[[5]] 
     max(res) - res
 }
 
@@ -88,6 +53,7 @@ comp2 <- function(x, y){
 
 # single linkage of minimal coalescent times
 # extends speciesTree fom ape
+
 coalSpeciesTree <- function(tree, X, sTree=NULL){
   
   if(is.null(X))return(speciesTree(tree))  

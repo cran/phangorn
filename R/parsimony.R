@@ -75,54 +75,100 @@ MinMaxPars <- function(tree, data){
     ext[is.na(match(edge, node))] = 1L
     res = matrix(0L, d, 2) 
     for(i in 1:d){
-        res[i, ] = .C("countMPR", numeric(2), dat[,edge[i]], dat[,node[i]], nr, as.double(weight), ext[i], PACKAGE = "phangorn")[[1]]
+        res[i, ] = .C(countMPR, numeric(2), dat[,edge[i]], dat[,node[i]], nr, as.double(weight), ext[i])[[1]]
     }
     res 
 }
 
 
-mpr <- function (tree, data, returnData = FALSE) 
+mpr2 <- function (tree, data, returnData = FALSE) 
 {
-    data = prepareDataFitch(data)
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == 
-        "cladewise") 
+    if (!is.binary.tree(tree)) 
+        stop("tree is not binary, the current implementation only supports binary trees!")     
+    if (is.null(attr(tree, "order")) || attr(tree, "order") != "postorder") 
         tree <- reorder(tree, "postorder")
-#    if (!is.binary.tree(tree)) 
-#        warning("tree is not binary, parsimony score may be wrong!!!")
-    nr = attr(data, "nr")
+    storage.mode(tree$edge) <- "integer"
+    data <- subset(data, tree$tip.label)
+    data <- prepareDataFitch(data)
+    nr = as.integer(attr(data, "nr"))
+    nTips = as.integer(length(tree$tip.label))
+    storage.mode(tree$edge) <- "integer"
     node <- tree$edge[, 1]
     edge <- tree$edge[, 2]
     weight = as.double(attr(data, "weight"))
-    m = length(edge) + 1
+    m = as.integer(max(tree$edge)) #length(edge) + 1
+    q = length(tree$tip)    
+    root <- as.integer(node[!match(node, edge, 0)][1])
+    l = length(node)
+    m2 = 2L*l
+    root0 <- as.integer(node[l]) 
+
+    on.exit(.C(fitch_free))
+    .C(fitch_init, as.integer(data), as.integer(nTips*nr), as.integer(nr*m), as.double(weight), as.integer(nr))
+#    tmp2 = fnodesNew5(tree$edge, nTips, nr)
+    tmp2 = .Call(FNALL5, as.integer(nr), as.integer(node), as.integer(edge), as.integer(l), 
+        as.integer(m + 1L), as.integer(m2), as.integer(root0))
+    if (!is.rooted2(tree)) {
+        ind = edge[node == root0]
+        tmpRoot = .C(prepRooted,integer(nr), nr, as.integer(ind))[[1]]
+        l = l-3L
+    }
+    result = .C(C_MPR,integer(nr*m), nr, as.integer(node[1:l]), as.integer(edge[1:l]), as.integer(l))[[1]]
+    attr(result, "dim") = c(nr, m)
+    result[,1:q] = data
+    if(!is.rooted2(tree))result[, root] = tmpRoot
+#    row.names = node0
+    result
+}
+
+
+mpr <-function (tree, data, returnData = FALSE) 
+{
+    if (!is.binary.tree(tree)) 
+        stop("tree is not binary, the current implementation only supports binary trees!")
+    
+    if (is.null(attr(tree, "order")) || attr(tree, "order") != 
+            "postorder") 
+        tree <- reorder(tree, "postorder")
+    storage.mode(tree$edge) <- "integer"
+    data <- subset(data, tree$tip.label)
+    data <- prepareDataFitch(data)
+    
+    nr = as.integer(attr(data, "nr"))
+    nTips = as.integer(length(tree$tip.label))
+    storage.mode(tree$edge) <- "integer"
+    node <- tree$edge[, 1]
+    edge <- tree$edge[, 2]
+    weight = as.double(attr(data, "weight"))
+    m = as.integer(max(tree$edge)) #length(edge) + 1
     q = length(tree$tip)
     root <- as.integer(node[!match(node, edge, 0)][1])
-    nTips = length(tree$tip)
+    
     node0 = node[node != root]
     node0 = unique(node0[length(node0):1L])
-
-    data <- data[,tree$tip.label]
     
-    on.exit(.C(fitch_free))
-    .C(fitch_init, as.integer(data), as.integer(nTips*nr), as.integer(nr*(2L*nTips - 2L)), as.double(weight), as.integer(nr))
+#    on.exit(.C(fitch_free))
+    .C(fitch_init, as.integer(data), as.integer(nTips*nr), as.integer(nr*m), as.double(weight), as.integer(nr))
     tmp2 = fnodesNew5(tree$edge, nTips, nr)
-    tmp3 <- .Call(getData, as.integer(nr), as.integer(2L*nTips - 2L))    
-# in C
+    tmp3 <- .Call(getData, as.integer(nr), m)
+    # as.integer(2L*nTips - 1L))    
+    # in C
     if (!is.rooted2(tree)) {
         root = getRoot(tree)
         ind = edge[node == root]
         rSeq = .C(fitchTriplet, integer(nr), tmp3[[1]][, ind[1]], 
-            tmp3[[1]][, ind[2]], tmp3[[1]][, ind[3]], as.integer(nr))
+                  tmp3[[1]][, ind[2]], tmp3[[1]][, ind[3]], as.integer(nr))
         tmp3[[1]][, root] = rSeq[[1]]
-        tmp3[[1]][, root] = rSeq[[1]]
+        #        tmp3[[1]][, root] = rSeq[[1]]
     }
     result = tmp3[[1]]
     for (i in node0) {
         ind = Children(tree, i)
         result[, i] = .C(fitchTriplet, integer(nr), tmp3[[1]][, 
-            ind[1]], tmp3[[1]][, ind[2]], tmp3[[2]][, i], as.integer(nr))[[1]]
+                                                              ind[1]], tmp3[[1]][, ind[2]], tmp3[[2]][, i], as.integer(nr))[[1]]
     }
     attr(result, "dim") = c(nr, m)
-    row.names = node0
+    #    row.names = node0
     result
 }
 
@@ -154,7 +200,7 @@ plotAnc <- function (tree, data, i = 1, col=NULL, cex.pie=par("cex"), pos="botto
    BOTHlabels(pie = y, XX = XX, YY = YY, adj = c(0.5, 0.5),
        frame = "rect", pch = NULL, sel = 1:length(XX), thermo = NULL,
        piecol = col, col = "black", bg = "lightblue", horiz = FALSE,
-       width = NULL, height = NULL)
+       width = NULL, height = NULL, cex=cex.pie)
    legend(pos, levels, text.col = col)
 }
 
@@ -317,7 +363,7 @@ add.one <- function (tree, tip.name, i){
     edge[i, 2] <- m + 2L
     neworder = .C("C_reorder", edge[, 1], edge[, 2], as.integer(l + 
            2L), as.integer(m + 2L), integer(l + 2L), as.integer(nTips + 
-           1L), DUP = FALSE, PACKAGE = "phangorn")[[5]]
+           1L), PACKAGE = "phangorn")[[5]] 
     tmp$edge <- edge[neworder, ]
     tmp
 }
@@ -427,15 +473,6 @@ prepareDataSankoff <- function(data){
     data
 }
 
-
-# schneller 
-# prepareDataSankoffNew <- function(data){
-#    contrast = attr(data, "contrast")
-#    contrast[contrast == 0] = 1e+06
-#    contrast[contrast == 1] <- 0
-#    attr(data, "contrast") <- contrast
-#    data
-#}
 
 
 sankoff <- function (tree, data, cost = NULL, site = 'pscore') 
@@ -622,7 +659,9 @@ pratchet <- function (data, start=NULL, method="fitch", maxit=100, k=5, trace=1,
         k=2
         trees = trees[-1]
         while (length(trees) > 0) {
-# change RF to do this faster RF.dist(res, trees)            
+# test and replace            
+# change RF to do this faster RF.dist(res, trees) class(tree) = "multiPhylo"
+#            rf2 = RF.dist(res, trees, FALSE)
             rf = sapply(trees, RF.dist, res, FALSE) 
             if(any(rf==0))trees = trees[-which(rf == 0)]
             if (length(trees) > 0) {
@@ -741,26 +780,26 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
     if (!is.rooted2(tree)) {
         root = getRoot(tree)
         ind = edge[node == root]
-        rSeq = .C("fitchTriplet", integer(nr), dat[, ind[1]], 
+        rSeq = .C(fitchTriplet, integer(nr), dat[, ind[1]], 
             dat[, ind[2]], dat[, ind[3]], as.integer(nr))
         dat[, root] = rSeq[[1]]
     }
-    result <- .C("ACCTRAN2", dat, as.integer(nr), numeric(nr), 
+    result <- .C(ACCTRAN2, dat, as.integer(nr), numeric(nr), 
         as.integer(node[l:1L]), as.integer(edge[l:1L]), l, as.double(weight), 
-        numeric(l), as.integer(nTips), PACKAGE = "phangorn")
+        numeric(l), as.integer(nTips))
     el = result[[8]][l:1L]
     if (!is.rooted2(tree)) {
         ind2 = which(node[] == root)
         dat = matrix(result[[1]], nr, max(node))
-        result <- .C("ACCTRAN3", result[[1]], as.integer(nr), 
+        result <- .C(ACCTRAN3, result[[1]], as.integer(nr), 
             numeric(nr), as.integer(node[(l - 3L):1L]), as.integer(edge[(l - 
                 3L):1L]), l - 3L, as.double(weight), numeric(l), 
-            as.integer(nTips), PACKAGE = "phangorn")
+            as.integer(nTips))
         el = result[[8]][(l - 3L):1L]
-        pars = .C("fitchTripletACC4", dat[, root], dat[, ind[1]], 
+        pars = .C(fitchTripletACC4, dat[, root], dat[, ind[1]], 
             dat[, ind[2]], dat[, ind[3]], as.integer(nr), numeric(1), 
             numeric(1), numeric(1), as.double(weight), numeric(nr), 
-            integer(nr), PACKAGE = "phangorn")
+            integer(nr))
         el[ind2[1]] = pars[[6]]
         el[ind2[2]] = pars[[7]]
         el[ind2[3]] = pars[[8]]
@@ -768,7 +807,7 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
     else {
         result <- .C("ACCTRAN3", result[[1]], as.integer(nr), 
             numeric(nr), as.integer(node[l:1L]), as.integer(edge[l:1L]), 
-            l, as.double(weight), numeric(l), as.integer(nTips), PACKAGE = "phangorn")
+            l, as.double(weight), numeric(l), as.integer(nTips))
         el = result[[8]][l:1L]
     }
     tree$edge.length = el

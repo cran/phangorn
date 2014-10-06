@@ -95,7 +95,7 @@ SEXP sankoffQuartet(SEXP dat, SEXP sn, SEXP scost, SEXP sk){
     return(result);        
 }    
 
-
+/*
 SEXP sankoffTwin(SEXP dat1, SEXP dat2, SEXP sn, SEXP scost, SEXP sk){
     int j, n=INTEGER(sn)[0], k = INTEGER(sk)[0];  
     double *cost, *tmp;
@@ -109,7 +109,7 @@ SEXP sankoffTwin(SEXP dat1, SEXP dat2, SEXP sn, SEXP scost, SEXP sk){
     UNPROTECT(2);    
     return(result);        
 } 
-
+*/
 
 SEXP sankoff3(SEXP dlist, SEXP scost, SEXP nr, SEXP nc, SEXP node, SEXP edge, SEXP mNodes, SEXP tips){
     R_len_t i, n = length(node), nt = length(tips);

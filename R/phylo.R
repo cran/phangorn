@@ -387,16 +387,25 @@ PNJ <- function (data)
 #
 # splits
 #
-splitsNetwork <- function(dm, gamma=.1, lambda=1e-6, weight=NULL){
+splitsNetwork <- function(dm, splits=NULL, gamma=.1, lambda=1e-6, weight=NULL){
     dm = as.matrix(dm)
     k = dim(dm)[1]
-    X2 = designAll(k)
-    X=X2[[1]]
+    
+    if(!is.null(splits)){
+        tmp = which(sapply(splits, length)==k)
+        splits = splits[-tmp]
+    }
+    
+    if(is.null(splits)){
+        X2 = designAll(k)
+        X=X2[[1]]
+    }
+    else X = as.matrix(splits2design(splits))
     
     y = dm[lower.tri(dm)]
-    ind = c(2^(0:(k-2)),2^(k-1)-1)
-    
-    y2 = lm(y~X[,ind]-1)$res
+    if(is.null(splits))ind = c(2^(0:(k-2)),2^(k-1)-1)
+    else ind = which(sapply(splits, length)==1)
+ #   y2 = lm(y~X[,ind]-1)$res
     n = dim(X)[2]
 
     ridge <- lambda * diag(n) 
@@ -406,6 +415,8 @@ splitsNetwork <- function(dm, gamma=.1, lambda=1e-6, weight=NULL){
     if(!is.null(weight)) dvec <- crossprod(X * sqrt(weight),y * sqrt(weight))
     else dvec <- crossprod(X, y)
 
+#    Dmat <- as.matrix(Dmat)
+#    dvec <- as.vector(dvec) 
     
     ind1       <- rep(1,n)
     ind1[ind]  <- 0 
@@ -434,9 +445,11 @@ splitsNetwork <- function(dm, gamma=.1, lambda=1e-6, weight=NULL){
     RSS1 = sum((y-X[,ind2]%*%solution[ind2])^2)
     RSS2 = sum((y-X[,ind2]%*%solution2)^2)
     
-    
-    splits = vector("list", length(ind2))
-    for(i in 1:length(ind2))splits[[i]] = which(X2[[2]][ind2[i],]==1)
+    if(is.null(splits)){
+        splits = vector("list", length(ind2))
+        for(i in 1:length(ind2))splits[[i]] = which(X2[[2]][ind2[i],]==1)
+    } 
+    else splits = splits[ind2]
     attr(splits, "weights") = solution[ind2]
     attr(splits, "unrestricted") = solution2
     attr(splits, "stats") = c(df=n2, RSS_p = RSS1, RSS_u=RSS2)
@@ -673,7 +686,8 @@ modelTest <- function (object, tree = NULL, model = c("JC", "F81", "K80",
     }
     eval.success <- FALSE
     if (!eval.success & multicore) {
-        if (!require(parallel) || .Platform$GUI != "X11") {
+# !require(parallel) ||         
+        if (.Platform$GUI != "X11") {
             warning("package 'parallel' not found or GUI is used, \n      analysis is performed in serial")
         }
         else {
@@ -916,6 +930,17 @@ pml.init <- function(data, k=1L){
   nr <- attr(data, "nr")
   nc <- attr(data, "nc")    
   .C("ll_init", as.integer(nr), as.integer(nTips), as.integer(nc), as.integer(k))
+} 
+
+
+pml.free2 <- function(){.C("ll_free2")}
+
+pml.init2 <- function(data, k=1L){
+    nTips <- length(data)
+    nr <- attr(data, "nr")
+    nc <- attr(data, "nc")    
+    weight <- attr(data, "weight")
+    .C("ll_init2", as.integer(unlist(data, use.names=FALSE)), as.double(weight), as.integer(nr), as.integer(nTips), as.integer(nc), as.integer(k))
 } 
 
 
@@ -1691,7 +1716,7 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
     # length(tree$edge.length)    
     if (type == "CODON") {
         df <- df + (k > 1) + (inv > 0) + 
-            length(unique(bf)) - 1
+            length(unique(bf)) - 1 + (dnds != 1) + (tstv != 1) 
     }
     else df = df + (k > 1) + (inv > 0) + 
         length(unique(bf)) - 1 + length(unique(Q)) - 1
@@ -1702,8 +1727,8 @@ optim.pml <- function (object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
         INV = INV, ll.0 = ll.0, tree = tree, lv = tmp$resll, 
         call = call, df = df, wMix = wMix, llMix = llMix)
     if (type == "CODON") {
-        object$dnds <- 1
-        object$tstv <- 1
+        object$dnds <- dnds
+        object$tstv <- tstv
     }
     class(object) = "pml"
 
@@ -1917,8 +1942,7 @@ optimEdge <- function (tree, data, eig=eig, Q=Q, w=w, g=g, bf=bf, rate=rate, ll.
  #              lg = length(parent.dat)
                P <- getP(old.el, eig, g)
                dad <- .Call("getDAD", LL, dat[, child[j]], P, nr, nc)
-# getDad, getPrep getDad, getPrep 
-# FS4 / FS5 , getM3 / getM4               
+# getDad, getPrep getDad, getPrep             
                X <- .Call("getPrep", dad, dat[, child[j]], eig[[2]], evi, nr, nc)
                           
                newEL <- .Call("FS4", eig, as.integer(length(bf)), as.double(old.el), 
@@ -1980,7 +2004,7 @@ pml.move <- function(EDGE, el, data, g, w, eig, k, nTips, bf){
 }
 
 
-# spaeter raus
+# spaeter raus in optimEdge
 pml6 <- function (tree, data, bf, eig, ll.0, w, g, ...) 
 {
     lll=ll.0
@@ -2244,7 +2268,7 @@ makePart <- function(fit, weight=~index+genes){
 }
 
 
-pmlPart <- function (formula, object, control=pml.control(epsilon=1e-8, maxit=10, trace=1), model=NULL, ...) 
+pmlPart <- function (formula, object, control=pml.control(epsilon=1e-8, maxit=10, trace=1), model=NULL, rooted=FALSE, ...) 
 {
     call <- match.call()
     form <- phangornParseFormula(formula)
@@ -2284,8 +2308,9 @@ pmlPart <- function (formula, object, control=pml.control(epsilon=1e-8, maxit=10
         loli = 0
         if(any(c(PartNni, PartBf, PartInv, PartQ, PartGamma, PartEdge, PartRate))){
             for (i in 1:p) {
-                fits[[i]] = optim.pml(fits[[i]], PartNni, PartBf, 
-                    PartQ, PartInv, PartGamma, PartEdge, PartRate, 
+                fits[[i]] = optim.pml(fits[[i]], optNni=PartNni, optBf=PartBf, 
+                    optQ=PartQ, optInv=PartInv, optGamma=PartGamma,  optEdge=PartEdge, 
+                    optRate=PartRate, optRooted=rooted,  
                     control = pml.control(maxit = 3, epsilon = 1e-8, trace-1), model=model[i])
             }
         } 
@@ -2361,18 +2386,33 @@ pmlPart <- function (formula, object, control=pml.control(epsilon=1e-8, maxit=10
 #
 # Distance Matrix methods
 #
-bip <- function (x) 
+
+#bip <- function (x) 
+#{
+#    if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
+#        x = reorder(x, "postorder")
+#    nTips = length(x$tip)
+#    res = vector("list", max(x$edge))
+#    res[1:nTips]=1:nTips
+#    tmp = bipart(x)
+#    res[attr(tmp, "nodes")] = tmp
+#    res
+#}
+
+
+bip <- function (obj) 
 {
-    if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
-        x = reorder(x, "postorder")
-    nTips = length(x$tip)
-    res = vector("list", max(x$edge))
-    res[1:nTips]=1:nTips
-    tmp = bipart(x)
-    res[attr(tmp, "nodes")] = tmp
+    if (is.null(attr(obj, "order")) || attr(obj, "order") == 
+            "cladewise") 
+        obj <- reorder(obj, "postorder")
+    maxP = max(obj$edge)
+    nTips = length(obj$tip)
+    res <- .Call("C_bip", as.integer(obj$edge[, 1]), as.integer(obj$edge[, 2]), as.integer(nTips), as.integer(maxP))
     res
 }
 
+
+# raus
 bip2 <- function (x) 
 {
     if(is.null(attr(x,"order")) || attr(x, "order")=="cladewise") x = reorder(x, "postorder")
@@ -2421,23 +2461,34 @@ designTree <- function(tree, method="unrooted", sparse=FALSE, ...){
 }
 
 
-designUnrooted = function(tree,order=NULL){
-    if(is.rooted(tree))tree = unroot(tree)
-    p=bipartition(tree)
-    if(!is.null(order)) p=p[,order]
-    n = dim(p)[1]
+
+# splits now work
+designUnrooted = function (tree, order = NULL) 
+{
+    if(inherits(tree, "phylo")){ 
+        if (is.rooted(tree)) 
+            tree = unroot(tree)
+        p = bipartition(tree)
+    }
+    if(inherits(tree, "splits")) p <- as.matrix(tree)
+    if (!is.null(order)) 
+        p = p[, order]
+    
     m = dim(p)[2]
-    res = matrix(0,(m-1)*m/2, n)
+    ind = rowSums(p)
+    p=p[ind!=m,]
+    n = dim(p)[1]
+    res = matrix(0, (m - 1) * m/2, n)
     k = 1
-    for(i in 1:(m-1)){
-        for(j in (i+1):m){
-            res[k,] = p[,i]!=p[,j]
-            k=k+1
+    for (i in 1:(m - 1)) {
+        for (j in (i + 1):m) {
+            res[k, ] = p[, i] != p[, j]
+            k = k + 1
         }
     }
-    colnames(res) = paste(tree$edge[,1],tree$edge[,2],sep="<->")
+    if(inherits(tree, "phylo"))colnames(res) = paste(tree$edge[, 1], tree$edge[, 2], sep = "<->")
     res
-    }
+}
 
     
 designUltra <- function (tree, sparse=FALSE) 
@@ -2580,8 +2631,8 @@ designStar = function(n){
 cisort <- function(x,y){
     k = length(x)
     l=length(y)
-    .C("C_cisort",as.integer(x),as.integer(y),k,l, integer(k+l), DUP=FALSE)[[5]]
-}
+    .C("C_cisort",as.integer(x),as.integer(y),k,l, integer(k+l))[[5]]
+}  
 
 
 bipart <- function(obj){
@@ -2590,7 +2641,7 @@ bipart <- function(obj){
     maxP  = max(obj$edge)
     nTips = length(obj$tip)
     res <- .Call("C_bipart", as.integer(obj$edge[,1]) , as.integer(obj$edge[,2]), as.integer(nTips), as.integer(maxP))  #, as.integer(obj$Nnode))
-    attr(res, "nodes") = unique(obj$edge[,1])
+#    attr(res, "nodes") = unique(obj$edge[,1])
     res    
 }
 
@@ -3095,6 +3146,9 @@ update.pml <- function (object, ...)
     
     resll <- matrix(0, nr, k)
     nTips = as.integer(length(tree$tip.label))  
+
+    data <- subset(data, tree$tip.label)     
+
     on.exit(.C("ll_free"))
     .C("ll_init", nr, nTips, nc, as.integer(k))
     tmp <- pml.fit(tree, data, bf, shape = shape, k = k, Q = Q, levels = attr(data, "levels"),
@@ -3847,64 +3901,6 @@ optimPartNNI <- function (object, AllEdge=TRUE,...)
 }
 
 
-#
-# add codon models, change to phyDat statt 3* 
-#
-simSeq = function(tree, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type = "DNA", model="USER",
-    levels = NULL, rate=1, ancestral=FALSE){
-    
-    pt <- match.arg(type, c("DNA", "AA", "USER"))
-    if (pt == "DNA") 
-        levels <- c("a", "c", "g", "t")
-    if (pt == "AA") 
-        levels <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i", 
-        "l", "k", "m", "f", "p", "s", "t", "w", "y", "v")
-    if (pt == "USER") 
-        if(is.null(levels))stop("levels have to be supplied if type is USER")
-     
-    lbf = length(levels)
-    
-    if (type == "AA" & !is.null(model)) {
-#        model <- match.arg(model, c("USER", "WAG", "JTT", "LG", "Dayhoff", "cpREV", "mtmam", "mtArt", "MtZoa", "mtREV24"))
-        model <- match.arg(model, c("USER", .aamodels))
-        if(model!="USER")getModelAA(model, bf=is.null(bf), Q=is.null(Q))
-    }
-
-    if(is.null(bf)) bf = rep(1/lbf,lbf)
-    if(is.null(Q)) Q = rep(1,lbf*(lbf-1)/2)
-    if(is.matrix(Q)) Q=Q[lower.tri(Q)]
-    eig = edQt(Q, bf)
-    
-    m = length(levels)    
-    
-    if(is.null(rootseq))rootseq = sample(levels, l, replace=TRUE, prob=bf)
-    tree = reorder(tree) 
-    edge = tree$edge
-    nNodes = max(edge)
-    res = matrix(NA, l, nNodes)
-    parent <- as.integer(edge[, 1])
-    child <- as.integer(edge[, 2])
-    root <- as.integer(parent[!match(parent, child, 0)][1])  
-    res[, root] = rootseq   
-    tl = tree$edge.length
-    for(i in 1:length(tl)){
-        from = parent[i] 
-        to = child[i]
-        P = getP(tl[i], eig, rate)[[1]]
-        for(j in 1:m){
-            ind = res[,from]==levels[j]
-            res[ind,to] = sample(levels, sum(ind), replace=TRUE, prob=P[,j])
-        }
-    }
-    k = length(tree$tip)
-    label = c(tree$tip, as.character((k+1):nNodes))
-    colnames(res)=label 
-    if(!ancestral)res = res[, tree$tip, drop=FALSE]
-    if(pt=="DNA") return(phyDat.DNA(as.data.frame(res), return.index=TRUE))
-    if(pt=="AA") return(phyDat.AA(as.data.frame(res), return.index=TRUE))
-    if(pt=="USER") return(phyDat.default(as.data.frame(res), levels = levels, return.index=TRUE))
-}        
-
       
 SH.test <- function (..., B = 10000, data = NULL)
 {
@@ -3987,7 +3983,8 @@ bootstrap.pml = function (x, bs = 100, trees = TRUE, multicore=FALSE,  ...)
     }
     eval.success <- FALSE
     if (!eval.success & multicore) {
-        if (!require(parallel) || .Platform$GUI!="X11") {
+#  !require(parallel) ||      
+        if (.Platform$GUI!="X11") {
             warning("package 'parallel' not found or GUI is used, 
             bootstrapping is performed in serial")
         } else {       
@@ -4003,30 +4000,20 @@ bootstrap.pml = function (x, bs = 100, trees = TRUE, multicore=FALSE,  ...)
 }
 
 
-bootstrap.phyDat <- function (x, FUN, bs = 100, multicore=FALSE, ...) 
+bootstrap.phyDat <- function (x, FUN, bs = 100, mc.cores=1L, ...) 
 {
     weight = attr(x, "weight")
     v = rep(1:length(weight), weight)
     BS = vector("list", bs)
     for(i in 1:bs)BS[[i]]=tabulate(sample(v, replace=TRUE),length(weight)) 
- 
     fitPar <- function(weights, data, ...){     
-         ind <- which(weights > 0)
-         data <- getRows(data, ind)
-         attr(data, "weight") <- weights[ind]
-         FUN(data,...)        
+        ind <- which(weights > 0)
+        data <- getRows(data, ind)
+        attr(data, "weight") <- weights[ind]
+        FUN(data,...)        
     }
-    eval.success <- FALSE
-    if (!eval.success & multicore) {         
-        if (!require(parallel) || .Platform$GUI!="X11") {
-            warning("package 'parallel' not found or GUI is used, 
-            bootstrapping is performed in serial")
-        } else { 
-            res <- mclapply(BS, fitPar, x, ...) 
-            eval.success <- TRUE
-        } 
-    }
-    if (!eval.success) res <- lapply(BS, fitPar, x, ...) 
+    res <- mclapply(BS, fitPar, x, ..., mc.cores = mc.cores) 
+    if(class(res[[1]]) == "phylo") class(res) <- "multiPhylo"
     res 
 }
 
@@ -4115,77 +4102,6 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
             bs.adj = c(0.5, 0.5)
         edgelabels(label[ind], frame = "none", col = bs.col, 
                    adj = bs.adj, ...)
-    }
-    invisible(tree)
-}
-
-
-plotBSOld <- function (tree, BStrees, type = "unrooted", bs.col = "black", 
-    bs.adj = NULL, ...) 
-{
-
-    prop.clades <- function (phy, ..., part = NULL, rooted = FALSE) 
-    {
-        if (is.null(part)) {
-            obj <- list(...)
-            if (length(obj) == 1 && class(obj[[1]]) != "phylo") 
-                obj <- unlist(obj, recursive = FALSE)
-# anders herum sicherer??
-            if(!identical(phy$tip, obj[[1]]$tip)) obj[[1]] = checkLabels(obj[[1]], phy$tip)
-            part <- prop.part(obj, check.labels = TRUE)
-        }
-        bp <- prop.part(phy)
-        if (!rooted){ 
-            bp <- postprocess.prop.part(bp)
-            part <- postprocess.prop.part(part) 
-        }
-        n <- numeric(phy$Nnode)
-        for (i in seq_along(bp)) {
-            for (j in seq_along(part)) {
-                if (identical(bp[[i]], part[[j]])) {
-                    n[i] <- attr(part, "number")[j]
-                    done <- TRUE
-                    break
-                }
-            }
-        }
-        n
-    }
-
-
-    if (type == "phylogram" | type == "cladogram") {
-        if (!is.rooted(tree)) 
-            tree2 = midpoint(tree)
-        else tree2=tree
-        plot(tree2, type = type, ...)
-    }
-    else plot(tree, type = type, ...)
-
-     
-    x = prop.clades(tree, BStrees)
-    x = round((x/length(BStrees)) * 100)
-    tree$node.label = x
-
-    label = c(rep("", length(tree$tip)), x)
-    ind <- get("last_plot.phylo", envir = .PlotPhyloEnv)$edge[, 2]
-
-    if (type == "phylogram" | type == "cladogram") {
-        root = getRoot(tree)
-        label = c(rep(0, length(tree$tip)), x)
-        label[root] = 0
-        ind2 = matchEdges(tree2, tree)
-        label = label[ind2]
-        ind = which(label > 0)
-        if (is.null(bs.adj)) 
-            bs.adj = c(1, 1)
-        nodelabels(text = label[ind], node = ind, frame = "none", 
-            col = bs.col, adj = bs.adj, ...)
-    }
-    else {
-        if (is.null(bs.adj)) 
-            bs.adj = c(0.5, 0.5)
-        edgelabels(label[ind], frame = "none", col = bs.col, 
-            adj = bs.adj, ...)
     }
     invisible(tree)
 }
@@ -4306,11 +4222,12 @@ pml.fit3 <- function (tree, data, bf = rep(1/length(levels), length(levels)),
     
     contrast = attr(data, "contrast")
     nco = as.integer(dim(contrast)[1])    
-
+# dlist=data, nr, nc, weight, k ausserhalb definieren  
+# pmlPart einbeziehen 
     resll <- .Call("PML3", dlist=data, el, as.double(w), as.double(g), nr, nc, k, eig, as.double(bf), node, edge, nTips, root, nco, contrast, N=as.integer(length(edge))) 
 
     # sort(INV@i)+1L  
-    ind = which(ll.0>0) 
+    ind = which(ll.0>0) # automatic in INV gespeichert
 
     sca = .Call("rowMax", resll, length(weight), as.integer(k)) + 1   # nr statt length(weight)
     lll = resll - sca 
@@ -4441,12 +4358,6 @@ optimRooted <- function(tree, data, eig=eig, w=w, g=g, bf=bf, rate=rate, ll.0=ll
         optimize(f=fn, interval=c(0.25,4), tree=tree, data=data, ..., maximum = TRUE,
                  tol = .00001)
     }
-    
-#    child2 = tree$edge[, 2]
-#    child = reorder(tree)$edge[, 2]
-#    parent2 = tree$edge[, 1]
-#    parent = reorder(tree)$edge[, 1]
-    
     parent = tree$edge[, 1]
     child = tree$edge[, 2]
 
@@ -4513,8 +4424,7 @@ optimRooted <- function(tree, data, eig=eig, w=w, g=g, bf=bf, rate=rate, ll.0=ll
           
         tree$edge.length = EL[tree$edge[, 2]]  
         ll2 <- pml.fit3(tree, data, bf=bf, k=k, eig=eig, ll.0=ll.0, INV=INV, w=w, g=g)
-# this seems fine!!        
-        
+
         for(i in 1:length(child2)){ # length(child2)
             dad = child2[i]
             if(dad>nTips ){ # kann raus
@@ -4600,7 +4510,7 @@ index.nni <- function (ch, cvector, pvector, root)
 }
 
 
-# nicer traversal auch fuer 
+# nicer traversal
 orderNNI <- function (cvector, root, nTips, nni=TRUE) 
 {
     #if(nni) l = sum(sapply(cvector, function(x, nTips) sum(x > nTips), nTips))
@@ -4714,6 +4624,8 @@ rooted.nni <- function(tree, data, eig, w, g, bf, rate, ll.0, INV,
     
     while(iter < 2){    
         ll2 <-  pml.fit3(tree, data, bf=bf, k=k, eig=eig, ll.0=ll.0, INV=INV, w=w, g=g)
+# browser()
+
         nh=nodeHeight(tree)
         
         loli <- rootNode                
@@ -4737,7 +4649,7 @@ rooted.nni <- function(tree, data, eig, w, g, bf, rate, ll.0, INV,
                         tmpKids <- sibs[[dad]]
                         tmpEdge <- cbind(pa, c(anc[pa], tmpKids))
                         pml.move(tmpEdge, EL[c(pa, tmpKids)], data, g, w, eig, k, nTips, bf)                                            
-#                        cat("move from pa to dad \n")                                           
+# cat("move from pa to dad \n")                                           
                         loli = dad
                     }                                    
                     else{                        
@@ -4793,7 +4705,7 @@ rooted.nni <- function(tree, data, eig, w, g, bf, rate, ll.0, INV,
                
                     ll0 = pml.fit3(tree, data, bf=bf, g=g, w=w, eig=eig, ll.0=ll.0, k=k, INV=INV)
                     
-                    cat("at root", ll0, ch, dad, "\n")   
+#                    cat("at root", ll0, ch, dad, "\n")   
                     ind2 = c(1,3,2,4)
                     ind3 = c(3,2,1,4)     
                     X2 = X3 = X1
@@ -4861,8 +4773,7 @@ rooted.nni <- function(tree, data, eig, w, g, bf, rate, ll.0, INV,
                     nh=nodeHeight(tree)
                     EL[tree$edge[,2]] = tree$edge.length
                     ind=0
-                }
-                    
+                }   
                 else{                        
                 if(ind==1){   
                     ll2 = res1[[2]]
@@ -4893,7 +4804,6 @@ rooted.nni <- function(tree, data, eig, w, g, bf, rate, ll.0, INV,
                 
               }
             }
- 
             nh=nodeHeight(tree)
             EL[tree$edge[,2]] = tree$edge.length
             loli = dad                           

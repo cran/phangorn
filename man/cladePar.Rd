@@ -52,6 +52,7 @@ Klaus Schliep \email{klaus.schliep@gmail.com}
 }
 \examples{
 tree = rtree(10)
+plot(tree)
 nodelabels()
 x = cladePar(tree, 12)
 cladePar(tree, 18, "blue", "blue", x=x, plot=TRUE)

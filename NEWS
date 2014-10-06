@@ -1,4 +1,50 @@
-      CHANGES in PHANGORN VERSION 1.99-6 
+     CHANGES in PHANGORN VERSION 1.99-8 
+
+NEW FEATURES
+
+    o pmlPart got an argument rooted to handle rooted trees 
+
+    o simSeq is now a generic function. This simplifies the  
+
+      construcion of parametric bootstrap test
+ 
+    o SOWH.test (very experimental)
+
+    o as.networx and plot.networx improved considerably 
+
+      (often generate networks less edges) 
+
+      and planar graphs are now plotted nicely
+
+BUG FIXES
+
+    o fixed some bugs in ancestral.pars 
+
+    o amino acid model "Blosum62" was not working
+
+OTHER CHANGES
+
+    o improvements to read.nexus.splits, write.nexus.splits to 
+
+      be more consistant with splitstree
+
+    o splitsNetwork got an additional argument splits
+
+    o help for consensusNet, as.splits, as.networx have been reorganised
+
+      and improved
+
+    o treedist is much faster for larger trees 
+
+    o several changes to keep R CMD check happy 
+
+    o a development version phangorn is now available on github
+
+      https://github.com/KlausVigo/phangorn.git 
+
+ 
+
+     CHANGES in PHANGORN VERSION 1.99-6 
 
 NEW FEATURES
 

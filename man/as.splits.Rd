@@ -1,15 +1,22 @@
 \name{as.splits}
 \alias{as.splits}
-\alias{as.prop.part}
+\alias{as.prop.part.splits}
 \alias{as.splits.phylo}
 \alias{as.splits.multiPhylo}
+\alias{as.splits.networx}
 \alias{as.matrix.splits}
+\alias{as.Matrix}
+\alias{as.Matrix.splits}
 \alias{print.splits}
 \alias{write.splits}
 \alias{allSplits}
 \alias{compatible}
 \alias{write.nexus.splits}
 \alias{read.nexus.splits}
+\alias{as.phylo.splits}
+\alias{addConfidences}
+\alias{countCycles}
+\alias{presenceAbsence}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Splits representation of graphs and trees.
@@ -23,10 +30,12 @@ as.splits(x, ...)
 \method{as.splits}{multiPhylo}(x, ...)
 \method{print}{splits}(x, maxp = getOption("max.print"), zero.print = ".", 
     one.print = "|", ...)
+\method{as.prop.part}{splits}(x, ...)    
 compatible(obj)
 allSplits(k, labels = NULL)
 write.nexus.splits(obj, file="", weights=NULL)
 read.nexus.splits(file)
+addConfidences(obj, phy)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -40,6 +49,7 @@ read.nexus.splits(file)
   \item{labels}{names of taxa.}   
   \item{file}{ a file name.}
   \item{weights}{ Edge weights.}
+  \item{phy}{An object of class phylo or multiPhylo.}
 }
 \value{
 \code{as.splits} returns an object of class splits, which is mainly a list of splits and some attributes.
@@ -48,12 +58,13 @@ read.nexus.splits(file)
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \note{
 The internal representation is likely to change. 
+\code{read.nexus.splits} reads in the splits block of a nexus file. It assumes that different covariables are tab delimited and the bipartition are separated with whitespace. Comments in square brackets are ignored. 
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{prop.part}}, \code{\link{lento}}, \code{\link{distanceHadamard}}
+\code{\link{prop.part}}, \code{\link{lento}}, \code{\link{distanceHadamard}}, \code{\link{as.networx}}
 }
 %% as.phylo.splits
 \examples{

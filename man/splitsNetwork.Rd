@@ -6,10 +6,12 @@
 \code{splitsNetwork} estimates a splits graph from a distance matrix.
 }
 \usage{
-splitsNetwork(dm, gamma=.1, lambda=1e-6, weight=NULL)
+splitsNetwork(dm, splits=NULL, gamma=.1, lambda=1e-6, weight=NULL)
 }
 \arguments{
   \item{dm}{A distance matrix.}
+  \item{splits}{a splits object, containing all splits to consider, 
+   otherwise all possible splits are used}
   \item{gamma}{penalty value for the L1 constraint.}
   \item{lambda}{penalty value for the L2 constraint.}
   \item{weight}{a vector of weights.}
@@ -31,7 +33,11 @@ External edges are fitted without constraints.
 indices of the splits, the second column an unconstrained fit 
 without penalty terms and the third column the constrained fit.
 }
-\references{K. P. Schliep (2009). Some Applications of statistical phylogenetics (PhD Thesis)}
+\references{
+Efron, Hastie, Johnstone and Tibshirani (2003) "Least Angle Regression" (with discussion) Annals of Statistics
+
+K. P. Schliep (2009). Some Applications of statistical phylogenetics (PhD Thesis)
+}
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 \seealso{\code{\link[phangorn]{distanceHadamard}}, \code{\link[phangorn]{designTree}}}
 
