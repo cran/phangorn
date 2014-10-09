@@ -574,7 +574,8 @@ as.networx.splits <- function(x, planar=FALSE, ...){
         attr(x, "cycle") <- c.ord
         attr(tmp, "splits") = x 
         class(tmp) = c("networx", "phylo")
-        return(reorder(tmp))
+#        return(reorder(tmp))
+        tmp
     }
 
     ll <- sapply(x, length)
@@ -596,7 +597,8 @@ as.networx.splits <- function(x, planar=FALSE, ...){
     attr(x, "cycle") <- c.ord
     attr(tmp, "splits") = x 
     class(tmp) = c("networx", "phylo")
-    reorder(tmp)
+#    tmp <- reorder(tmp)
+    tmp
 }
 
 
@@ -643,21 +645,25 @@ addConfidences <- function(obj, phy){
 }
 
 
-reorder.networx <- function (x, order = "cladewise", ...) 
-{
-    order <- match.arg(order, c("cladewise"))
-    if (!is.null(attr(x, "order"))) 
-        if (attr(x, "order") == order) 
-            return(x)
-    nb.node <- x$Nnode
-    if (nb.node == 1) 
-        return(x)
-    nb.tip <- length(x$tip.label)
-    nb.edge <- dim(x$edge)[1]
-    #neworder <- if (order == "cladewise") 
-    neworder <- .C("neworder_cladewise", as.integer(nb.tip), as.integer(x$edge[, 1]), as.integer(x$edge[, 2]),
-               as.integer(nb.edge), integer(nb.edge), PACKAGE = "phangorn")[[5]]
+addConfidences.phylo <- function(to, from){
+    conf = attr(addConfidences(as.splits(to), from), "confidences")
+    nTips = length(to$tip.label)
+    to$node.label = conf[-c(1:nTips)]
+    to      
+} 
 
+
+reorder.networx <- function (x, order =  "cladewise", ...) 
+{
+    order <- match.arg(order, c("cladewise", "postorder"))
+    if (!is.null(attr(x, "order"))) 
+        if (attr(x, "order") == "cladewise") 
+            return(x)    
+    g <- graph(t(x$edge))
+    if(order == "cladewise") neword <- topological.sort(g, "out")
+    else neword <- topological.sort(g, "in") 
+    neworder <- order(match(x$edge[,1], neword))
+    
     x$edge <- x$edge[neworder, ]
     if (!is.null(x$edge.length)) 
         x$edge.length <- x$edge.length[neworder]

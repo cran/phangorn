@@ -43,7 +43,6 @@ reroot <-  function (tree, node)
     tree$edge[tree$edge == 0L] = node
 # needed for unrooted trees    
     tree <- collapse.singles(tree)
-#    reorderPruning(tree)
     attr(tree, "order") <- NULL
     reorder(tree, "postorder")
 }
@@ -97,6 +96,7 @@ node2root <- function(x){
      } 
      res
 }
+    oldtree <- tree
     tree = unroot(tree)   
     nTips = length(tree$tip)
     maxD1 = node2root(tree)[1:nTips] 
@@ -138,7 +138,9 @@ node2root <- function(x){
     tree$edge=edge
     tree$Nnode  = tree$Nnode+1
     attr(tree, "order") <- NULL
-    reorder(reroot(tree, rn), "postorder")
+    tree <- reorder(reroot(tree, rn), "postorder")
+    if(!is.null(oldtree$node.label))tree <- addConfidences.phylo(tree, oldtree)
+    tree 
 }
 
 
@@ -511,8 +513,8 @@ nnin <- function (tree, n)
         tree1$edge.length[c(ind1, ind2[1])] = tree$edge.length[c(ind2[1] ,ind1)]
         tree2$edge.length[c(ind1, ind2[2])] = tree$edge.length[c(ind2[2] ,ind1)]
         }
-    tree1 <- reorder(tree1, "postorder")  #reorderPruning(tree1) 
-    tree2 <- reorder(tree2, "postorder")  #reorderPruning(tree2) 
+    tree1 <- reorder(tree1, "postorder")  
+    tree2 <- reorder(tree2, "postorder")  
 #    tree1$tip.label <- tree2$tip.label <- NULL    
     result = list(tree1, tree2)
     result
