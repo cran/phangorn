@@ -1,7 +1,7 @@
 Package: phangorn
 Title: Phylogenetic analysis in R
-Version: 1.99-9
-Date: 2014-10-9
+Version: 1.99-11
+Date: 2014-11-10
 Author: Klaus Schliep, Emmanuel Paradis
 Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
 Description: Phylogenetic analysis in R (Estimation of phylogenetic
@@ -13,6 +13,6 @@ Suggests: seqLogo, seqinr, xtable, flashClust
 License: GPL (>= 2)
 URL: https://github.com/KlausVigo/phangorn
 Repository: CRAN
-Packaged: 2014-10-09 15:33:19 UTC; klaus_000
+Packaged: 2014-11-11 02:35:11 UTC; klaus
 NeedsCompilation: yes
-Date/Publication: 2014-10-09 23:47:41
+Date/Publication: 2014-11-11 09:04:51

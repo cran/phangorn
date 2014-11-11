@@ -43,13 +43,27 @@ print.splits <- function (x, maxp = getOption("max.print"),
 }
 
 
+#"[.splits" = function(x, i){
+#   result = unclass(x)[i]
+#   if(!is.null(attr(x, "weights"))) attr(result, "weights") = attr(x, "weights")[i] 
+#   if(!is.null(attr(x, "confidences"))) attr(result, "confidences") = attr(x, "confidences")[i]
+#   if(!is.null(attr(x, "intervals"))) attr(result, "intervals") = attr(x, "intervals")[i] 
+#   if(!is.null(attr(x, "data"))) attr(result, "data") = attr(x, "data")[i,, drop=FALSE] 
+#   attr(result, "labels") = attr(x, "labels")
+#   class(result) = c("splits", "prop.part")
+#   result
+#}
+
+
 "[.splits" = function(x, i){
-   result = unclass(x)[i]
-   if(!is.null(attr(x, "weights"))) attr(result, "weights") = attr(x, "weights")[i] 
-   if(!is.null(attr(x, "data"))) attr(result, "data") = attr(x, "data")[i,, drop=FALSE] 
-   attr(result, "labels") = attr(x, "labels")
-   class(result) = c("splits", "prop.part")
-   result
+    tmp = attributes(x)
+    result = unclass(x)[i]
+    if(!is.null(tmp$weights)) tmp$weights = tmp$weights[i] 
+    if(!is.null(tmp$confidences)) tmp$confidences = tmp$confidences[i]
+    if(!is.null(tmp$intervals)) tmp$intervals = tmp$intervals[i] 
+    if(!is.null(tmp$data)) tmp$data = tmp$data[i,, drop=FALSE] 
+    attributes(result) = tmp
+    result
 }
 
 
@@ -146,17 +160,6 @@ c.splits <- function (..., recursive=FALSE)
     attr(res, "weight") = as.vector(sapply(x, attr, "weight"))
     res
 }
-
-
-# computes splits from phylo
-#as.splits.phylo <- function(x, ...){
-#    result = bip(x)[x$edge[,2]]
-#    attr(result, "weights") = x$edge.length
-#    attr(result, "labels") <- x$tip
-#    class(result) = c('splits', 'prop.part')
-#    result 
-#}
-
 
 
 # computes splits from phylo
@@ -559,13 +562,17 @@ as.networx.splits <- function(x, planar=FALSE, ...){
   attr(x, "weights") <- weight
   nTips <- length(label)
   x <- oneWise(x, nTips) 
+  l <- sapply(x, length)
+  if(any(l==nTips))x <- x[l!=nTips] # get rid of trivial splits
+  ext <- sum(l==1 | l==(nTips-1))
   if(!is.null(attr(x, "cycle"))){  
       c.ord <- attr(x, "cycle") 
   }
   else c.ord <- getOrdering(x)
   dm <- as.matrix(compatible2(x)) 
 # which splits are in circular ordering  
-    circSplits = which(countCycles(x, ord=c.ord)==2)  
+    circSplits = which(countCycles(x, ord=c.ord)==2) 
+    if(length(circSplits) == length(x)) planar=TRUE
     tmp = circNetwork(x, c.ord)  
     attr(tmp, "order") = NULL
     if(planar){
@@ -574,8 +581,8 @@ as.networx.splits <- function(x, planar=FALSE, ...){
         attr(x, "cycle") <- c.ord
         attr(tmp, "splits") = x 
         class(tmp) = c("networx", "phylo")
-#        return(reorder(tmp))
-        tmp
+        return(reorder(tmp))
+#        tmp
     }
 
     ll <- sapply(x, length)
@@ -597,7 +604,7 @@ as.networx.splits <- function(x, planar=FALSE, ...){
     attr(x, "cycle") <- c.ord
     attr(tmp, "splits") = x 
     class(tmp) = c("networx", "phylo")
-#    tmp <- reorder(tmp)
+    tmp <- reorder(tmp)
     tmp
 }
 
@@ -619,7 +626,7 @@ consensusNet <- function (obj, prob = 0.3, ...)
     res = as.networx(spl)  
     res$edge.labels = as.character(res$edge.length / l * 100)
     res$edge.labels[res$edge[,2]<=length(res$tip.label)] = ""
-    res
+    reorder(res)
 }
 
 
@@ -657,7 +664,7 @@ reorder.networx <- function (x, order =  "cladewise", ...)
 {
     order <- match.arg(order, c("cladewise", "postorder"))
     if (!is.null(attr(x, "order"))) 
-        if (attr(x, "order") == "cladewise") 
+        if (attr(x, "order") == order) 
             return(x)    
     g <- graph(t(x$edge))
     if(order == "cladewise") neword <- topological.sort(g, "out")
@@ -676,8 +683,8 @@ reorder.networx <- function (x, order =  "cladewise", ...)
 
 
 coords <- function(obj, dim="3D"){
-    if(is.null(attr(obj,"order")) || attr(obj, "order")=="pruningwise") #obj <- reorder(obj)
-        obj = reorder.networx(obj)
+#    if(is.null(attr(obj,"order")) || (attr(obj, "order")=="postorder") ) 
+#        obj = reorder.networx(obj)
 
     l = length(obj$edge.length)
     ind1 = which(!duplicated(obj$splitIndex))
@@ -685,8 +692,10 @@ coords <- function(obj, dim="3D"){
     n = max(obj$edge)
     adj = Matrix::spMatrix(n, n, i = obj$edge[,2], j = obj$edge[,1], x = rep(1, length(obj$edge.length)))
     g = graph.adjacency(adj, "undirected")
+##########
+#    add this 
 #    g2 <- graph(t(obj$edge), directed=FALSE)
-#    g2 <- set.edge.attribute(g, "weight", value=obj$edge.length)
+#    g2 <- set.edge.attribute(g, "weight", value=rep(1, nrow(obj$edge))
     if(dim=="3D"){
         coord <- layout.kamada.kawai(g, dim=3)
         k = matrix(0, max(obj$split), 3)
@@ -772,10 +781,6 @@ plot.networx = function(x, type="3D", use.edge.length = TRUE, show.tip.label=TRU
     edge.color="grey", edge.width = 3, edge.lty = 1,
     font = 3, cex = 1, ...){
     type = match.arg(type, c("3D", "2D")) 
-#    n = max(x$edge)
-#    tip = rep(NA, n)
-#    tips = x$tip.label
-#    tip[1:length(tips)] = tips
     if(use.edge.length==FALSE) x$edge.length[] = 1
     x = reorder(x)
     nTips = length(x$tip.label)
