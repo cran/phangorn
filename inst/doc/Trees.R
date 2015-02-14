@@ -1,21 +1,21 @@
 ### R code from vignette source 'Trees.Rnw'
 
 ###################################################
-### code chunk number 1: Trees.Rnw:47-49
+### code chunk number 1: Trees.Rnw:48-50
 ###################################################
 options(width=70)
 foo <- packageDescription("phangorn")
 
 
 ###################################################
-### code chunk number 2: Trees.Rnw:65-67
+### code chunk number 2: Trees.Rnw:66-68
 ###################################################
 library(phangorn)
 primates = read.phyDat("primates.dna", format="phylip", type="DNA")
 
 
 ###################################################
-### code chunk number 3: Trees.Rnw:74-77
+### code chunk number 3: Trees.Rnw:75-78
 ###################################################
 dm = dist.dna(as.DNAbin(primates))
 treeUPGMA = upgma(dm)
@@ -42,14 +42,14 @@ plot(treeNJ, "unrooted", main="NJ")
 
 
 ###################################################
-### code chunk number 6: Trees.Rnw:99-101
+### code chunk number 6: Trees.Rnw:100-102
 ###################################################
 parsimony(treeUPGMA, primates)
 parsimony(treeNJ, primates)
 
 
 ###################################################
-### code chunk number 7: Trees.Rnw:104-107
+### code chunk number 7: Trees.Rnw:105-108
 ###################################################
 treePars = optim.parsimony(treeUPGMA, primates)
 treeRatchet = pratchet(primates, trace = 0)
@@ -57,33 +57,33 @@ parsimony(c(treePars, treeRatchet), primates)
 
 
 ###################################################
-### code chunk number 8: Trees.Rnw:110-111 (eval = FALSE)
+### code chunk number 8: Trees.Rnw:111-112 (eval = FALSE)
 ###################################################
 ## (trees <- bab(subset(primates,1:10)))
 
 
 ###################################################
-### code chunk number 9: Trees.Rnw:117-119
+### code chunk number 9: Trees.Rnw:118-120
 ###################################################
 fit = pml(treeNJ, data=primates)
 fit
 
 
 ###################################################
-### code chunk number 10: Trees.Rnw:122-123
+### code chunk number 10: Trees.Rnw:123-124
 ###################################################
 methods(class="pml")
 
 
 ###################################################
-### code chunk number 11: Trees.Rnw:126-128
+### code chunk number 11: Trees.Rnw:127-129
 ###################################################
 fitJC = optim.pml(fit, TRUE)
 logLik(fitJC)
 
 
 ###################################################
-### code chunk number 12: Trees.Rnw:131-135
+### code chunk number 12: Trees.Rnw:132-136
 ###################################################
 fitGTR = update(fit, k=4, inv=0.2) 
 fitGTR = optim.pml(fitGTR, TRUE,TRUE, TRUE, TRUE, TRUE, 
@@ -92,45 +92,45 @@ fitGTR
 
 
 ###################################################
-### code chunk number 13: Trees.Rnw:138-139
+### code chunk number 13: Trees.Rnw:139-140
 ###################################################
 anova(fitJC, fitGTR) 
 
 
 ###################################################
-### code chunk number 14: Trees.Rnw:142-144
+### code chunk number 14: Trees.Rnw:143-145
 ###################################################
 AIC(fitGTR) 
 AIC(fitJC)
 
 
 ###################################################
-### code chunk number 15: Trees.Rnw:147-148
+### code chunk number 15: Trees.Rnw:148-149
 ###################################################
 SH.test(fitGTR, fitJC) 
 
 
 ###################################################
-### code chunk number 16: Trees.Rnw:151-152
+### code chunk number 16: Trees.Rnw:152-153
 ###################################################
 load("Trees.RData")
 
 
 ###################################################
-### code chunk number 17: Trees.Rnw:154-155 (eval = FALSE)
+### code chunk number 17: Trees.Rnw:155-156 (eval = FALSE)
 ###################################################
 ## mt = modelTest(primates)
 
 
 ###################################################
-### code chunk number 18: Trees.Rnw:159-161
+### code chunk number 18: Trees.Rnw:160-162
 ###################################################
 library(xtable)
 xtable(mt, caption="Summary table of modelTest", label="tab:modelTest")
 
 
 ###################################################
-### code chunk number 19: Trees.Rnw:165-168
+### code chunk number 19: Trees.Rnw:166-169
 ###################################################
 env <- attr(mt, "env")
 ls(envir=env)
@@ -138,7 +138,7 @@ ls(envir=env)
 
 
 ###################################################
-### code chunk number 20: Trees.Rnw:172-174 (eval = FALSE)
+### code chunk number 20: Trees.Rnw:173-175 (eval = FALSE)
 ###################################################
 ## bs = bootstrap.pml(fitJC, bs=100, optNni=TRUE, 
 ##     control = pml.control(trace = 0))
@@ -160,14 +160,14 @@ plotBS(fitJC$tree, bs)
 
 
 ###################################################
-### code chunk number 23: Trees.Rnw:198-200
+### code chunk number 23: Trees.Rnw:199-201
 ###################################################
 options(prompt=" ")
 options(continue="  ")
 
 
 ###################################################
-### code chunk number 24: Trees.Rnw:202-225 (eval = FALSE)
+### code chunk number 24: Trees.Rnw:203-226 (eval = FALSE)
 ###################################################
 ## library(parallel) # supports parallel computing
 ## library(phangorn)
@@ -195,7 +195,7 @@ options(continue="  ")
 
 
 ###################################################
-### code chunk number 25: Trees.Rnw:229-243 (eval = FALSE)
+### code chunk number 25: Trees.Rnw:230-244 (eval = FALSE)
 ###################################################
 ## library(parallel) # supports parallel computing
 ## library(phangorn)
@@ -214,7 +214,7 @@ options(continue="  ")
 
 
 ###################################################
-### code chunk number 26: Trees.Rnw:251-252
+### code chunk number 26: Trees.Rnw:252-253
 ###################################################
 toLatex(sessionInfo())
 

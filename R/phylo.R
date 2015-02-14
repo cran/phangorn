@@ -11,6 +11,7 @@ dec2Bin = function (x)
     res
 }
 
+
 # returns binary (0, 1) vector of length k
 dec2bin <- function (x, k=ceiling(log2(x))) 
 {
@@ -382,119 +383,6 @@ PNJ <- function (data)
     tree <- old2new.phylo(tree)   
     reorder(tree)    
 }
-
-
-#
-# splits
-#
-splitsNetwork <- function(dm, splits=NULL, gamma=.1, lambda=1e-6, weight=NULL){
-    dm = as.matrix(dm)
-    k = dim(dm)[1]
-    
-    if(!is.null(splits)){
-        tmp = which(sapply(splits, length)==k)
-        splits = splits[-tmp]
-    }
-    
-    if(is.null(splits)){
-        X2 = designAll(k)
-        X=X2[[1]]
-    }
-    else X = as.matrix(splits2design(splits))
-    
-    y = dm[lower.tri(dm)]
-    if(is.null(splits))ind = c(2^(0:(k-2)),2^(k-1)-1)
-    else ind = which(sapply(splits, length)==1)
- #   y2 = lm(y~X[,ind]-1)$res
-    n = dim(X)[2]
-
-    ridge <- lambda * diag(n) 
-    ridge[ind,ind] <- 0
-    if(!is.null(weight)) Dmat <- crossprod(X * sqrt(weight)) + ridge
-    else Dmat <- crossprod(X) + ridge
-    if(!is.null(weight)) dvec <- crossprod(X * sqrt(weight),y * sqrt(weight))
-    else dvec <- crossprod(X, y)
-
-#    Dmat <- as.matrix(Dmat)
-#    dvec <- as.vector(dvec) 
-    
-    ind1       <- rep(1,n)
-    ind1[ind]  <- 0 
-
-    Amat       <- cbind(ind1,diag(n)) 
-    bvec       <- c(gamma, rep(0,n))
-
-    solution <- quadprog::solve.QP(Dmat,dvec,Amat,bvec=bvec, meq=1)$sol   
-    
-    ind2 <- which(solution>1e-8)
-    n2 <- length(ind2)
-
-    ind3 = which(duplicated(c(ind2, ind), fromLast = TRUE)[1:n2])
-    ridge2 <- lambda * diag(n2) 
-    ridge2[ind3,ind3] <- 0
-    
-    if(!is.null(weight)) Dmat <- crossprod(X[, ind2] * sqrt(weight)) + ridge2
-    else Dmat <- crossprod(X[, ind2]) + ridge2
-    if(!is.null(weight)) dvec <- crossprod(X[, ind2] * sqrt(weight),y * sqrt(weight))
-    else dvec <- crossprod(X[, ind2], y)
-    
-    Amat2 <- diag(n2)
-    bvec2 <- rep(0, n2)
-    solution2  <- quadprog::solve.QP(Dmat, dvec, Amat2)$sol
-    
-    RSS1 = sum((y-X[,ind2]%*%solution[ind2])^2)
-    RSS2 = sum((y-X[,ind2]%*%solution2)^2)
-    
-    if(is.null(splits)){
-        splits = vector("list", length(ind2))
-        for(i in 1:length(ind2))splits[[i]] = which(X2[[2]][ind2[i],]==1)
-    } 
-    else splits = splits[ind2]
-    attr(splits, "weights") = solution[ind2]
-    attr(splits, "unrestricted") = solution2
-    attr(splits, "stats") = c(df=n2, RSS_p = RSS1, RSS_u=RSS2)
-    attr(splits,"labels") =dimnames(dm)[[1]]
-    class(splits)='splits'
-    return(splits)           
-}
-
-
-allSplits = function(k, labels=NULL){
-    result <- lapply(1:(2^(k-1)-1),dec2Bin)
-    if(is.null(labels)) labels=(as.character(1:k))
-    attr(result, 'labels') =labels
-    class(result)='splits'
-    result
-    }   
-
-
-
-getIndex = function(left, right, n){
-    if(n<max(left) | n<max(right)) stop("Error")  
-    left = as.integer(left)
-    right = as.integer(right)
-    ll = length(left)
-    lr = length(right)
-    .C("giveIndex", left, right, ll, lr, as.integer(n), integer(ll*lr))[[6]]+1
-}
-
-    
-splits2design <- function(obj, weight=NULL){
-    labels= attr(obj,'labels')
-    m = length(labels)
-    n=length(obj)
-    l = 1:m 
-    sl = sapply(obj, length)
-    p0 = sl * (m-sl)
-    p = c(0,cumsum(p0))
-    i = numeric()
-    for(k in 1:n){
-        sp = obj[[k]]
-        if(p0[k]!=0) i[(p[k]+1):p[k+1]] = getIndex(sp, l[-sp], m) 
-    }
-    dims=c(m*(m-1)/2,n)
-    sparseMatrix(i=i, p=p, dims=dims) 
-    }
 
 
 
@@ -921,6 +809,17 @@ edQ <- function(Q=c(1,1,1,1,1,1), bf=c(0.25,.25,.25,.25)){
     e
 }
 
+edQ2 <- function(Q){
+    res = Q
+    l=dim(Q)[1]
+    diag(res) = 0
+    diag(res) = -rowSums(res)
+    e = eigen(res, FALSE)
+    e$inv = solve.default(e$vec)
+    e
+}
+
+
 
 pml.free <- function(){.C("ll_free")}
 
@@ -971,30 +870,6 @@ ll <- function(dat1, tree, bf = c(0.25, 0.25, 0.25, 0.25), g = 1,
         assign("asdf", dat, envir = parent.frame(n = 1))
         }
     result
-}
-
-
-# raus
-ll2 <- function(dat1, tree, g = 1, eig, ...) 
-{
-    q = length(tree$tip.label)
-    node <- tree$edge[, 1]
-    edge <- tree$edge[, 2]
-    m = length(edge) + 1
-    dat = vector(mode = "list", length = m)
-    el <- tree$edge.length
-    P <- getP(el, eig, g)
-    nr <- as.integer(attr(dat1, "nr"))
-    nc <- as.integer(attr(dat1, "nc"))
-    node = as.integer(node - min(node))
-    edge = as.integer(edge - 1)
-    nTips = as.integer(length(tree$tip))
-    mNodes = as.integer(max(node) + 1)
-    contrast = attr(dat1, "contrast")
-    nco = as.integer(dim(contrast)[1])
-    res <- .Call("LogLik2", dat1[tree$tip.label], P, nr, nc, 
-        node, edge, nTips, mNodes, contrast, nco)[[1]]
-    res
 }
 
 
@@ -1715,19 +1590,6 @@ fs <- function (old.el, eig, parent.dat, child.dat, weight, g=g,
             as.double(ll.0), as.integer(getA), as.integer(getB))
 }
 
-fs0 <- function (old.el, eig, parent.dat, child.dat, weight, g=g, 
-    w=w, bf=bf, ll.0=ll.0, evi, getA=TRUE, getB=TRUE) 
-{
-    P <- getP(old.el, eig, g)
-    nr = as.integer(length(weight))
-    nc = as.integer(length(bf))
-# dad = parent / child * P 
-    dad <- .Call("getDAD", parent.dat, child.dat, P, nr, nc) 
-# (child  * (dad %*% P))
-    dad <- .Call("getM4", child.dat, dad, P, nr, nc) 
-    list(old.el, parent.dat, dad)
-}
-
 
 fs3 <- function (old.el, eig, parent.dat, child, weight, g=g, 
     w=w, bf=bf, ll.0=ll.0, contrast, contrast2, evi, ext=TRUE, getA=TRUE, getB=TRUE) # child.dat
@@ -2329,19 +2191,6 @@ pmlPart <- function (formula, object, control=pml.control(epsilon=1e-8, maxit=10
 # Distance Matrix methods
 #
 
-#bip <- function (x) 
-#{
-#    if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
-#        x = reorder(x, "postorder")
-#    nTips = length(x$tip)
-#    res = vector("list", max(x$edge))
-#    res[1:nTips]=1:nTips
-#    tmp = bipart(x)
-#    res[attr(tmp, "nodes")] = tmp
-#    res
-#}
-
-
 bip <- function (obj) 
 {
     if (is.null(attr(obj, "order")) || attr(obj, "order") == 
@@ -2353,38 +2202,6 @@ bip <- function (obj)
     res
 }
 
-
-# raus
-bip2 <- function (x) 
-{
-    if(is.null(attr(x,"order")) || attr(x, "order")=="cladewise") x = reorder(x, "postorder")
-    nNode = x$Nnode
-    nTips = length(x$tip)
-    parent <- as.integer(x$edge[, 1])
-    child <- as.integer(x$edge[, 2])
-    res = vector("list", max(x$edge))
-    p = parent[1]
-    tmp = NULL
-    for(i in 1:nTips) res[[i]]=i
-    for (i in 1:length(parent)) {
-        pi = parent[i]
-        ci = child[i]
-        if (pi == p) {
-            if (ci < (nTips + 1)) 
-                tmp = cisort(tmp, ci)
-            else tmp = cisort(tmp, res[[ci]])
-        }
-        else {
-            res[[p]] = (tmp)
-            if (ci < (nTips + 1)) 
-                tmp = ci
-            else tmp = res[[ci]]
-            p = pi
-        }
-    }
-    res[[p]] = (tmp)
-    res
-}
 
 # as.Matrix, sparse = TRUE, 
 designTree <- function(tree, method="unrooted", sparse=FALSE, ...){
@@ -2401,7 +2218,6 @@ designTree <- function(tree, method="unrooted", sparse=FALSE, ...){
     if(method==2) X <- designUltra(tree, sparse=sparse,...)
     X
 }
-
 
 
 # splits now work
@@ -2531,10 +2347,106 @@ nnls.tree <- function(dm, tree, rooted=FALSE, trace=1){
 }
 
 
+nnls.phylo <- function(x, dm, rooted=FALSE, trace=0){
+    nnls.tree(dm, x, rooted, trace=trace)
+}
+
+
+nnls.splits <- function(x, dm, trace=0){
+    labels=attr(x, "labels")
+    dm = as.matrix(dm)
+    k = dim(dm)[1]
+    dm = dm[labels,labels]
+    y = dm[lower.tri(dm)]
+    
+    x = SHORTwise(x, k)
+    l <- sapply(x, length)
+    if(any(l==0)) x = x[-which(l==0)]
+    
+    X = splits2design(x)
+    
+    if(any(is.na(y))){
+        ind = which(is.na(y))
+        X = X[-ind,,drop=FALSE]
+        y= y[-ind]
+    }
+    X = as.matrix(X)
+    n = dim(X)[2]
+    int = sapply(x, length)
+    Amat = diag(n) # (int)
+    betahat <- nnls(X, y)  
+    ind = (betahat$x > 1e-8) | int==1  
+    x = x[ind]
+    RSS <- betahat$deviance
+    attr(x, "weights") = betahat$x[ind]
+    if(trace)print(paste("RSS:", RSS))
+    attr(x, "RSS") = RSS
+    x
+}    
+
+
+nnls.splitsOld <- function(x, dm, trace=0){
+    labels=attr(x, "labels")
+    dm = as.matrix(dm)
+    k = dim(dm)[1]
+    dm = dm[labels,labels]
+    y = dm[lower.tri(dm)]
+    
+    x = SHORTwise(x, k)
+    l <- sapply(x, length)
+    if(any(l==0)) x = x[-which(l==0)]
+
+    X = splits2design(x)
+    
+    if(any(is.na(y))){
+        ind = which(is.na(y))
+        X = X[-ind,,drop=FALSE]
+        y= y[-ind]
+    }
+    
+    Dmat <- crossprod(X) # cross-product computations
+    dvec <- crossprod(X, y)
+    betahat <- as.vector(solve(Dmat, dvec))
+    
+    if(!any(betahat<0)){
+        RSS = sum((y-(X%*%betahat))^2)    
+        if(trace)print(paste("RSS:", RSS))
+        attr(x, "RSS") = RSS
+        attr(x, "weights") = betahat 
+        return(x)
+    }
+    n = dim(X)[2]
+    
+    int = sapply(x, length)
+#    int = as.numeric(int==1)# (int>1)
+    Amat = diag(n) # (int)
+    betahat <- quadprog::solve.QP(as.matrix(Dmat),as.vector(dvec),Amat)$sol # quadratic programing solving
+    RSS = sum((y-(X%*%betahat))^2)
+    ind = (betahat > 1e-8) | int==1  
+    x = x[ind]
+    attr(x, "weights") = betahat[ind]
+    if(trace)print(paste("RSS:", RSS))
+    attr(x, "RSS") = RSS
+    x
+}  
+
+nnls.networx <- function(x, dm){
+    spl <- attr(x, "splits")
+    spl2 <- nnls.splits(spl, dm)
+    weight <- attr(spl, "weight")
+    weight[] <- 0
+    weight[match(spl2, spl)] = attr(spl2, "weight")
+    attr(attr(x, "splits"), "weight") <- weight
+    x$edge.length = weight[x$splitIndex]
+    x
+}
+
+
 designSplits <- function (x, splits = "all", ...) 
 {
     if (!is.na(pmatch(splits, "all"))) 
         splits <- "all"
+    if(inherits(x, "splits")) return(designUnrooted(x))
     SPLITS <- c("all", "star") #,"caterpillar")
     splits <- pmatch(splits, SPLITS)
     if (is.na(splits)) stop("invalid splits method")
@@ -2544,8 +2456,8 @@ designSplits <- function (x, splits = "all", ...)
     return(X)
 }
 
-
-designAll <- function(n){
+# add return splits=FALSE
+designAll <- function(n, add.split=FALSE){
     Y = matrix(0L, n*(n-1)/2, n)
     k = 1
     for(i in 1:(n-1)){
@@ -2559,6 +2471,7 @@ designAll <- function(n){
     for(i in 1:m)
     X[i, ] <- rep(rep(c(0L,1L), each=2^(i-1)),2^(m-i))
     X <- X[,-1]
+    if(!add.split) return((Y%*%X)%%2)
     list(X=(Y%*%X)%%2,Splits=t(X))
 }
 
@@ -2568,13 +2481,6 @@ designStar = function(n){
     for(i in 1:(n-1)) res = rbind(res,cbind(matrix(0,(n-i),i-1),1,diag(n-i)))
     res
 }
-
-
-cisort <- function(x,y){
-    k = length(x)
-    l=length(y)
-    .C("C_cisort",as.integer(x),as.integer(y),k,l, integer(k+l))[[5]]
-}  
 
 
 bipart <- function(obj){
@@ -3997,6 +3903,7 @@ checkLabels <- function(tree, tip){
 plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black", 
           bs.adj = NULL, ...) 
 {
+    # prop.clades raus??
     prop.clades <- function(phy, ..., part = NULL, rooted = FALSE) {
         if (is.null(part)) {
             obj <- list(...)
@@ -4032,6 +3939,7 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
         plot(tree2, type = type, ...)
     }
     else plot(tree, type = type, ...)
+    BStrees <- .uncompressTipLabel(BStrees)
     x = prop.clades(tree, BStrees)
     x = round((x/length(BStrees)) * 100)
     tree$node.label = x

@@ -1,3 +1,31 @@
+     CHANGES in PHANGORN VERSION 1.99-12
+
+NEW FEATURES
+
+    o added neighborNet algorithm (Bryant and Moulton 2004)
+
+      very experimental at the moment
+
+BUG FIXES
+
+    o plotBS was not working correctly if bootstraped trees are in 
+
+      compressed form (bug report by Tobias Müller)
+
+OTHER CHANGES
+
+    o many splits and networx methods have been improved 
+
+      and a vignette was added
+
+    o phangorn now suggests only the rgl and not depends on it 
+
+      to avoid problems on different platforms (suggestion by Matt Pennell)
+
+    o new package dependencies knitr for html vignettes and nnls
+
+
+
      CHANGES in PHANGORN VERSION 1.99-10
 
 BUG FIXES
@@ -132,9 +160,9 @@ BUG FIXES
 
       write.phyDat for nexus files
 
-    o some of the recently introduced (1.7-4) amino acid models were not known by all
+    o some of the recently introduced (1.7-4) amino acid models were not known 
 
-      functions and contained NAs 
+      by all functions and contained NAs 
 
 OTHER CHANGES
 
