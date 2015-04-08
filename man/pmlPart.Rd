@@ -1,5 +1,6 @@
 \name{pmlPart}
 \alias{pmlPart}
+\alias{pmlPart2multiPhylo}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Partition model. }
 \description{
@@ -8,6 +9,7 @@
 \usage{
 pmlPart(formula, object, control = pml.control(epsilon=1e-8, maxit=10, trace=1), 
     model=NULL, rooted=FALSE, ...)
+pmlPart2multiPhylo(x)    
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,6 +19,7 @@ pmlPart(formula, object, control = pml.control(epsilon=1e-8, maxit=10, trace=1),
   \item{model}{A vector containing the models containing a model for each partition.} 
   \item{rooted}{Are the gene trees rooted (ultrametric) or unrooted.} 
   \item{\dots}{Further arguments passed to or from other methods. }
+  \item{x}{an object of class \code{pmlPart} }
 }
 \details{
     The \code{formula} object allows to specify which parameter get     
@@ -30,7 +33,10 @@ pmlPart(formula, object, control = pml.control(epsilon=1e-8, maxit=10, trace=1),
     of the formula.  
     
     For partitions with different edge weights, but same topology, \code{pmlPen}
-    can try to find more parsimonious models (see example).             
+    can try to find more parsimonious models (see example). 
+    
+    \code{pmlPart2multiPhylo} is a convenience function to extract the trees 
+    out of a \code{pmlPart} object.
 }
 \value{
   \code{kcluster} returns a list with elements

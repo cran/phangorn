@@ -115,6 +115,10 @@ mpr <- function(tree, data, cost=NULL){
     res <- mpr.help(tree,data,cost)
     l = length(tree$tip)
     m = length(res)
+    label = as.character(1:m)
+    nam = tree$tip.label
+    label[1:length(nam)] = nam
+    att[["names"]] = label
     ntips = length(tree$tip)
     contrast = att$contrast
     eps=5e-6
@@ -130,6 +134,7 @@ mpr <- function(tree, data, cost=NULL){
     attributes(res) = att
     res
 }
+
 
 
 plotAnc <- function (tree, data, i = 1, col=NULL, cex.pie=par("cex"), pos="bottomright", ...)
@@ -302,7 +307,7 @@ RI <- function (tree, data, cost=NULL)
     (g - pscore)/(g - m)
 }
 
-
+# not used
 add.one <- function (tree, tip.name, i){
     if (class(tree) != "phylo") 
         stop("tree should be an object of class 'phylo.'")
@@ -414,7 +419,41 @@ mmsNew0 <- function (x, Y)
 # Sankoff 
 #
 
-old2new.phyDat <- function(data){}
+#old2new.phyDat <- function(data){}
+# works only for nucleotides
+old2new.phyDat <- function(obj){
+    att <- attributes(obj)
+    l = length(obj)
+    contrast <- attr(obj, "contrast")
+    nr <- attr(obj, "nr")
+    X = matrix(rep(rowSums(contrast), each=nr),nrow=nr)    
+    res <- vector("list", l)
+    for(i in 1:l){
+        browser()
+        tmp = X - tcrossprod(obj[[i]], contrast)
+        res[[i]] = unlist(apply(tmp, 1, function(x)which(x<1e-6)[1]))
+    }
+    attributes(res) <- att
+    res
+}
+
+old2new.phyDat <- function(obj){
+    att <- attributes(obj)
+    l = length(obj)
+    contrast <- attr(obj, "contrast")
+    nr <- attr(obj, "nr")
+    X = matrix(rep(rowSums(contrast), each=nr),nrow=nr)   
+    for(i in 1:l)obj[[i]][obj[[i]]>0] = 1
+    res <- vector("list", l)
+    contrast[contrast==0]=1e6   
+    for(i in 1:l){
+        tmp =  tcrossprod(obj[[i]], contrast) - X
+        res[[i]] = unlist(apply(tmp, 1, function(x)which(x<1e-6)[1]))
+    }
+    attributes(res) <- att
+    res
+}
+
 
 
 new2old.phyDat <- function(data){
@@ -739,23 +778,23 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
     if (!is.rooted2(tree)) {
         root = getRoot(tree)
         ind = edge[node == root]
-        rSeq = .C(fitchTriplet, integer(nr), dat[, ind[1]], 
+        rSeq = .C("fitchTriplet", integer(nr), dat[, ind[1]], 
             dat[, ind[2]], dat[, ind[3]], as.integer(nr))
         dat[, root] = rSeq[[1]]
     }
-    result <- .C(ACCTRAN2, dat, as.integer(nr), numeric(nr), 
+    result <- .C("ACCTRAN2", dat, as.integer(nr), numeric(nr), 
         as.integer(node[l:1L]), as.integer(edge[l:1L]), l, as.double(weight), 
         numeric(l), as.integer(nTips))
     el = result[[8]][l:1L]
     if (!is.rooted2(tree)) {
         ind2 = which(node[] == root)
         dat = matrix(result[[1]], nr, max(node))
-        result <- .C(ACCTRAN3, result[[1]], as.integer(nr), 
+        result <- .C("ACCTRAN3", result[[1]], as.integer(nr), 
             numeric(nr), as.integer(node[(l - 3L):1L]), as.integer(edge[(l - 
                 3L):1L]), l - 3L, as.double(weight), numeric(l), 
             as.integer(nTips))
         el = result[[8]][(l - 3L):1L]
-        pars = .C(fitchTripletACC4, dat[, root], dat[, ind[1]], 
+        pars = .C("fitchTripletACC4", dat[, root], dat[, ind[1]], 
             dat[, ind[2]], dat[, ind[3]], as.integer(nr), numeric(1), 
             numeric(1), numeric(1), as.double(weight), numeric(nr), 
             integer(nr))

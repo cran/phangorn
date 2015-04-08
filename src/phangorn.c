@@ -360,7 +360,7 @@ void tabulate(int *x, int *n, int *nbin, int *ans){
 }
 
 
-void reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root){ 
+void C_reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root){ 
     int i, j, sum=0, k, Nnode, ind, *ord, *csum, *tips, *stack, z=0;  // l, 
     double *parent;
     int m=sumNode[0];
@@ -439,44 +439,6 @@ SEXP AllChildren(SEXP children, SEXP parent, SEXP M){
     return(RESULT);
 }
 
-/*
- *
- 
-setwd("/home/klaus/Desktop/phangorn/src/") 
-allKids <- function(phy){
-    nTips = as.integer(length(phy$tip))
-    lp=nrow(phy$edge)
-    nNode = phy$Nnode
-    .C("AllKids", as.integer(phy$edge[,2]), as.integer(phy$edge[,1]), as.integer(nTips), 
-        as.integer(nNode), as.integer(lp), integer(lp), integer(nNode+1L),integer(nNode))
-}
-
-
-   
-bipHelp <- function(phy){
-    nTips = as.integer(length(phy$tip))
-    lp=nrow(phy$edge)
-    nNode = phy$Nnode
-    mp = max(phy$edge)
-    .C("bipHelp", as.integer(phy$edge[,1]), as.integer(phy$edge[,2]), as.integer(nTips), 
-        as.integer(mp), as.integer(lp), integer(mp), integer(mp+1L))
-} 
- 
- 
-setwd("/home/klaus/Desktop/phangorn/src/") 
-dyn.load("phangorn.so")
-library(phangorn)
-
-tree = rtree(8)
-tree = reorder(tree, "postorder")
-bipHelp(tree)
-
-
-allKids(tree)
-
-
-
-*/
 
 void AllKids(int *children, int *parents, int *nTips, int *nNode, int *lp, int *kids, int *lkids, int *pkids){
     int i, k, m=nNode[0], p; // l=0L, *tab , j 

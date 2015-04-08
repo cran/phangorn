@@ -313,6 +313,8 @@ as.phyDat <- function (x, ...){
 as.phyDat.DNAbin <- function(x,...) phyDat.DNA(x,...)
 
 
+
+
 as.phyDat.alignment <- function (x, type="DNA",...) 
 {
     x$seq <- tolower(x$seq)
@@ -462,10 +464,47 @@ as.data.frame.phyDat <- function(x, ...){
 }
 
 
-as.DNAbin.phyDat <- function(x,...) {
-   if(attr(x, "type")=="DNA") return(as.DNAbin(as.character(x, ...)))
-   else stop("x must be a nucleotide sequence")
+#as.DNAbin.phyDat <- function(x,...) {
+#   if(attr(x, "type")=="DNA") return(as.DNAbin(as.character(x, ...)))
+#   else stop("x must be a nucleotide sequence")
+#}
+
+# quite abit faster
+as.DNAbin.phyDat <- function (x, ...) 
+{
+    if(attr(x, "type")=="DNA"){
+
+    nr <- attr(x, "nr")
+    ac = attr(x, "allLevels")
+    result = matrix(as.raw(0), nrow = length(x), ncol = nr)
+    # from ape ._cs_
+    cs <- c("a", "g", "c", "t", "r", "m", "w", "s", "k", "y", "v", "h", 
+      "d", "b", "n", "-", "?")
+    # from ape ._bs_
+    bs <- as.raw(c(136, 72, 40, 24, 192, 160, 144, 96, 80, 48, 224, 176, 208, 
+                   112, 240, 4, 2))
+    ord <- match(ac, cs)
+    ord[5] <- 4
+
+    for (i in 1:length(x)){
+        ind <- ord[x[[i]]]
+        result[i,] <- bs[ind]    
+    }    
+    if (is.null(attr(x, "index"))) 
+        index = rep(1:nr, attr(x, "weight"))
+    else {
+        index = attr(x, "index")
+        if (is.data.frame(index)) 
+            index <- index[, 1]
+    }
+    result = result[, index, drop = FALSE]
+    rownames(result) = names(x)
+    class(result) <- "DNAbin"
+    return(result)
+    }
+    else stop("x must be a nucleotide sequence")
 }
+
 
  
 phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...) 
@@ -521,6 +560,61 @@ c.phyDat <- function(...){
     attr(dat,"index") <- data.frame(index=attr(dat,"index"), genes=rep(objNames, nr))   
     dat
 }
+
+
+# new cbind.phyDat 
+cbindPD <- function(..., gaps="-"){
+    object <- as.list(substitute(list(...)))[-1]    
+    x <- list(...)
+    n <- length(x) 
+    if (n == 1) 
+        return(x[[1]])
+    type <- attr(x[[1]], "type")
+    nr = numeric(n)
+    
+    ATTR <- attributes(x[[1]])
+    
+    nr[1] <- sum(attr(x[[1]], "weight"))
+    levels <- attr(x[[1]], "levels")
+    allLevels <- attr(x[[1]], "allLevels")
+    gapsInd <- match(gaps, allLevels)
+    snames <- vector("list", n)  # names(x[[1]])
+    vec = numeric(n+1)
+    wvec = numeric(n+1)
+    objNames<-as.character(object)
+    if(any(duplicated(objNames))) objNames <- paste(objNames,1:n,sep="")
+    #    tmp <- as.character(x[[1]])
+    
+    for(i in 1:n){
+        snames[[i]] = names(x[[i]]) 
+        nr[i] <- attr(x[[i]], "nr") 
+        vec[i+1] = attr(x[[i]], "nr")
+        wvec[i+1] = sum(attr(x[[i]], "weight"))
+    }
+    vec = cumsum(vec)
+    wvec = cumsum(wvec)
+    snames = unique(unlist(snames))
+    weight <- numeric(vec[n+1])
+    
+    index <- numeric(wvec[n+1]) 
+    ATTR$names <- snames
+    ATTR$nr <- vec[n+1]
+    
+    tmp = matrix(gapsInd, vec[n+1], length(snames), dimnames = list(NULL, snames))
+    tmp <- as.data.frame(tmp)
+    
+    for(i in 1:n){
+        nam = names(x[[i]])
+        tmp[(vec[i]+1):vec[i+1], nam] <- x[[i]][nam]
+        weight[(vec[i]+1):vec[i+1]] <- attr(x[[i]], "weight")
+        index[(wvec[i]+1):wvec[i+1]] <- attr(x[[i]], "index")
+    }
+    ATTR$index <- index
+    ATTR$weight <- weight
+    attributes(tmp) <- ATTR
+    tmp
+}
+
 
 
 cbind.phyDat <- function(..., gaps="-"){
@@ -631,26 +725,23 @@ getCols <- function (data, cols)
 # allows negative indexing subset(dat,,-c(3:5))
 getRows <- function (data, rows, site.pattern = TRUE) 
 {   
-    if(!site.pattern & all(rows>0)){
-        weight = tabulate(rows)
-        ind = which(weight>0)
-        rows = rows[ind]
-        weight = weight[ind]
-    } 
-    for (i in 1:length(data)){ 
-        if(is.matrix(data[[i]]))data[[i]] = data[[i]][rows,]
-        else data[[i]] = data[[i]][rows]
-    }  
-#    if(site.pattern) attr(data, "weight") = attr(data, "weight")[rows]
-#    else attr(data, "weight") = rep(1, length(rows))
-    attr(data, "weight") = attr(data, "weight")[rows]
-    if(!site.pattern){
-        if(all(rows>0))attr(data, "weight") = weight 
-        else attr(data, "weight")[] = 1
-    }    
-    attr(data, "nr") = length(attr(data, "weight"))
-    attr(data, "index") = NULL
-    data
+  index <- attr(data, "index")
+  if(is.data.frame(index))index = index[,1]
+  if(!site.pattern){ # & all(rows>0)
+    weight = tabulate(index[rows])
+    ind = which(weight>0)
+    rows = ind   # rows[ind]
+    weight = weight[ind]
+  } 
+  for (i in 1:length(data)){ 
+    if(is.matrix(data[[i]]))data[[i]] = data[[i]][rows,]
+    else data[[i]] = data[[i]][rows]
+  }  
+  attr(data, "weight") = attr(data, "weight")[rows]
+  if(!site.pattern) attr(data, "weight") = weight    
+  attr(data, "nr") = length(attr(data, "weight"))
+  attr(data, "index") = NULL
+  data
 }
 
 
@@ -659,10 +750,10 @@ subset.phyDat <- function (x, subset, select, site.pattern = TRUE,...)
      
     if (!missing(subset)) x <- getCols(x, subset)
     if (!missing(select)){
-         if(!site.pattern){
-             if(is.data.frame(attr(x, "index"))) select <- attr(x, "index")[select,1]
-             else select <- attr(x, "index")[select]
-         }     
+#         if(!site.pattern){
+#             if(is.data.frame(attr(x, "index"))) select <- attr(x, "index")[select,1]
+#             else select <- attr(x, "index")[select]
+#         }     
          if(any(is.na(select))) return(NULL) 
          x <- getRows(x, select, site.pattern=site.pattern)
     }    
@@ -694,6 +785,51 @@ write.phylip <- function(data, weight, file=""){
 }
 
 
+read.FASTA.AA <- function (file) 
+{
+    if (length(grep("^(ht|f)tp:", file))) {
+        url <- file
+        file <- tempfile()
+        download.file(url, file)
+    }
+    sz <- file.info(file)$size
+    x <- readBin(file, "raw", sz)
+    icr <- which(x == as.raw(13))
+    if (length(icr)) 
+        x <- x[-icr]
+    res <- .Call("rawStream2phyDat", x)
+    
+    aa <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i", 
+            "l", "k", "m", "f", "p", "s", "t", "w", "y", "v")
+    aa2 <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i", 
+             "l", "k", "m", "f", "p", "s", "t", "w", "y", "v", "b", 
+             "z", "x", "-", "?")
+    AA <- diag(20)
+    AA <- rbind(AA, matrix(0, 5, 20))
+    AA[21, 3] <- AA[21, 4] <- 1 # Aspartate or Asparagine
+    AA[22, 6] <- AA[22, 7] <- 1 #
+    AA[23:25, ] = 1
+    dimnames(AA) <- list(aa2, aa)
+    
+    ddd = fast.table(res)
+    
+    data = ddd$data
+    names(data) <- sub("^ +", "", names(data))
+    row.names(data) = NULL
+    
+    attr(data, "row.names") = NULL
+    attr(data, "weight") = ddd$weight
+    attr(data, "nr") = length(ddd$weight)
+    attr(data, "nc") = 20
+    attr(data, "index") = as.integer(ddd$index)
+    attr(data, "levels") = aa
+    attr(data, "allLevels") = aa2
+    attr(data, "type") = "AA"
+    attr(data, "contrast") = AA    
+    class(data) = "phyDat"
+    data
+}
+
 
 # throw out
 read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0, 
@@ -710,6 +846,12 @@ read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
     phylip <- if (format %in% c("interleaved", "sequential")) 
         TRUE
     else FALSE
+    
+    
+    if (format == "fasta") {
+        obj <- read.FASTA.AA(file)
+        return(obj)
+    }
     X <- scan(file = file, what = character(), sep = "\n", quiet = TRUE, 
         skip = skip, nlines = nlines, comment.char = comment.char)      
            
@@ -769,19 +911,19 @@ read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
         if (is.null(seq.names)) 
             seq.names <- getTaxaNames(taxa)
     }
-    if (format == "fasta") {
-        start <- grep("^ {0,}>", X)
-        taxa <- X[start]
-        n <- length(taxa)
-        obj <- vector("list", n)
-        if (is.null(seq.names)) {
-            taxa <- sub("^ {0,}>", "", taxa)
-            seq.names <- getTaxaNames(taxa)
-        }
-        start <- c(start, length(X) + 1)
-        for (i in 1:n) obj[[i]] <- unlist(strsplit(gsub(" ", 
-            "", X[(start[i] + 1):(start[i + 1] - 1)]), NULL))
-    }
+    if (format == "fasta") return(read.FASTA.AA(file))
+#        start <- grep("^ {0,}>", X)
+#        taxa <- X[start]
+#        n <- length(taxa)
+#        obj <- vector("list", n)
+#        if (is.null(seq.names)) {
+#            taxa <- sub("^ {0,}>", "", taxa)
+#            seq.names <- getTaxaNames(taxa)
+#        }
+#        start <- c(start, length(X) + 1)
+#        for (i in 1:n) obj[[i]] <- unlist(strsplit(gsub(" ", 
+#            "", X[(start[i] + 1):(start[i + 1] - 1)]), NULL))
+#    }
     if (phylip) {
         rownames(obj) <- seq.names
         obj <- tolower(obj)
