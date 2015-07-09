@@ -10,9 +10,11 @@ cyclicSplits <- function(k, labels=NULL){
             tmp = (1L:y)+x
             tmp %% (k+1L) + tmp %/% (k+1L)
         }
-        for(i in 2:l){
-            res[(ind+1):(ind+k)] <- lapply(0L:(k-1L), fun, i)
-            ind <- ind+k
+        if(k>4){
+            for(i in 2:l){
+                res[(ind+1):(ind+k)] <- lapply(0L:(k-1L), fun, i)
+                ind <- ind+k
+            }
         }
         if((k%%2L)==0){
             m <- k%/%2
@@ -21,6 +23,7 @@ cyclicSplits <- function(k, labels=NULL){
     }   
     if(is.null(labels)) labels=(as.character(1:k))
     attr(res, 'labels') =labels
+    attr(res, "cycle") = 1:k
     class(res)="splits"
     res   
 }

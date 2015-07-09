@@ -1,6 +1,7 @@
 \name{phyDat}
 \alias{phyDat}
 \alias{as.phyDat.DNAbin}
+\alias{as.phyDat.alignment}
 \alias{as.data.frame.phyDat}
 \alias{as.character.phyDat}
 \alias{as.DNAbin.phyDat}
@@ -13,6 +14,7 @@
 \alias{baseFreq}
 \alias{cbind.phyDat}
 \alias{c.phyDat}
+\alias{phyDat2alignment}
 \title{Conversion among Sequence Formats}
 \description{
 These functions transform several DNA formats into the \code{phyDat} format. 
@@ -23,10 +25,12 @@ phyDat(data, type = "DNA", levels = NULL, return.index=TRUE, ...)
 read.phyDat(file, format="phylip", type="DNA", ...)
 write.phyDat(x, file, format="phylip",...)
 \method{as.phyDat}{DNAbin}(x, ...)
+\method{as.phyDat}{alignment}(x, type="DNA", ...)
 \method{as.character}{phyDat}(x, allLevels = TRUE, ...)
 \method{as.data.frame}{phyDat}(x, ...)
 \method{as.DNAbin}{phyDat}(x, ...)
 \method{subset}{phyDat}(x, subset, select, site.pattern = TRUE, ...)
+phyDat2alignment(x)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 acgt2ry(obj)
 baseFreq(obj, freq=FALSE, drop.unused.levels=FALSE)
@@ -55,12 +59,15 @@ baseFreq(obj, freq=FALSE, drop.unused.levels=FALSE)
 If \code{type} "USER" a vector has to be give to \code{levels}.
 For example c("a", "c", "g", "t", "-") would create a data object that  
 can be used in phylogenetic analysis with gaps as fifth state.  
+There is a more detailed example for specifying "USER" defined data 
+formats in the vignette "phangorn-specials".  
+
 \code{allSitePattern} returns all possible site patterns and can
 be useful in simulation studies. For further details see the vignette 
 phangorn-specials.  
 
 \code{write.phyDat} calls the function write.dna or write.nexus.data and  
-\code{read.phyDat} calls the function read.dna, read.aa or read.nexus.data
+\code{read.phyDat} calls the function \code{read.dna}, \code{read.aa} or \code{read.nexus.data}
 see for more details over there.
   
 You may import data directly with \code{\link[ape]{read.dna}} or \code{\link[ape]{read.nexus.data}}
@@ -70,8 +77,6 @@ The generic function \code{c} can be used to to combine sequences and \code{uniq
 all unique sequences or unique haplotypes. 
 
 \code{acgt2ry} converts a \code{phyDat} object of nucleotides into an binary ry-coded dataset.  
-
-There is a more detailed example for specifying USER defined data formats in the vignette advanced features. 
 }
 \value{
 The functions return an object of class \code{phyDat}. 
@@ -79,8 +84,10 @@ The functions return an object of class \code{phyDat}.
 
 \author{Klaus Schliep \email{klaus.schliep@gmail.com}}
 
-\seealso{ \code{\link{DNAbin}}, \code{\link{as.DNAbin}}, \code{\link{read.dna}},  \code{\link{read.aa}} and \code{\link{read.nexus.data}} and 
-the example of \code{\link{pmlMix}} for the use of \code{allSitePattern}}
+\seealso{ \code{\link{DNAbin}}, \code{\link{as.DNAbin}}, \code{\link{read.dna}},  \code{\link{read.aa}}, \code{\link{read.nexus.data}} 
+and the chapter 1 in the \code{vignette("phangorn-specials", package="phangorn")} 
+and the example of \code{\link{pmlMix}} for the use of \code{allSitePattern}
+}
 \examples{
 data(Laurasiatherian)
 class(Laurasiatherian)

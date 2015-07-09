@@ -8,13 +8,14 @@
 }
 \usage{
 treedist(tree1, tree2, check.labels = TRUE)
-RF.dist(tree1, tree2=NULL, check.labels=TRUE)
+RF.dist(tree1, tree2=NULL, check.labels=TRUE, rooted=FALSE)
 }
 \arguments{
   \item{tree1}{ A phylogenetic tree (class \code{phylo})
   or vector of trees (an object of class \code{multiPhylo}). See details }
   \item{tree2}{ A phylogenetic tree. }
   \item{check.labels}{compares labels of the trees.}
+  \item{rooted}{take bipartitions for rooted trees into account, default is unrooting the trees.}
 }
 \value{
   \code{treedist} returns a vector containing the following tree distance methods

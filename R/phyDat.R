@@ -26,11 +26,14 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE, contrast =
     if (is.matrix(data)) 
         nam = row.names(data)
     else nam = names(data)
+    if(is.null(nam))stop("data object must contain taxa names")
     if (class(data) == "DNAbin") 
         data = as.character(data)
     if (is.matrix(data)) 
         data = as.data.frame(t(data), stringsAsFactors = FALSE)
+    if (is.vector(data))data = as.data.frame(t(data), stringsAsFactors = FALSE)
     else data = as.data.frame(data, stringsAsFactors = FALSE)
+    if(length(data[[1]])==1) compress=FALSE 
     if(compress){
         ddd = fast.table(data)
         data = ddd$data
@@ -63,22 +66,18 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE, contrast =
                 contrast = rbind(contrast, matrix(1, k, l))
         }
     }
-    d = dim(data)
     att = attributes(data) 
-    data = match(unlist(data), all.levels)
-    attr(data, "dim") = d
-    data = as.data.frame(data, stringsAsFactors=FALSE)  
+    data = lapply(data, match, all.levels) # avoid unlist   
     attributes(data) = att
-
+    
     row.names(data) = as.character(1:p)
     data = na.omit(data)
-   
+    
     aaa = match(index, attr(data, "na.action"))
     index = index[is.na(aaa)] 
     index = match(index, unique(index))
     rn = as.numeric(rownames(data))
-    attr(data, "na.action") = NULL  
-        
+    attr(data, "na.action") = NULL        
     weight = weight[rn] 
     p = dim(data)[1]
     names(data) = nam
@@ -328,7 +327,20 @@ as.phyDat.alignment <- function (x, type="DNA",...)
 }
 
 
-as.alignment.phyDat <- function(x, ...) as.alignment(as.character(x))
+#as.alignment.phyDat <- function(x, ...) as.alignment(as.character(x))
+
+phyDat2alignment <-  function(x){
+    z = as.character(x)
+    nam = rownames(z)
+    type = attr(x, "type")
+    seq <- switch(type, 
+                  DNA = tolower(apply(z, 1, paste, collapse="")), 
+                  AA = toupper(apply(z, 1, paste, collapse="")))                     
+    names(seq) <- NULL
+    res <- list(nb=length(seq), nam=nam, seq=seq, com=NA)
+    class(res) = "alignment"
+    res
+}
 
 
 as.phyDat.matrix <- function (x, ...) phyDat(data=x, ...)
@@ -766,13 +778,23 @@ unique.phyDat <- function(x, incomparables=FALSE, ...) getCols(x, !duplicated(x)
 
 allSitePattern <- function(n,levels=c("a","c","g","t"), names=NULL){
     l=length(levels)
-    X=matrix(0, l^n,n)
+    X=vector("list", n)
+    if(is.null(names))names(X) = paste("t",1:n, sep="") 
+    else names(X)=names
     for(i in 1:n)
-    X[, i] = rep(rep(c(1:l), each=l^(i-1)),l^(n-i))
-    for(i in 1:l)X[X==i] = levels[i]
-    if(is.null(names))colnames(X) = paste("t",1:n, sep="")
-    else colnames(X)=names
-    phyDat.default(t(X), levels)
+        X[[i]] = rep(rep(levels, each=l^(i-1)),l^(n-i)) 
+    X = as.data.frame(X)
+    phyDat.default(X, levels, compress=FALSE) 
+} 
+
+
+constSitePattern <- function(n,levels=c("a","c","g","t"), names=NULL){
+    l=length(levels)
+    X=matrix(0, l,n)
+    X = matrix(rep(levels, each=n), n, l)
+    if(is.null(names))rownames(X) = paste("t",1:n, sep="")
+    else rownames(X)=names
+    phyDat.default(X, levels)
 } 
 
 
@@ -935,3 +957,9 @@ read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
     obj   
 }
 
+
+genlight2phyDat <- function(x, ambiguity=NA){
+    tmp <- as.matrix(x)
+    lev <- na.omit(unique(as.vector(tmp)))
+    phyDat(tmp, "USER", levels=lev, ambiguity=ambiguity)
+}

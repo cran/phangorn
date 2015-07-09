@@ -17,7 +17,7 @@ primates = read.phyDat("primates.dna", format="phylip", type="DNA")
 ###################################################
 ### code chunk number 3: Trees.Rnw:75-78
 ###################################################
-dm = dist.dna(as.DNAbin(primates))
+dm = dist.ml(primates)
 treeUPGMA = upgma(dm)
 treeNJ = NJ(dm)
 

@@ -337,7 +337,6 @@ compatible3 <- function(x, y=NULL)
     ylabels = attr(y, "labels")
     if(identical(xlabels, ylabels)) labels = xlabels 
     else labels = intersect(xlabels, ylabels)
-#    if(length(labels) maybe warning
     nx = length(x)
     ny = length(y)   
     bp1 = as.matrix(x)[,labels, drop=FALSE]
@@ -993,7 +992,10 @@ plot.networx = function(x, type="3D", use.edge.length = TRUE, show.tip.label=TRU
     if(show.tip.label)node.label[1:nTips] = ""
     
     chk <- FALSE
-    if(type=="3D") chk <- .check.pkg("rgl")
+    
+    
+    
+    if(type=="3D") chk <- requireNamespace("rgl", quietly = TRUE) #.check.pkg("rgl")
     if(!chk && type=="3D"){
         warning("type=\"3D\" requires the package \"rgl\"\n, plotting =\"2D\" instead!\n")
         type="2D"
@@ -1020,9 +1022,14 @@ plotRGL <- function(coords, net, show.tip.label=TRUE,
         show.nodes=FALSE, tip.color = "blue", edge.color="grey", 
         edge.width = 3, font = 3, cex = par("cex"), ...){
     
-    chk <- .check.pkg("rgl")
-    if(!chk) open3d <- segments3d <- spheres3d <- rgl.texts <- function(...)NULL
-    
+#    chk <- .check.pkg("rgl")
+#    if(!chk) open3d <- segments3d <- spheres3d <- rgl.texts <- function(...)NULL
+
+    open3d <- rgl::open3d 
+    segments3d  <- rgl::segments3d
+    spheres3d <- rgl::spheres3d 
+    rgl.texts <- rgl::rgl.texts
+        
     edge = net$edge
   
     x = coords[,1]
@@ -1063,7 +1070,7 @@ plot2D <- function(coords, net, show.tip.label=TRUE,
    yy = coords[,2]
    nTips = length(label)
 
-   cex=1
+#   cex=1
    
    xlim <- range(xx)
    ylim <- range(yy)
@@ -1301,7 +1308,6 @@ read.nexus.splits <- function(file)
         tmp = X[i]
         tmp = sub("\\s+", "", tmp) 
         tmp = strsplit(tmp, "\t")[[1]]
-        if(length(tmp)!=(mformat+1)) warning("blub")
         if(flab)labels[j] = as.numeric(tmp[ind[1]])        
         if(fwei)weights[j] = as.numeric(tmp[ind[2]])
         if(fcon)confidences[j] = as.numeric(tmp[ind[3]])
