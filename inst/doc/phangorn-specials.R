@@ -1,14 +1,15 @@
 ### R code from vignette source 'phangorn-specials.Rnw'
 
 ###################################################
-### code chunk number 1: phangorn-specials.Rnw:46-48
+### code chunk number 1: phangorn-specials.Rnw:47-50
 ###################################################
 options(width=70)
+options("show.signif.stars" = FALSE)
 foo <- packageDescription("phangorn")
 
 
 ###################################################
-### code chunk number 2: phangorn-specials.Rnw:70-76
+### code chunk number 2: phangorn-specials.Rnw:72-78
 ###################################################
 library(phangorn)
 data = matrix(c("r","a","y","g","g","a","c","-","c","t","c","g", 
@@ -19,14 +20,14 @@ data
 
 
 ###################################################
-### code chunk number 3: phangorn-specials.Rnw:79-81
+### code chunk number 3: phangorn-specials.Rnw:81-83
 ###################################################
 gapsdata1 = phyDat(data)
 gapsdata1
 
 
 ###################################################
-### code chunk number 4: phangorn-specials.Rnw:84-87
+### code chunk number 4: phangorn-specials.Rnw:86-89
 ###################################################
 gapsdata2 = phyDat(data, type="USER", levels=c("a","c","g","t","-"), 
     ambiguity = c("?", "n"))
@@ -34,7 +35,7 @@ gapsdata2
 
 
 ###################################################
-### code chunk number 5: phangorn-specials.Rnw:91-106
+### code chunk number 5: phangorn-specials.Rnw:93-108
 ###################################################
 contrast = matrix(data = c(1,0,0,0,0,
     0,1,0,0,0,
@@ -54,7 +55,7 @@ gapsdata3
 
 
 ###################################################
-### code chunk number 6: phangorn-specials.Rnw:137-142
+### code chunk number 6: phangorn-specials.Rnw:140-145
 ###################################################
 tree = unroot(rtree(3))
 fit = pml(tree, gapsdata3)
@@ -64,7 +65,7 @@ fit
 
 
 ###################################################
-### code chunk number 7: phangorn-specials.Rnw:205-215
+### code chunk number 7: phangorn-specials.Rnw:208-218
 ###################################################
 library(phangorn)
 primates = read.phyDat("primates.dna", format="phylip", type="DNA")
@@ -96,13 +97,13 @@ for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 
 
 ###################################################
-### code chunk number 10: phangorn-specials.Rnw:242-243
+### code chunk number 10: phangorn-specials.Rnw:245-246
 ###################################################
 trees = nni(trees[[1]])
 
 
 ###################################################
-### code chunk number 11: phangorn-specials.Rnw:254-255
+### code chunk number 11: phangorn-specials.Rnw:257-258
 ###################################################
 toLatex(sessionInfo())
 

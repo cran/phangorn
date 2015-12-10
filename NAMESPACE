@@ -6,24 +6,35 @@ importFrom(ape, as.DNAbin, as.phylo, plot.phylo, as.prop.part, nj,old2new.phylo,
     postprocess.prop.part, speciesTree, plotPhyloCoor, cladogram.plot, phylogram.plot,
     node.depth.edgelength, drop.tip, stree, rtree, is.ultrametric, .PlotPhyloEnv,
     nodelabels, edgelabels, BOTHlabels, read.nexus.data, write.nexus.data, 
-    read.dna, write.dna, reorder.phylo, dist.nodes, collapse.singles, rotate)
-importFrom(igraph, graph, graph.adjacency, layout.kamada.kawai, plot.igraph,
-    get.shortest.paths, set.edge.attribute, vcount, graph.edgelist, topological.sort) 
+    read.dna, write.dna, reorder.phylo, dist.nodes, collapse.singles, rotate, prop.clades)
+importFrom(igraph, graph, graph_from_adjacency_matrix, layout_with_kk, plot.igraph,
+    shortest_paths, set.edge.attribute, set_edge_attr, decompose,
+    vcount, graph.edgelist, graph_from_edgelist, topo_sort) 
+#layout.kamada.kawai, graph.adjacency, get.shortest.paths, topological.sort,
+
+
+
 importFrom(Matrix, Matrix, sparseMatrix, spMatrix, crossprod, solve) #, %*%
 #importFrom(fastmatch, fmatch)
 importFrom(nnls, nnls)
-importFrom(parallel, mclapply)
+#importFrom(parallel, mclapply, detectCores)
+import(parallel)
 importFrom(quadprog, solve.QP, solve.QP.compact)
 #importFrom(rgl, open3d, segments3d, spheres3d, rgl.texts)
-#importFrom(Rcpp, evalCpp)
-importFrom(stats, AIC, logLik, reorder, update, optim, optimize, constrOptim, na.omit, 
+importFrom(stats, AIC, BIC, logLik, reorder, update, optim, optimize, constrOptim, na.omit, 
            cophenetic, hclust, as.dist, pchisq, reshape, qgamma, pgamma, model.matrix,
-           aggregate, lm.fit, xtabs, quantile) 
+           aggregate, lm.fit, xtabs, quantile, sd) 
 importFrom(graphics, plot.new, plot.window, text, par, plot, abline, strwidth, axis, title, segments, 
            points, image, matplot, legend, hist) 
-importFrom(utils, read.table, download.file, citation, stack, installed.packages, write.table) 
+importFrom(utils, read.table, download.file, citation, stack, installed.packages, write.table, combn) 
 importFrom(grDevices, rgb, rainbow, adjustcolor)
 importFrom(methods, hasArg)
+#importFrom(Rcpp, evalCpp)
+importMethodsFrom(Biostrings,as.matrix)
+importFrom(Biostrings,DNAMultipleAlignment)
+importFrom(Biostrings,RNAMultipleAlignment)
+importFrom(Biostrings,AAMultipleAlignment)
+
 
 export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UNJ, PNJ, 
     phyDat, cbind.phyDat, read.phyDat, write.phyDat, as.Matrix, as.phyDat, as.splits, as.networx,
@@ -39,7 +50,8 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UN
     bab, random.addition, diversity, baseFreq, densiTree, superTree, coalSpeciesTree, 
     pml.fit, pml.init, pml.free, edQt, lli, cladePar, addConfidences, countCycles, 
     SOWH.test, plot.networx, presenceAbsence, as.networx.splits, addTrivialSplits,
-    phyDat2alignment, AICc, readDist, writeDist, discrete.gamma)
+    phyDat2alignment, AICc, readDist, writeDist, discrete.gamma,
+    removeUndeterminedSites, phyDat2MultipleAlignment, delta.score)
 
 S3method('[', splits)          
 S3method(addConfidences, phylo)
@@ -49,6 +61,7 @@ S3method(AICc, pml)
 S3method(as.character, phyDat)
 S3method(as.data.frame, phyDat)
 S3method(anova, pml)
+S3method(BIC, pml)
 S3method(c, phyDat)
 S3method(c, splits)
 S3method(cbind, phyDat)
@@ -61,6 +74,7 @@ S3method(as.phyDat, DNAbin)
 S3method(as.phyDat, alignment)
 S3method(as.phyDat, data.frame)
 S3method(as.phyDat, matrix)
+S3method(as.phyDat, MultipleAlignment)
 S3method(as.DNAbin, phyDat)
 S3method(as.phylo, splits)
 S3method(as.splits, phylo)

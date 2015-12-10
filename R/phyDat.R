@@ -27,7 +27,7 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE, contrast =
         nam = row.names(data)
     else nam = names(data)
     if(is.null(nam))stop("data object must contain taxa names")
-    if (class(data) == "DNAbin") 
+    if (inherits(data,"DNAbin")) 
         data = as.character(data)
     if (is.matrix(data)) 
         data = as.data.frame(t(data), stringsAsFactors = FALSE)
@@ -101,7 +101,7 @@ phyDat.DNA = function (data, return.index = TRUE)
     if (is.matrix(data)) 
         nam = row.names(data)
     else nam = names(data)
-    if (class(data) == "DNAbin") 
+    if (inherits(data,"DNAbin")) 
         data = as.character(data)
     if (is.matrix(data)) 
         data = as.data.frame(t(data), stringsAsFactors = FALSE)
@@ -162,7 +162,7 @@ phyDat.AA <- function (data, return.index = TRUE)
 {
     if(is.matrix(data)) nam = row.names(data)
     else nam = names(data)  
-    if (class(data) == "DNAbin") 
+    if (inherits(data,"DNAbin")) 
         data = as.character(data)
     if (is.matrix(data)) 
         data = as.data.frame(t(data), stringsAsFactors = FALSE)
@@ -229,7 +229,7 @@ phyDat.codon <- function (data, return.index = TRUE)
 {
     if(is.matrix(data)) nam = row.names(data)
     else nam = names(data)  
-    if (class(data) == "DNAbin") 
+    if (inherits(data,"DNAbin")) 
         data = as.character(data)
 
     if (is.matrix(data)) 
@@ -304,7 +304,7 @@ phyDat.codon <- function (data, return.index = TRUE)
 
 
 as.phyDat <- function (x, ...){
-    if (class(x) == "phyDat") return(x)
+    if (inherits(x,"phyDat")) return(x)
     UseMethod("as.phyDat")
 }
 
@@ -341,6 +341,32 @@ phyDat2alignment <-  function(x){
     class(res) = "alignment"
     res
 }
+
+
+as.phyDat.MultipleAlignment <- function(x, ...){
+    if(inherits(x, "DNAMultipleAlignment"))
+        res <- phyDat.DNA(as.matrix(x))
+    if(inherits(x, "RNAMultipleAlignment"))
+        res <- phyDat.DNA(as.matrix(x))
+    if(inherits(x, "RNAMultipleAlignment"))
+        res <- phyDat.AA(as.matrix(x))
+    res
+}
+
+
+as.MultipleAlignment.phyDat <- function(x){
+    z = as.character(x)
+    nam = rownames(z)
+    type = attr(x, "type")
+    seq <- switch(type, 
+                  DNA = tolower(apply(z, 1, paste, collapse="")), 
+                  AA = toupper(apply(z, 1, paste, collapse="")))
+    if(type=="DNA") return(DNAMultipleAlignment(seq))
+    if(type=="AA") return(AAMultipleAlignment(seq))
+}
+
+
+phyDat2MultipleAlignment <- as.MultipleAlignment.phyDat
 
 
 as.phyDat.matrix <- function (x, ...) phyDat(data=x, ...)
@@ -521,7 +547,7 @@ as.DNAbin.phyDat <- function (x, ...)
  
 phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...) 
 {
-    if (class(data) == "DNAbin") type <- "DNA"
+    if (inherits(data,"DNAbin")) type <- "DNA"
     pt <- match.arg(type, c("DNA", "AA", "CODON", "USER"))  
     if(pt=="DNA") dat <- phyDat.DNA(data, return.index=return.index,...)
     if(pt=="AA") dat <- phyDat.AA(data, return.index=return.index, ...)
@@ -684,6 +710,10 @@ write.phyDat <- function(x, file, format="phylip",...){
 
 
 read.phyDat <- function(file, format="phylip", type="DNA", ...){
+    
+    formats <- c("phylip", "nexus", "interleaved", "sequential", "fasta", "clustal")
+    format <- match.arg(tolower(format), formats)
+    
     if(format=="nexus") data=read.nexus.data(file, ...)
     else {
         if(format=="phylip")format="interleaved"  #"sequential"
@@ -697,17 +727,18 @@ read.phyDat <- function(file, format="phylip", type="DNA", ...){
 }
 
 
-baseFreq <- function(obj, freq=FALSE, drop.unused.levels = FALSE){
-    if (class(obj) != "phyDat") 
+baseFreq <- function(obj, freq=FALSE, all=FALSE, drop.unused.levels = FALSE){
+    if (!inherits(obj,"phyDat")) 
         stop("data must be of class phyDat")
     labels <- attr(obj, "allLevels")
     weight <- attr(obj,"weight")
     n <- length(obj)    
     res <- numeric(length(labels))  
     D = diag(length(labels))   
-    for(i in 1:n)res <- res + colSums(D[obj[[i]],, drop=FALSE]*weight)      
-    if(!freq)res <- res/sum(res)
+    for(i in 1:n)res <- res + colSums(D[obj[[i]],, drop=FALSE]*weight)
     names(res) <- labels
+    if(!all) res <- res[attr(obj, "levels")]
+    if(!freq)res <- res/sum(res)
     if(drop.unused.levels) return(res[res>0])    
     res    
 }
@@ -774,6 +805,28 @@ subset.phyDat <- function (x, subset, select, site.pattern = TRUE,...)
 
 
 unique.phyDat <- function(x, incomparables=FALSE, ...) getCols(x, !duplicated(x))
+
+
+removeUndeterminedSites <- function(x, use.contrast=TRUE, undetermined=c("?", "n", "-"), ...){
+    nc <- attr(x, "nc")
+    nr <- attr(x, "nr")
+    contrast <- attr(x, "contrast")
+    if(use.contrast) ind <- which( (contrast %*% rep(1, nc)) == nc )
+    else ind <- sort(match(undetermined, attr(x, "allLevels")))
+    tmp <- x[[1]] %in% ind
+    for(i in 2:length(x)) tmp = tmp & (x[[i]] %in% ind)
+    if(any(tmp)) x <- getRows(x, (1:nr)[!tmp]) #getRows(x, -which(tmp))
+    x
+}
+
+
+removeParsUninfoSites <- function(data){
+    nr <- attr(data, "nr")
+    pis <- parsinfo(data)
+    if (length(pis) > 0) 
+        data <- getRows(data, c(1:nr)[-pis[, 1]], TRUE)
+}
+
 
 
 allSitePattern <- function(n,levels=c("a","c","g","t"), names=NULL){

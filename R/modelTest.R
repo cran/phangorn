@@ -1,11 +1,21 @@
-modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80", 
-    "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, k = 4, freq=FALSE, 
+aic.weights <- function(aic){
+    diff.aic <- aic-min(aic)
+    exp(-0.5 * diff.aic) / sum(exp(-0.5 * diff.aic))
+}
+
+
+modelTest <- function (object, tree = NULL, model = c("JC", "F81", "K80", 
+    "HKY", "SYM", "GTR"), G = TRUE, I = TRUE, FREQ=FALSE, k = 4, 
     control = pml.control(epsilon = 1e-08, maxit = 10, trace = 1), 
-    multicore = FALSE, mc.cores = getOption("mc.cores", 1L)) 
+    multicore = FALSE, mc.cores = NULL) 
 {    
-    if (class(object) == "phyDat") 
+#    multicore = mc.cores > 1L
+    if(multicore && is.null(mc.cores)){
+        mc.cores <- detectCores()
+    }
+    if (inherits(object,"phyDat")) 
         data = object
-    if (class(object) == "pml") {
+    if (inherits(object,"pml")) {
         data = object$data
         if (is.null(tree)) 
             tree = object$tree
@@ -16,6 +26,8 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
                                            "TIM1", "TIM2e", "TIM2", "TIM3e", "TIM3", "TVMe", "TVM", 
                                            "SYM", "GTR")
     if(attr(data, "type")=="AA") type = .aamodels   
+    
+    if( (length(model)==1) && model == "all") model <- type
     model = match.arg(model, type, TRUE)
     
     env = new.env()
@@ -32,13 +44,12 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
     fit = pml(tree, data)
     fit = optim.pml(fit, control = control)
     l = length(model)
-    if(attr(fit$data, "type")=="DNA")freq=FALSE    
-    n = 1L + sum(I + G + (G & I) + freq + (freq & I) + (freq & G) + (freq & G & I))
+    if(attr(fit$data, "type")=="DNA")FREQ=FALSE    
+    n = 1L + sum(I + G + (G & I) + FREQ + (FREQ & I) + (FREQ & G) + (FREQ & G & I))
     nseq = sum(attr(data, "weight"))
     
     
-    
-    fitPar = function(model, fit, G, I, k, freq) {
+    fitPar = function(model, fit, G, I, k, FREQ) {
         m = 1
         res = matrix(NA, n, 6)
         res = as.data.frame(res)
@@ -101,7 +112,7 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
             trees[[m]] = fitGI$tree
             m = m + 1
         }
-        if (freq) {
+        if (FREQ) {
             if(trace>0)print(paste(model, "+F", sep = ""))
             fitF = optim.pml(fittmp, model = model, optBf = TRUE, 
                              control = control)
@@ -115,7 +126,7 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
             trees[[m]] = fitF$tree
             m = m + 1
         }
-        if (freq & I) {
+        if (FREQ & I) {
             if(trace>0)print(paste(model, "+I+F", sep = ""))
             fitIF <- update(fitF, inv = fitI$inv)
             fitIF = optim.pml(fitIF, model = model, optBf = TRUE, optInv = TRUE,
@@ -130,7 +141,7 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
             trees[[m]] = fitIF$tree
             m = m + 1
         }
-        if (freq & G) {
+        if (FREQ & G) {
             if(trace>0)print(paste(model, "+G+F", sep = ""))
             fitGF <- update(fitF, k=k, shape=fitG$shape)
             fitGF = optim.pml(fitGF, model = model, optBf = TRUE, optGamma = TRUE, 
@@ -145,10 +156,10 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
             trees[[m]] = fitGF$tree
             m = m + 1
         }
-        if (freq & G & I) {
+        if (FREQ & G & I) {
             if(trace>0)print(paste(model, "+G+I+F", sep = ""))
             fitGIF <- update(fitIF, k=k)
-            fitGIF = optim.pml(fitGIF, model = model, optBf = TRUE, optInv = TRUE, , optGamma = TRUE, 
+            fitGIF = optim.pml(fitGIF, model = model, optBf = TRUE, optInv = TRUE, optGamma = TRUE, 
                                control = control)
             res[m, 1] = paste(model, "+G+I+F", sep = "")
             res[m, 2] = fitGIF$df
@@ -160,8 +171,6 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
             trees[[m]] = fitGIF$tree
             m = m + 1
         }
-        
-        
         list(res, trees, calls)
     }
     eval.success <- FALSE
@@ -171,17 +180,23 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
         #            warning("package 'parallel' not found or GUI is used, \n      analysis is performed in serial")
         #       }
         #        else {
-        RES <- mclapply(model, fitPar, fit, G, I, k, freq, mc.cores=mc.cores)
+        RES <- mclapply(model, fitPar, fit, G, I, k, FREQ, mc.cores=mc.cores)
         eval.success <- TRUE
         #        }
     }
     if (!eval.success) 
-        RES <- lapply(model, fitPar, fit, G, I, k, freq)
+        RES <- lapply(model, fitPar, fit, G, I, k, FREQ)
     #   res <- RES <- lapply(model, fitPar, fit, G, I, k, freq)    
-    RESULT = matrix(NA, n * l, 6)
+#    RESULT = matrix(NA, n * l, 6)
+#    RESULT = as.data.frame(RESULT)
+#    colnames(RESULT) = c("Model", "df", "logLik", "AIC", "AICc", "BIC")
+    RESULT = matrix(NA, n * l, 8)
     RESULT = as.data.frame(RESULT)
-    colnames(RESULT) = c("Model", "df", "logLik", "AIC", "AICc", "BIC")
-    for (i in 1:l) RESULT[((i - 1) * n + 1):(n * i), ] = RES[[i]][[1]]
+    colnames(RESULT) = c("Model", "df", "logLik", "AIC", "AICw", "AICc", "AICcw", "BIC")
+    
+    for (i in 1:l) RESULT[((i - 1) * n + 1):(n * i), c(1,2,3,4,6,8)] = RES[[i]][[1]]
+    RESULT[,5] <- aic.weights(RESULT[,4])
+    RESULT[,7] <- aic.weights(RESULT[,6])
     for(i in 1:l){
         for(j in 1:n){
             mo = RES[[i]][[1]][j,1]
@@ -197,5 +212,7 @@ modelTest2 <- function (object, tree = NULL, model = c("JC", "F81", "K80",
     attr(RESULT, "env") = env 
     RESULT
 }
+
+
 
 

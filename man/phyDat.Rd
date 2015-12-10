@@ -2,6 +2,7 @@
 \alias{phyDat}
 \alias{as.phyDat.DNAbin}
 \alias{as.phyDat.alignment}
+\alias{as.phyDat.MultipleAlignment}
 \alias{as.data.frame.phyDat}
 \alias{as.character.phyDat}
 \alias{as.DNAbin.phyDat}
@@ -14,7 +15,10 @@
 \alias{baseFreq}
 \alias{cbind.phyDat}
 \alias{c.phyDat}
+\alias{unique.phyDat}
+\alias{removeUndeterminedSites}
 \alias{phyDat2alignment}
+\alias{phyDat2MultipleAlignment}
 \title{Conversion among Sequence Formats}
 \description{
 These functions transform several DNA formats into the \code{phyDat} format. 
@@ -26,6 +30,7 @@ read.phyDat(file, format="phylip", type="DNA", ...)
 write.phyDat(x, file, format="phylip",...)
 \method{as.phyDat}{DNAbin}(x, ...)
 \method{as.phyDat}{alignment}(x, type="DNA", ...)
+\method{as.phyDat}{MultipleAlignment}(x, ...)
 \method{as.character}{phyDat}(x, allLevels = TRUE, ...)
 \method{as.data.frame}{phyDat}(x, ...)
 \method{as.DNAbin}{phyDat}(x, ...)
@@ -33,7 +38,7 @@ write.phyDat(x, file, format="phylip",...)
 phyDat2alignment(x)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 acgt2ry(obj)
-baseFreq(obj, freq=FALSE, drop.unused.levels=FALSE)
+baseFreq(obj, freq=FALSE, all=FALSE, drop.unused.levels=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -43,7 +48,9 @@ baseFreq(obj, freq=FALSE, drop.unused.levels=FALSE)
   \item{levels}{Level attributes.}
   \item{return.index}{If TRUE returns a index of the site patterns.}
   \item{file}{A file name.}
-  \item{format}{File format of the sequence alignment (see details).}
+  \item{format}{File format of the sequence alignment (see details).
+  Several popular formats are supported: "phylip", "interleaved", "sequential", "clustal", "fasta" or "nexus", or any unambiguous abbreviation of these. 
+  }
   \item{n}{Number of sequences.}
   \item{names}{Names of sequences.}
   \item{subset}{a subset of taxa.}
@@ -52,6 +59,7 @@ baseFreq(obj, freq=FALSE, drop.unused.levels=FALSE)
   \item{allLevels}{return original data.} 
   \item{obj}{as object of class phyDat}
   \item{freq}{logical, if 'TRUE', frequencies or counts are returned otherwise proportions}
+  \item{all}{all a logical; if all = TRUE, all counts of bases, ambiguous codes, missing data, and alignment gaps are returned as defined in the contrast.}
   \item{drop.unused.levels}{logical, drop unused levels}  
   \item{...}{further arguments passed to or from other methods.}
 }
@@ -93,6 +101,7 @@ data(Laurasiatherian)
 class(Laurasiatherian)
 Laurasiatherian
 baseFreq(Laurasiatherian)
+baseFreq(Laurasiatherian, all=TRUE)
 subset(Laurasiatherian, subset=1:5)
 # transform into old ape format
 LauraChar <- as.character(Laurasiatherian)

@@ -8,7 +8,7 @@ set.seed(1)
 bs <- bootstrap.phyDat(yeast, FUN = function(x)nj(dist.hamming(x)), 
     bs=100)
 tree <- nj(dist.hamming(yeast))
-par("mar" = rep(2, 4))
+par("mar" = rep(1, 4))
 tree <- plotBS(tree, bs, "phylogram")
 cnet <- consensusNet(bs, .3)
 plot(cnet, "2D", show.edge.label=TRUE)
@@ -23,22 +23,23 @@ plot(cnet, "2D", show.edge.label=TRUE)
 ## ---- eval=TRUE----------------------------------------------------------
 dm <- dist.hamming(yeast)
 nnet <- neighborNet(dm)
-par("mar" = rep(2, 4))
+par("mar" = rep(1, 4))
 plot(nnet, "2D")
 
 ## ---- eval=TRUE----------------------------------------------------------
 nnet <- addConfidences(nnet, tree)
-par("mar" = rep(2, 4))
+par("mar" = rep(1, 4))
 plot(nnet, "2D", show.edge.label=TRUE)
 
 ## ---- eval=TRUE----------------------------------------------------------
 tree2 <- rNNI(tree, 2)
 tree2 <- addConfidences(tree2, tree)
 # several support values are missing
+par("mar" = rep(1, 4))
 plot(tree2, show.node.label=TRUE)
 
 ## ---- eval=TRUE----------------------------------------------------------
 cnet <- nnls.networx(cnet, dm)
-par("mar" = rep(2, 4))
+par("mar" = rep(1, 4))
 plot(cnet, "2D", show.edge.label=TRUE)
 

@@ -1,4 +1,38 @@
-     CHANGES in PHANGORN VERSION 1.99-14
+     CHANGES in PHANGORN VERSION 2.0.0
+
+NEW FEATURES    
+    
+    o as.phyDat.MultipleAlignment to excange data with Biostrings
+    
+    o dist.ml can now compute distances using a discrete gamma model
+    
+      and the "F81" model.
+
+    o optim.pml got a new rearrangement argument and can now 
+    
+      use a stochastic rearrangements similar to Nguyen et al. (2015)
+
+BUG FIXES
+
+    o plotBS may double counted edges when rooted trees were in the sample 
+    
+OTHER CHANGES
+
+    o optim.pml uses more C code and should be more robust  
+
+    o more unit tests
+    
+    o baseFreq got additional parameter 'all' similar to base.freq in ape 
+    
+    o lots of little improvements in the manual and help files
+    
+    o modelTest now also shows AIC weights and model="all" will test
+    
+      all available models
+
+
+
+     CHANGES in PHANGORN VERSION 1.99.14
  
 NEW FEATURES
 

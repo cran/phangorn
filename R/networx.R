@@ -8,7 +8,7 @@ as.splits <- function (x, ...){
 
 
 as.Matrix <- function (x, ...){
-    if (class(x) == "Matrix") return(x)
+    if (inherits(x,"Matrix")) return(x)
     UseMethod("as.Matrix")
 }
 
@@ -66,12 +66,13 @@ orderSplitLabel = function(x, order){
 }
 
 
-presenceAbsence <- function(x, y){
+# returns order of x$edge
+presenceAbsenceOld <- function(x, y){
     X <- as.splits(x)
     Y <- as.splits(y)
     labels <- attr(X, "labels") 
-    if(class(x)[1] == "phylo") X <- X[x$edge[,2]]
-    if(class(y)[1] == "phylo") Y <- Y[y$edge[,2]]
+    #    if(inherits(x,"phylo")) X <- X[x$edge[,2]]
+    #    if(inherits(y,"phylo")) Y <- Y[y$edge[,2]]
     Y <- orderSplitLabel(Y, labels)
     nTips <- length(labels)
     X <- oneWise(X, nTips)
@@ -81,7 +82,20 @@ presenceAbsence <- function(x, y){
     if(inherits(x, "networx")){
         res <- res[x$splitIndex]    
     }    
+    if(class(x)[1]=="phylo"){
+        # res <- res[x$edge[,2]]
+        x$node.label = res[-c(1:length(labels))]
+        return(x)
+    }
     res            
+}
+
+
+presenceAbsence <- function(x,y){
+    spl <- as.splits(y)
+    l <- length(spl)
+    attr(spl, "confidences") <- rep(1, l)
+    addConfidences(x, y)
 }
 
 
@@ -154,23 +168,26 @@ c.splits <- function (..., recursive=FALSE)
 
 # computes splits from phylo
 as.splits.phylo <- function(x, ...){
-    result = bip(x)
+    result <- bip(x)
     if(!is.null(x$edge.length)){
-        edge.weights = numeric(max(x$edge))
-        edge.weights[x$edge[,2]] = x$edge.length
-        attr(result, "weights") = edge.weights
+        edge.weights <- numeric(max(x$edge))
+        edge.weights[x$edge[,2]] <- x$edge.length
+        attr(result, "weights") <- edge.weights
     }
+    if(!is.null(x$node.label)){
+        attr(result, "confidences") <- c(rep("", length(x$tip.label)), x$node.label)
+    }    
     attr(result, "labels") <- x$tip
-    class(result) = c('splits', 'prop.part')
+    class(result) <- c('splits', 'prop.part')
     result 
 }
 
 
 # computes splits from multiPhylo object (e.g. bootstrap, MCMC etc.)
 as.splits.multiPhylo <- function(x, ...){
-    if(class(x)=="multiPhylo")x = .uncompressTipLabel(x)
+    if(inherits(x,"multiPhylo"))x = .uncompressTipLabel(x)
     lx = length(x)
-    if(class(x)=="multiPhylo")class(x)='list'  # prop.part allows not yet multiPhylo
+    if(inherits(x,"multiPhylo"))class(x)='list'  # prop.part allows not yet multiPhylo
     firstTip = x[[1]]$tip[1]
     x = lapply(x, root, firstTip) # old trick  
     splits <- prop.part(x)
@@ -507,25 +524,48 @@ splits2design <- function(obj, weight=NULL){
 }
 
 
+hC <- function(g, set){
+    intersec = NULL
+    allEdges = NULL
+    fromTo <- set
+    l = length(set)
+    sptmp = shortest_paths(g, fromTo[l], fromTo[1], output=c("epath"))$epath[[1]]
+    sptmp = as.vector(sptmp)
+    allEdges = sptmp
+    for(i in 2:length(set)){
+        sptmp = shortest_paths(g, fromTo[i-1], fromTo[i], output=c("epath"))$epath[[1]]
+        sptmp = as.vector(sptmp)
+        intersec = c(intersec, intersect(allEdges, sptmp) )
+        allEdges = c(allEdges, sptmp)
+    }
+    #    allEdges = unique(allEdges)
+    list(allEdges, unique(allEdges), intersec)
+}   
+
+
 addEdge <- function(network, desc, spl){   
     edge <- network$edge
     parent <- edge[,1]
     child <- edge[,2]
     nTips <- length(network$tip.label)
 
-    desc2 = SHORTwise(desc, nTips)    
+    desc2 <- SHORTwise(desc, nTips)    
     split <- desc2[spl]
         
-    index = network$splitIndex
-    ind = which(compatible2(split, desc2[index]) == 1)
-    if(is.null(ind)) return(network)
-    add = TRUE
+    index <- network$splitIndex
+    ind <- which(compatible2(split, desc2[index]) == 1)
+    if(is.null(ind) | (length(ind)==0)) return(network)
+    add <- TRUE
   
-    X = as.matrix(desc2)
-    rsX = rowSums(X)
-    z = X %*% X[spl,]
-    v = which((rsX == z)[index] == TRUE) 
+    X <- as.matrix(desc2)
+    rsX <- rowSums(X)
+    z <- X %*% X[spl,]
+    v <- which((rsX == z)[index] == TRUE) 
 
+    
+# intersection of shortest pathes of both partitions
+# best with similar to circNetwork with shortest_paths 
+    
     while(add){
         tmp = ind
         for(i in ind){          
@@ -538,6 +578,17 @@ addEdge <- function(network, desc, spl){
         }
         ind=tmp
     }    
+   
+
+    g = graph(t(network$edge[ind,]), directed=FALSE)
+    dec = decompose(g, min.vertices = 2)
+
+    #    fromTo <- sort(match(split[[1]], attr(desc, "cycle")))
+    #    sptmp = shortest_paths(g, fromTo[i-1], fromTo[i], 
+    #                           output=c("epath"))$epath[[1]]
+    #    sp2 = c(sp2, sptmp[-c(1, length(sptmp))])
+    #    sp0 = c(sp0, sptmp)
+    
     oldNodes = unique(as.vector(edge[ind,]))
     mNodes = max(network$edge)
     newNodes = (mNodes+1L) : (mNodes+length(oldNodes))
@@ -575,7 +626,6 @@ circNetwork <- function(x, ord=NULL){
     res = stree(nTips, tip.label = attr(x, "labels"))
     res$edge[, 2] = ord
     res$edge.length=NULL
-#    browser()    
     x <- SHORTwise(x, nTips)    
     spRes <- as.splits(res)[res$edge[,2]]
     index = match(spRes, x)
@@ -631,7 +681,9 @@ circNetwork <- function(x, ord=NULL){
         sp0 = NULL
         
         for(i in 2:length(fromTo)){
-            sptmp = get.shortest.paths(g, fromTo[i-1], fromTo[i], 
+#            sptmp = get.shortest.paths(g, fromTo[i-1], fromTo[i], 
+#                                       output=c("epath"))$epath[[1]]            
+            sptmp = shortest_paths(g, fromTo[i-1], fromTo[i], 
                                        output=c("epath"))$epath[[1]]
             sp2 = c(sp2, sptmp[-c(1, length(sptmp))])
             sp0 = c(sp0, sptmp)
@@ -809,46 +861,63 @@ consensusNet <- function (obj, prob = 0.3, ...)
 }
 
 
-addConfidences <- function (obj, phy) UseMethod("addConfidences")
+addConfidences <- function (x, y) UseMethod("addConfidences")
 
 
+changeOrder <- function(x, labels){
+    oldL <- attr(x, "labels")
+    ind <- match(oldL,labels)
+    for(i in 1:length(x))
+        x[[i]] <- sort(ind[x[[i]]])
+    if(!is.null(attr(x, "cycle")))
+        attr(x, "cycle") <- ind[attr(x, "cycle")]
+    attr(x, "labels") <- labels
+    x    
+}
 
-addConfidences.splits <- function(obj, phy){
-    tiplabel <- attr(obj, "label")
-    obj = addTrivialSplits(obj) 
-    ind <- match(tiplabel, phy$tip.label)
-    if (any(is.na(ind)) | length(tiplabel) != length(phy$tip.label)) 
-        stop("trees have different labels")
-    phy$tip.label <- phy$tip.label[ind]
-    ind2 <- match(1:length(ind), phy$edge[, 2])
-    phy$edge[ind2, 2] <- order(ind)
-    
-    spl <- as.splits(phy)
-    
-    nTips <- length(tiplabel)
+
+# y now more general 
+addConfidences.splits <- function(x, y){
+    tiplabel <- attr(x, "label")
+    nTips = length(tiplabel)
+    x = addTrivialSplits(x) 
+    if(inherits(y,"phylo")){
+        ind <- match(tiplabel, y$tip.label)
+        if (any(is.na(ind)) | length(tiplabel) != length(y$tip.label)) 
+            stop("trees have different labels")
+        y$tip.label <- y$tip.label[ind]
+        ind2 <- match(1:length(ind), y$edge[, 2])
+        y$edge[ind2, 2] <- order(ind)
+    }
+    spl <- as.splits(y)
+    spl <- changeOrder(spl, tiplabel)
     spl <- SHORTwise(spl, nTips)
-    ind <- match(SHORTwise(obj, nTips), spl)
-    pos <-  which(ind > nTips)
-    confidences <- character(length(obj))
-    confidences[pos] <- phy$node.label[ind[pos] - nTips]
-    attr(obj, "confidences") <- confidences
-    obj  
+#    ind <- match(SHORTwise(x, nTips), spl)
+#    ind
+    ind <- match(SHORTwise(x, nTips), spl)
+    #    pos <-  which(ind > nTips)
+    pos <-  which(!is.na(ind))
+    confidences <- character(length(x))
+    confidences[pos] <- attr(spl, "confidences")[ind[pos]]
+    #        y$node.label[ind[pos] - nTips]
+    attr(x, "confidences") <- confidences
+    x  
 }
 
 
-addConfidences.networx <- function(obj, phy){
-    spl <- attr(obj, "splits")
-    spl <- addConfidences(spl, phy)
-    attr(obj, "splits") <- spl
-    obj    
+addConfidences.networx <- function(x, y){
+    spl <- attr(x, "splits")
+    spl <- addConfidences(spl, y)
+    attr(x, "splits") <- spl
+    x    
 }
 
 
-addConfidences.phylo <- function(obj, phy){
-    conf = attr(addConfidences(as.splits(obj), phy), "confidences")
-    nTips = length(obj$tip.label)
-    obj$node.label = conf[-c(1:nTips)]
-    obj      
+addConfidences.phylo <- function(x, y){
+    conf = attr(addConfidences(as.splits(x), y), "confidences")
+    nTips = length(x$tip.label)
+    x$node.label = conf[-c(1:nTips)]
+    x      
 } 
 
 
@@ -859,8 +928,10 @@ reorder.networx <- function (x, order =  "cladewise", ...)
         if (attr(x, "order") == order) 
             return(x)    
     g <- graph(t(x$edge))
-    if(order == "cladewise") neword <- topological.sort(g, "out")
-    else neword <- topological.sort(g, "in") 
+#    if(order == "cladewise") neword <- topological.sort(g, "out")
+#    else neword <- topological.sort(g, "in") 
+    if(order == "cladewise") neword <- topo_sort(g, "out")
+    else neword <- topo_sort(g, "in") 
     neworder <- order(match(x$edge[,1], neword))
     
     x$edge <- x$edge[neworder, ]
@@ -882,14 +953,16 @@ coords <- function(obj, dim="3D"){
     ind1 = which(!duplicated(obj$splitIndex))
 
     n = max(obj$edge)
-    adj = Matrix::spMatrix(n, n, i = obj$edge[,2], j = obj$edge[,1], x = rep(1, length(obj$edge.length)))
-    g = graph.adjacency(adj, "undirected")
+    adj = spMatrix(n, n, i = obj$edge[,2], j = obj$edge[,1], x = rep(1, length(obj$edge.length))) # Matrix::
+    g = graph_from_adjacency_matrix(adj, "undirected")
+#    g = graph.adjacency(adj, "undirected")
 ##########
 #    add this 
 #    g2 <- graph(t(obj$edge), directed=FALSE)
 #    g2 <- set.edge.attribute(g, "weight", value=rep(1, nrow(obj$edge))
     if(dim=="3D"){
-        coord <- layout.kamada.kawai(g, dim=3)
+        coord <- layout_with_kk(g, dim=3)
+#        coord <- layout.kamada.kawai(g, dim=3)
         k = matrix(0, max(obj$split), 3)
         for(i in ind1){
             tmp = coord[obj$edge[i, 2],] - coord[obj$edge[i, 1],]
@@ -906,7 +979,8 @@ coords <- function(obj, dim="3D"){
         }            
     }
     else{
-        coord <- layout.kamada.kawai(g, dim=2)
+        coord <- layout_with_kk(g, dim=2)
+#        coord <- layout.kamada.kawai(g, dim=2)
         k = matrix(0, max(obj$split), 2)
         for(i in ind1){
             tmp = coord[obj$edge[i, 2],] - coord[obj$edge[i, 1],]
@@ -966,20 +1040,11 @@ edgeLabels <- function(xx,yy,zz=NULL, edge){
         cbind(XX, YY)  
 }
 
-.check.pkg <- function (pkg) 
-{
-    if (pkg %in% rownames(installed.packages())) {
-        require(pkg, character.only = TRUE)
-        return(TRUE)
-    }
-    else return(FALSE)
-}
-
-
+# tip.color = "blue", edge.color="grey",
 plot.networx = function(x, type="3D", use.edge.length = TRUE, show.tip.label=TRUE,
     show.edge.label=FALSE, edge.label=NULL, show.node.label = FALSE, node.label=NULL,
-    show.nodes=FALSE, tip.color = "blue", 
-    edge.color="grey", edge.width = 3, edge.lty = 1,
+    show.nodes=FALSE, tip.color = "black", 
+    edge.color="black", edge.width = 3, edge.lty = 1,
     font = 3, cex = 1, ...){
     type = match.arg(type, c("3D", "2D")) 
     if(use.edge.length==FALSE) x$edge.length[] = 1
@@ -992,8 +1057,6 @@ plot.networx = function(x, type="3D", use.edge.length = TRUE, show.tip.label=TRU
     if(show.tip.label)node.label[1:nTips] = ""
     
     chk <- FALSE
-    
-    
     
     if(type=="3D") chk <- requireNamespace("rgl", quietly = TRUE) #.check.pkg("rgl")
     if(!chk && type=="3D"){
@@ -1037,8 +1100,8 @@ plotRGL <- function(coords, net, show.tip.label=TRUE,
     z = coords[,3]
      
     nTips = length(net$tip.label)
-    
-    segments3d(x[t(edge)],y[t(edge)],z[t(edge)], col=edge.color, lwd=edge.width) 
+  
+    segments3d(x[t(edge)],y[t(edge)],z[t(edge)], col=rep(edge.color, each=2), lwd=edge.width) 
     radius=0
     if(show.nodes){
         radius = sqrt((max(x)-min(x))^2 + (max(y)-min(y))^2 + (max(z)-min(z))^2) / 200    
@@ -1110,9 +1173,9 @@ plot2D <- function(coords, net, show.tip.label=TRUE,
 lento <- function (obj, xlim = NULL, ylim = NULL, main = "Lento plot", 
     sub = NULL, xlab = NULL, ylab = NULL, bipart=TRUE, trivial=FALSE, ...) 
 {
-    if (class(obj) == "phylo") 
+    if (inherits(obj,"phylo")) 
         obj = as.splits(obj)
-    if (class(obj) == "multiPhylo") 
+    if (inherits(obj,"multiPhylo")) 
         obj = as.splits(obj)    
     labels = attr(obj, "labels") 
     l = length(labels)
@@ -1260,7 +1323,7 @@ read.nexus.splits <- function(file)
     semico <- grep(";", X)
     X=gsub("\\[(.*?)\\]", "", X) # get rid of comments
     i1 <- grep("TAXLABELS", X, ignore.case = TRUE)    
-    taxlab <- TRUE 
+    taxlab <- ifelse(length(i1)>0, TRUE, FALSE) 
     if (taxlab) {
         end <- semico[semico > i1][1]
         x <- X[(i1 + 1):end] # assumes there's a 'new line' after "TRANSLATE"
@@ -1438,4 +1501,46 @@ fast.tree2  = function(tree, node){
    obj
 }
 
+
+
+################################################################################
+# delta.score
+################################################################################
+# Calculated from mathematical description given in Gray et al. (2010) Phil.
+# Trans. Roy. Soc. B. 
+# delta.score reference: Holland et al. (2002) Mol. Biol. Evol.
+################################################################################ 
+
+
+# Calculating Delta and Q-residual scores 
+# internal
+delta.quartet <-
+    function(quartet,dist.dna) {
+        m1 <- dist.dna[quartet[1],quartet[2]] + dist.dna[quartet[3],quartet[4]]
+        m2 <- dist.dna[quartet[1],quartet[3]] + dist.dna[quartet[2],quartet[4]]
+        m3 <- dist.dna[quartet[1],quartet[4]] + dist.dna[quartet[2],quartet[3]]
+        m <- sort(c(m1,m2,m3),decreasing=T)
+        if((m[1]-m[3])!=0) {
+            ret <- (m[1]-m[2])/(m[1]-m[3])
+        } else {
+            ret <- 0
+        }
+        return(ret)
+    }
+
+
+delta.score <- function(x, arg="mean", ...) {
+        # dist.dna <- as.matrix(dist.dna(dna,"raw"))   
+        # dist.dna(dna,"raw") is equivalent to dist.hamming(as.phyDat(dna), exclude="all") 
+        dist.dna <- as.matrix(dist.hamming(x, ...))
+        # Number of quartets
+        # choose(length(names(x)),4)
+        # Create all quartets
+        all.quartets <- t(combn(names(x),4))
+        delta.values <- apply(all.quartets[,],1,delta.quartet,dist.dna)
+        if (!arg%in%c("all", "mean","sd")) stop("return options are: all, mean, or sd")
+        if (arg=='all') return(delta.values)
+        if (arg=='mean') return(mean(delta.values))
+        if (arg=='sd') return(sd(delta.values))
+    }
 
