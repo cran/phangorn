@@ -1,4 +1,4 @@
-9598c0406393b729f318d08a8e743e85 *DESCRIPTION
+7af4571ff887cf3706753c0a1a5110ca *DESCRIPTION
 27ffaae6466e2babdd8a2d6a6b5a989c *NAMESPACE
 807746d432bff2e4cd564d1626372362 *NEWS
 115bc297835dcaab7d32527fcacb2061 *R/Coalescent.R
@@ -26,7 +26,7 @@ f2d09a645d5c8bdecb2de167c18110aa *R/treeManipulation.R
 06a427b3a3c6bf68a9085e3a2d409aed *R/treedist.R
 c925e4cd5ce95bf91968fc909d6eef76 *R/zzz.R
 d138f01ef43de1a854453852cdf06fb2 *README.md
-5f5a9d4a1e2c286244e8bb4f3ec9acac *build/vignette.rds
+761d645db6b2906172285faea3c9b60d *build/vignette.rds
 4a92b07bcd170e85bd237e460acafa93 *data/Laurasiatherian.RData
 4b269c2e640293341b9b1c04d4dd7f4e *data/chloroplast.RData
 19f84425e8caaf9f605490cdff17dd81 *data/yeast.RData
