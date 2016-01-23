@@ -77,6 +77,21 @@ SEXP AddOne(SEXP edge, SEXP tip, SEXP ind, SEXP l, SEXP m){
 }
 
 
+SEXP AddOnes(SEXP edge, SEXP tip, SEXP ind, SEXP l, SEXP m){
+    R_len_t n = length(ind); 
+    SEXP result, res;
+    PROTECT(res = allocVector(VECSXP, n));
+    for(int i=0; i<n; i++){
+        PROTECT(result = allocMatrix(INTSXP, INTEGER(l)[0]+2L, 2L));
+        addOne(INTEGER(edge), INTEGER(tip), &INTEGER(ind)[i], INTEGER(l), INTEGER(m), INTEGER(result));
+        SET_VECTOR_ELT(res, i, result);
+        UNPROTECT(1);
+    }
+    UNPROTECT(1);
+    return(res);
+}
+
+
 void fitch43(int *dat1, int *dat2, int *nr, int *pars, double *weight, double *w){
     int k, tmp;
     for(k = 0; k < (*nr); k++){
@@ -130,7 +145,9 @@ void fitch54(int *res, int *dat1, int *dat2, int *nr, double *weight, double *w)
     } 
 }
 
-
+// FNALL5(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP my, SEXP root) 
+// nrx, edge,   score (result von FNALL5) 
+// root berechnen
 SEXP FITCHTRIP3(SEXP DAT3, SEXP nrx, SEXP edge, SEXP score, SEXP PS){ 
     R_len_t i, m = length(edge);  
     int nr=INTEGER(nrx)[0], k, tmp, ei, *edges=INTEGER(edge); 
@@ -141,18 +158,9 @@ SEXP FITCHTRIP3(SEXP DAT3, SEXP nrx, SEXP edge, SEXP score, SEXP PS){
     PROTECT(pvec = allocVector(REALSXP, m));
     pvtmp = REAL(pvec);
     for(i=0; i<m; i++) pvtmp[i] = REAL(score)[i]; 
-/*    
-#ifdef _OPENMP
-if(*nthreads <= 1){ *nthreads=1; }else{ *nthreads=(*nthreads < omp_get_max_threads()) ? (*nthreads) : (omp_get_max_threads()); }
-#endif
-
-#ifdef SUPPORT_OPENMP    
-#pragma omp parallel for private(i, ei, k, tmp) shared(edges, data1, data2, d3, nr, weight, ps, pvtmp)
-#endif
-*/
     for(i=0; i<m; i++){
         ei = edges[i] - 1L;
-//      pvtmp[i] = REAL(score)[ei];
+//      pvtmp[i] = REAL(score)[ei]; -1L
         for(k = 0; k < nr; k++){
             tmp = data1[k + ei*nr] & data2[k + ei*nr];
             if(!tmp){
@@ -504,7 +512,7 @@ void fitchTripletACC4(int *root, int *dat1, int *dat2, int *dat3, int *nr, doubl
 }
 
 
-
+// eleganter in Rcpp
 SEXP FITCH345(SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP mx, SEXP ps){   
     int *nr=INTEGER(nrx), m=INTEGER(mx)[0], i;  
     double *pvtmp;  
