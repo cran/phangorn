@@ -94,7 +94,7 @@ fitGTR
 
 
 ###################################################
-### code chunk number 13: Trees.Rnw:141-144
+### code chunk number 13: Trees.Rnw:143-146
 ###################################################
 fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE, 
     rearrangement = "stochastic", control = pml.control(trace = 0))
@@ -102,19 +102,19 @@ fitGTR
 
 
 ###################################################
-### code chunk number 14: Trees.Rnw:148-149
+### code chunk number 14: Trees.Rnw:150-151
 ###################################################
 anova(fitJC, fitGTR) 
 
 
 ###################################################
-### code chunk number 15: Trees.Rnw:152-153
+### code chunk number 15: Trees.Rnw:154-155
 ###################################################
 SH.test(fitGTR, fitJC) 
 
 
 ###################################################
-### code chunk number 16: Trees.Rnw:156-160
+### code chunk number 16: Trees.Rnw:158-162
 ###################################################
 AIC(fitJC)
 AIC(fitGTR) 
@@ -123,26 +123,26 @@ BIC(fitGTR)
 
 
 ###################################################
-### code chunk number 17: Trees.Rnw:163-164
+### code chunk number 17: Trees.Rnw:165-166
 ###################################################
 load("Trees.RData")
 
 
 ###################################################
-### code chunk number 18: Trees.Rnw:166-167 (eval = FALSE)
+### code chunk number 18: Trees.Rnw:168-169 (eval = FALSE)
 ###################################################
 ## mt = modelTest(primates)
 
 
 ###################################################
-### code chunk number 19: Trees.Rnw:171-173
+### code chunk number 19: Trees.Rnw:173-175
 ###################################################
 library(xtable)
 print(xtable(mt, caption="Summary table of modelTest", label="tab:modelTest"), include.rownames=FALSE)
 
 
 ###################################################
-### code chunk number 20: Trees.Rnw:177-180
+### code chunk number 20: Trees.Rnw:179-182
 ###################################################
 env <- attr(mt, "env")
 ls(envir=env)
@@ -150,7 +150,7 @@ ls(envir=env)
 
 
 ###################################################
-### code chunk number 21: Trees.Rnw:183-185 (eval = FALSE)
+### code chunk number 21: Trees.Rnw:185-187 (eval = FALSE)
 ###################################################
 ## bs = bootstrap.pml(fitJC, bs=100, optNni=TRUE, 
 ##     control = pml.control(trace = 0))
@@ -182,14 +182,14 @@ title("b)")
 
 
 ###################################################
-### code chunk number 24: Trees.Rnw:216-218
+### code chunk number 24: Trees.Rnw:218-220
 ###################################################
 options(prompt=" ")
 options(continue="  ")
 
 
 ###################################################
-### code chunk number 25: Trees.Rnw:220-249 (eval = FALSE)
+### code chunk number 25: Trees.Rnw:222-251 (eval = FALSE)
 ###################################################
 ## library(phangorn)
 ## file="myfile"
@@ -201,9 +201,9 @@ options(continue="  ")
 ## tree <- nnls.phylo(tree, dm)   # need edge weights
 ## 
 ## 
-## # 1. alternative: quick and dirty: GTR + G + NNI
+## # 1. alternative: quick and dirty: GTR + G 
 ## fitStart = pml(tree, dat, k=4)
-## fit = optim.pml(fitStart, model="GTR", optGamma=TRUE, rearrangement="NNI") 
+## fit = optim.pml(fitStart, model="GTR", optGamma=TRUE, rearrangement="stochastic") 
 ##  
 ## # 2. alternative: preper with modelTest  
 ## mt <- modelTest(dat, tree=tree, multicore=TRUE)
@@ -223,7 +223,7 @@ options(continue="  ")
 
 
 ###################################################
-### code chunk number 26: Trees.Rnw:255-276 (eval = FALSE)
+### code chunk number 26: Trees.Rnw:257-278 (eval = FALSE)
 ###################################################
 ## library(phangorn)
 ## file="myfile"
@@ -249,7 +249,7 @@ options(continue="  ")
 
 
 ###################################################
-### code chunk number 27: Trees.Rnw:288-289
+### code chunk number 27: Trees.Rnw:290-291
 ###################################################
 toLatex(sessionInfo())
 

@@ -1,6 +1,7 @@
 \name{addConfidences}
 \alias{addConfidences}
 \alias{presenceAbsence}
+\alias{createLabel}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Compare splits and add support values to an object
@@ -9,8 +10,9 @@ Compare splits and add support values to an object
 Add support values to a \code{splits}, \code{phylo} or \code{networx} object. 
 }
 \usage{
-addConfidences(x, y)
+addConfidences(x, y, ...)
 presenceAbsence(x, y)
+createLabel(x, y, label_y, type = "edge", nomatch = NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,6 +22,18 @@ an object of class \code{splits}, \code{phylo} or \code{networx}
   \item{y}{
 an object of class \code{splits}, \code{phylo}, \code{multiPhylo} or \code{networx}
 }
+  \item{...}{
+  Further arguments passed to or from other methods.
+  }
+  \item{label_y}{
+  label of y matched on x. Will be usually of length(as.splits(x)). 
+  }
+  \item{type}{
+  should labels returned for edges (in \code{networx}) or splits. 
+  }
+  \item{nomatch}{
+  default value if no match between x and y is found. 
+  }
 }
 %%\details{
 %%  ~~ If necessary, more details than the description above ~~

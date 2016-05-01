@@ -1,5 +1,6 @@
 \name{phyDat}
 \alias{phyDat}
+\alias{as.AAbin.phyDat}
 \alias{as.phyDat.DNAbin}
 \alias{as.phyDat.alignment}
 \alias{as.phyDat.MultipleAlignment}
@@ -20,6 +21,7 @@
 \alias{removeUndeterminedSites}
 \alias{phyDat2alignment}
 \alias{phyDat2MultipleAlignment}
+\alias{image.phyDat}
 \title{Conversion among Sequence Formats}
 \description{
 These functions transform several DNA formats into the \code{phyDat} format. 
@@ -32,10 +34,12 @@ write.phyDat(x, file, format="phylip",...)
 \method{as.phyDat}{DNAbin}(x, ...)
 \method{as.phyDat}{alignment}(x, type="DNA", ...)
 \method{as.phyDat}{MultipleAlignment}(x, ...)
+%\method{as.AAbin}{phyDat}(x, ...)
 \method{as.character}{phyDat}(x, allLevels = TRUE, ...)
 \method{as.data.frame}{phyDat}(x, ...)
 \method{as.DNAbin}{phyDat}(x, ...)
 \method{subset}{phyDat}(x, subset, select, site.pattern = TRUE, ...)
+\method{unique}{phyDat}(x, incomparables = FALSE, identical = TRUE, ...)
 phyDat2alignment(x)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 acgt2ry(obj)
@@ -62,6 +66,9 @@ baseFreq(obj, freq=FALSE, all=FALSE, drop.unused.levels=FALSE)
   \item{freq}{logical, if 'TRUE', frequencies or counts are returned otherwise proportions}
   \item{all}{all a logical; if all = TRUE, all counts of bases, ambiguous codes, missing data, and alignment gaps are returned as defined in the contrast.}
   \item{drop.unused.levels}{logical, drop unused levels}  
+  \item{incomparables}{for compatability with unique.}
+  \item{identical}{if TRUE (default) sequences have to be identical, if FALSE sequences are considered 
+  duplicates if distance between sequences is zero (happens frequently with ambiguous sites).}
   \item{...}{further arguments passed to or from other methods.}
 }
 \details{

@@ -2,6 +2,9 @@
 \alias{plot.networx}
 \alias{as.networx}
 \alias{as.networx.splits}
+\alias{as.networx.phylo}
+\alias{write.nexus.networx}
+\alias{read.nexus.networx}
 %\alias{reorder.networx}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
@@ -13,12 +16,17 @@ Phylogenetic networks
 }
 \usage{
 as.networx(x, ...)
-\method{as.networx}{splits}(x, planar = FALSE, ...)
+\method{as.networx}{splits}(x, planar = FALSE, coord = c("none", "2D", "3D"), ...)
 \method{plot}{networx}(x, type="3D", use.edge.length = TRUE, show.tip.label=TRUE, 
      show.edge.label=FALSE, edge.label = NULL, show.node.label=FALSE, 
      node.label = NULL, show.nodes=FALSE, tip.color="black", 
-     edge.color="black", edge.width=3, edge.lty=1, font=3, 
-     cex=1, ...)
+     edge.color="black", edge.width=3, edge.lty=1, 
+     split.color=NULL, split.width=NULL, split.lty=NULL,
+     font = 3, cex = par("cex"), 
+     cex.node.label=cex, cex.edge.label=cex,
+     col.node.label = tip.color, col.edge.label = tip.color, 
+     font.node.label = font, font.edge.label = font,
+     ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,6 +37,7 @@ an object of class \code{"splits"} (as.networx) or \code{"networx"} (plot)
 logical whether to produce a planar graph from only cyclic splits 
 (may excludes splits). 
 }
+\item{coord}{add coordinates of the nodes, allows to reproduce the plot.}
 \item{type}{
 "3D" to plot using rgl or "2D" in the normal device. 
 }
@@ -67,12 +76,37 @@ the width used to draw edges.
 \item{edge.lty}{
 a vector of line types.
 }
+\item{split.color}{
+the colors used to draw edges.
+}
+\item{split.width}{
+the width used to draw edges.
+}
+\item{split.lty}{
+a vector of line types.
+}
 \item{font}{
 an integer specifying the type of font for the labels: 1 (plain text), 
 2 (bold), 3 (italic, the default), or 4 (bold italic).
 }
 \item{cex}{
 a numeric value giving the factor scaling of the labels.}
+\item{cex.node.label}{
+a numeric value giving the factor scaling of the node labels.}
+\item{cex.edge.label}{
+a numeric value giving the factor scaling of the edge labels.}
+\item{col.node.label}{
+the colors used for the node labels.
+}
+\item{col.edge.label}{
+the colors used for the edge labels.
+}
+\item{font.node.label}{
+the font used for the node labels.
+}
+\item{font.edge.label}{
+the font used for the edge labels.
+}
 \item{\dots}{
 Further arguments passed to or from other methods.
 }
@@ -85,6 +119,9 @@ The argument planar = FALSE will create a planar split graph based on a
 cyclic ordering. These objects can be nicely plotted in "2D".
 So far not all parameters behave the same on the the rgl "3D"
 and basic graphic "2D" device. 
+
+Often it is easier (and safer) to supply vectors of graphial parameters for splits (e.g. splits.color). 
+These overwrite values edge.color. 
 }
 \note{
 The internal representation is likely to change. 

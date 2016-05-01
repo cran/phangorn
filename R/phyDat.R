@@ -31,8 +31,12 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE, contrast =
         data = as.character(data)
     if (is.matrix(data)) 
         data = as.data.frame(t(data), stringsAsFactors = FALSE)
-    if (is.vector(data))data = as.data.frame(t(data), stringsAsFactors = FALSE)
+# new 4.4.2016 bug fix (reported by Eli Levy Karin)     
+    if (is.vector(data) && !is.list(data))data = as.data.frame(t(data), stringsAsFactors = FALSE)
     else data = as.data.frame(data, stringsAsFactors = FALSE)
+#    data = data.frame(as.matrix(data), stringsAsFactors = FALSE)    
+    
+    
     if(length(data[[1]])==1) compress=FALSE 
     if(compress){
         ddd = fast.table(data)
@@ -349,7 +353,7 @@ as.phyDat.MultipleAlignment <- function(x, ...){
         res <- phyDat.DNA(Biostrings::as.matrix(x))
     if(inherits(x, "RNAMultipleAlignment"))
         res <- phyDat.DNA(Biostrings::as.matrix(x))
-    if(inherits(x, "RNAMultipleAlignment"))
+    if(inherits(x, "AAMultipleAlignment"))
         res <- phyDat.AA(Biostrings::as.matrix(x))
     return(res)
     }
@@ -556,6 +560,12 @@ as.DNAbin.phyDat <- function (x, ...)
 }
 
 
+if (getRversion() >= "2.15.1") utils::globalVariables("as.AAbin")
+as.AAbin.phyDat <- function(x,...) {
+   if(attr(x, "type")=="AA") return(as.AAbin(as.character(x, ...)))
+   else stop("x must be a amino acid sequence")
+}
+
  
 phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...) 
 {
@@ -711,7 +721,7 @@ cbind.phyDat <- function(..., gaps="-"){
 
 
 write.phyDat <- function(x, file, format="phylip",...){
-    if(format=="fasta") write.dna(as.character(x), file, format="fasta", ...)
+    if(format=="fasta") write.dna(as.character(x), file, format="fasta", colsep = "", nbcol=-1, ...)
     if(format=="phylip") write.dna(as.character(x), file, format="sequential", ...)    
     if(format=="nexus"){   
          type = attr(x, "type")
@@ -816,7 +826,58 @@ subset.phyDat <- function (x, subset, select, site.pattern = TRUE,...)
 }
 
 
-unique.phyDat <- function(x, incomparables=FALSE, ...) getCols(x, !duplicated(x))
+duplicated_phyDat <- function(x, ...){
+    dm <- as.matrix(dist.hamming(x))
+    diag(dm) <- 1
+    res <- logical(nrow(dm))
+    if(all(dm>0)) return(res)
+    tmp <- which(dm==0, arr.ind = TRUE, useNames = FALSE)
+    tmp <- tmp[tmp[,1] < tmp[,2],2]
+    res[unique(tmp)]=TRUE
+    res
+}
+
+
+duplicated_map2 <- function(x, ...){
+    dm <- dist.hamming(x)
+    if(all(dm>0)) return(NULL)
+    dm <- as.matrix(dm)
+    tmp <- which(dm==0, arr.ind = TRUE, useNames = FALSE)
+    tmp <- tmp[tmp[,1] < tmp[,2],] 
+    tmp[] = names(x)[tmp]
+    g <- graph_from_edgelist(tmp, directed = FALSE)
+    clu <- components(g)
+    gr <- groups(clu)
+    mapping <- matrix(NA, 1,2)
+    for(i in 1:length(gr)){
+        if(length(gr[[i]])==2)mapping <- rbind(mapping, gr[[i]])
+        else{
+            tmplab = gr[[i]]
+            sg <- sum(dm[tmplab, tmplab])
+            if(sg==0)mapping <- rbind(mapping, cbind(tmplab[1], tmplab[-1]))
+        }
+    }
+    mapping[-1,c(2,1)]
+}
+
+
+duplicated_map <- function(x, ...){
+# exact matches    
+   dup <-  duplicated(x)
+   mapping <- NULL
+   if(any(dup)){ # && optNNI
+       labels <- names(x)
+       ind <- match(subset(x, dup), x)
+       mapping <- cbind(labels[dup], labels[ind])
+   }
+   mapping
+}   
+
+
+unique.phyDat <- function(x, incomparables=FALSE, identical=TRUE, ...){
+    if(identical) return(getCols(x, !duplicated(x)))
+    getCols(x, !duplicated_phyDat(x))
+} 
 
 
 removeUndeterminedSites <- function(x, use.contrast=TRUE, undetermined=c("?", "n", "-"), ...){
@@ -1028,3 +1089,12 @@ genlight2phyDat <- function(x, ambiguity=NA){
     lev <- na.omit(unique(as.vector(tmp)))
     phyDat(tmp, "USER", levels=lev, ambiguity=ambiguity)
 }
+
+
+if (getRversion() >= "2.15.1") utils::globalVariables("image.AAbin")
+image.phyDat <- function(x, ...){
+    if(attr(x, "type")=="AA")image(as.AAbin(x), ...)
+    if(attr(x, "type")=="DNA")image(as.DNAbin(x), ...)
+    else return(NULL)
+}
+
