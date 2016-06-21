@@ -97,13 +97,13 @@ for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 
 
 ###################################################
-### code chunk number 10: phangorn-specials.Rnw:270-271
+### code chunk number 10: phangorn-specials.Rnw:271-272
 ###################################################
 trees = nni(trees[[1]])
 
 
 ###################################################
-### code chunk number 11: phangorn-specials.Rnw:282-283
+### code chunk number 11: phangorn-specials.Rnw:283-284
 ###################################################
 toLatex(sessionInfo())
 

@@ -3,7 +3,7 @@
 #
 
 allKids <- function(phy){
-    nTips = as.integer(length(phy$tip))
+    nTips = as.integer(length(phy$tip.label))
     lp=nrow(phy$edge)
     nNode = phy$Nnode
     .C("AllKids", as.integer(phy$edge[,2]), as.integer(phy$edge[,1]), as.integer(nTips), 
@@ -115,8 +115,8 @@ treedist <- function (tree1, tree2, check.labels=TRUE)
     
     bp1 = bip(tree1)
     bp2 = bip(tree2)
-    bp1 <- SHORTwise(bp1, length(tree1$tip))
-    bp2 <- SHORTwise(bp2, length(tree2$tip))
+    bp1 <- SHORTwise(bp1, length(tree1$tip.label))
+    bp2 <- SHORTwise(bp2, length(tree2$tip.label))
     bp1 <- sapply(bp1, paste, collapse = "_")
     bp2 <- sapply(bp2, paste, collapse = "_")
     
@@ -167,7 +167,174 @@ treedist <- function (tree1, tree2, check.labels=TRUE)
 }
 
 
-mRF2 <- function(tree, trees, check.labels = TRUE){
+wRF0 <- function(tree1, tree2, normalize=FALSE, check.labels=TRUE, rooted = FALSE){    
+    r1 = is.rooted(tree1)
+    r2 = is.rooted(tree2)
+    if (r1 != r2) {
+        message("one tree is unrooted, unrooted both")
+    }
+    if (!rooted) {
+        if (r1) 
+            tree1 <- unroot(tree1)
+        if (r2) 
+            tree2 <- unroot(tree2)
+    }
+    if (!r1 | !r2) {
+        if (r1) 
+            tree1 = unroot(tree1)
+        if (r2) 
+            tree2 = unroot(tree2)
+    }
+    if (!is.binary.tree(tree1) | !is.binary.tree(tree2)) 
+        message("Trees are not binary!")
+    if (check.labels) {
+        ind <- match(tree1$tip.label, tree2$tip.label)
+        if (any(is.na(ind)) | length(tree1$tip.label) != length(tree2$tip.label)) 
+            stop("trees have different labels")
+        tree2$tip.label <- tree2$tip.label[ind]
+        ind2 <- match(1:length(ind), tree2$edge[, 2])
+        tree2$edge[ind2, 2] <- order(ind)
+    }
+    bp1 = bip(tree1)
+    bp2 = bip(tree2)
+    if (!rooted) {
+        bp1 <- SHORTwise(bp1, length(tree1$tip.label))
+        bp2 <- SHORTwise(bp2, length(tree2$tip.label))
+    }
+    bp1 <- sapply(bp1, paste, collapse = "_")
+    bp2 <- sapply(bp2, paste, collapse = "_")
+    
+    w1 <- numeric(max(tree1$edge))
+    w2 <- numeric(max(tree2$edge))
+    w1[tree1$edge[,2]] <- tree1$edge.length
+    w2[tree2$edge[,2]] <- tree2$edge.length
+    
+    ind3 <- match(bp1, bp2, nomatch=0L)
+    ind4 <- ind3[ind3>0]
+    ind3 <- which(ind3>0)
+    
+    s1 <- sum(abs(w1[ind3] - w2[ind4]))
+    s2 <- sum(w1[-ind3])
+    s3 <- sum(w2[-ind4])
+    
+    wRF <- s1 + s2 + s3
+    if(normalize) wRF <- wRF / (sum(tree1$edge.length) + sum(tree2$edge.length))
+    return(wRF)
+}
+
+
+wRF2 <- function(tree, trees, normalize=FALSE, check.labels = TRUE){    
+    if(check.labels){
+        trees <- .compressTipLabel(trees)
+        tree <- checkLabels(tree, attr(trees, "TipLabel"))
+    }    
+    trees <- .uncompressTipLabel(trees)
+    unclass(trees) 
+    
+    if (any(sapply(trees, is.rooted))) {
+        trees <- lapply(trees, unroot)
+    }
+    
+    nTips <- length(tree$tip.label)
+    
+    fun1 <- function(x){
+        w <- numeric(max(x$edge))
+        w[x$edge[,2]] <- x$edge.length
+        w
+    }
+    W <- lapply(trees, fun1)
+    
+    fun2 <- function(x, nTips){
+        bp <- bip(x)
+        bp <- SHORTwise(bp, nTips)
+        bp <- sapply(bp, paste, collapse = "_")
+        bp
+    }
+    BP <- lapply(trees, fun2, nTips)
+    
+    if(is.rooted(tree)) tree <- unroot(tree)
+    bp = bip(tree)
+    
+    bp <- SHORTwise(bp, nTips)
+    bp <- sapply(bp, paste, collapse = "_")
+    
+    w <- numeric(max(tree$edge))
+    w[tree$edge[,2]] <- tree$edge.length
+    
+    l <- length(trees)
+    wRF <- numeric(l)
+    
+    for(i in 1:l){
+        ind3 = fmatch(BP[[i]], bp, nomatch=0L)
+        ind4 = ind3[ind3>0]
+        ind3 = which(ind3>0)
+        
+        s1 = sum(abs(W[[i]][ind3] - w[ind4]))
+        s2 = sum(W[[i]][-ind3])
+        s3 = sum(w[-ind4])
+        wRF[i] = (s1 + s2 + s3)
+    }
+    if(normalize){
+        sc <- sapply(trees, function(x)sum(x$edge.length)) + sum(tree$edge.length)
+        wRF <- wRF / sc
+    }
+    wRF
+}
+
+
+wRF1 <- function(trees, normalize=FALSE, check.labels = TRUE){
+    if(check.labels) trees <- .compressTipLabel(trees)
+    trees <- .uncompressTipLabel(trees)
+    unclass(trees)     
+    
+    nTips <- length(trees[[1]]$tip.label)
+    if (any(sapply(trees, is.rooted))) {
+        trees <- lapply(trees, unroot)
+    }
+    fun1 <- function(x){
+        w <- numeric(max(x$edge))
+        w[x$edge[,2]] <- x$edge.length
+        w
+    }
+    W <- lapply(trees, fun1)
+    fun2 <- function(x, nTips){
+        bp <- bip(x)
+        bp <- SHORTwise(bp, nTips)
+        bp <- sapply(bp, paste, collapse = "_")
+        bp
+    }
+    if(normalize) sc <- sapply(trees, function(x)sum(x$edge.length)) 
+    BP <- lapply(trees, fun2, nTips)
+    k <- 1
+    l <- length(trees)
+    wRF <- numeric((l * (l - 1))/2)
+    for (i in 1:(l - 1)){
+        bp <- BP[[i]]
+        w <- W[[i]]
+        for (j in (i + 1):l){
+            ind3 = fmatch(BP[[j]], bp, nomatch=0L)
+            ind4 = ind3[ind3>0]
+            ind3 = which(ind3>0)
+            s1 = sum(abs(W[[j]][ind3] - w[ind4]))
+            s2 = sum(W[[j]][-ind3])
+            s3 = sum(w[-ind4])
+            wRF[k] <- (s1 + s2 + s3)
+            if(normalize) wRF[k] <- wRF[k] / (sc[i] + sc[j])
+            k=k+1
+        }
+    }
+    attr(wRF, "Size") <- l
+    if(!is.null(names(trees)))attr(KF, "Labels") <- names(trees)
+    attr(wRF, "Diag") <- FALSE
+    attr(wRF, "Upper") <- FALSE
+    class(wRF) <- "dist"
+    return(wRF)
+}
+
+
+
+
+mRF2 <- function(tree, trees, normalize=FALSE, check.labels = TRUE){
     if (!inherits(trees,"multiPhylo")) 
         stop("trees should be an object of class \"multiPhylo\"")
     if (!inherits(tree,"phylo")) 
@@ -212,11 +379,15 @@ mRF2 <- function(tree, trees, check.labels = TRUE){
 #        RF[i] <- sum(match(xx[[i]], yy, nomatch=0L)==0L) + sum(match(yy, xx[[i]], nomatch=0L)==0L)
     }
     if(!is.null(names(trees)))names(RF) <- names(trees)
-    return(RF)
+    if(!normalize)return(RF)
+    else{
+        sc <- sapply(trees, Nnode) + Nnode(tree) - 2
+        return(RF/sc)
+    }
 }
 
 
-mRF<-function(trees){
+mRF<-function(trees, normalize=FALSE){
     if (!inherits(trees,"multiPhylo")) 
         stop("trees should be an object of class \"multiPhylo\"")
     trees <- .compressTipLabel(trees)
@@ -246,6 +417,7 @@ mRF<-function(trees){
         for (j in (i + 1):l){
             RF[k] <- Nnodes[i] + Nnodes[j] - 2 * sum(fmatch(xx[[j]], tmp, nomatch=0L)>0L)
 #            RF[k] <- sum(match(xx[[j]], tmp, nomatch=0L)==0L) + sum(match(tmp, xx[[j]], nomatch=0L)==0L)
+            if(normalize) RF[k] <- RF[k] / ( Nnodes[i] + Nnodes[j] - 2)
             k=k+1
         }   
     }
@@ -258,11 +430,7 @@ mRF<-function(trees){
 }
 
 
-RF.dist <- function(tree1, tree2=NULL, check.labels = TRUE, rooted=FALSE)
-{
-    if(class(tree1)=="multiPhylo" && is.null(tree2))return(mRF(tree1)) 
-    if(class(tree1)=="phylo" && class(tree2)=="multiPhylo")return(mRF2(tree1, tree2, check.labels))
-    if(class(tree2)=="phylo" && class(tree1)=="multiPhylo")return(mRF2(tree2, tree1, check.labels))
+RF0 <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, rooted=FALSE){   
     r1 = is.rooted(tree1)
     r2 = is.rooted(tree2)
     if(r1 != r2){
@@ -292,11 +460,32 @@ RF.dist <- function(tree1, tree2=NULL, check.labels = TRUE, rooted=FALSE)
     bp1 = bipart(tree1)
     bp2 = bipart(tree2)
     if(!rooted){
-        bp1 <- SHORTwise(bp1, length(tree1$tip))
-        bp2 <- SHORTwise(bp2, length(tree2$tip))    
+        bp1 <- SHORTwise(bp1, length(tree1$tip.label))
+        bp2 <- SHORTwise(bp2, length(tree2$tip.label))    
     }
     RF = sum(match(bp1, bp2, nomatch=0L)==0L) + sum(match(bp2, bp1, nomatch=0L)==0L)
+    if(normalize) RF <- RF / (Nnode(tree1) + Nnode(tree2) - 2)
     RF
+}
+
+
+RF.dist <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, rooted=FALSE)
+{
+    if(class(tree1)=="phylo" && class(tree2)=="phylo")return(RF0(tree1, tree2, normalize, check.labels, rooted))
+    if(class(tree1)=="multiPhylo" && is.null(tree2))return(mRF(tree1, normalize)) 
+    if(class(tree1)=="phylo" && class(tree2)=="multiPhylo")return(mRF2(tree1, tree2, normalize, check.labels))
+    if(class(tree2)=="phylo" && class(tree1)=="multiPhylo")return(mRF2(tree2, tree1, normalize, check.labels))
+    else return(NULL)
+}
+
+
+wRF.dist <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, rooted=FALSE){
+    if(class(tree1)=="phylo" && class(tree2)=="phylo")return(wRF0(tree1, tree2, normalize, check.labels, rooted))
+    if(class(tree1)=="multiPhylo" && is.null(tree2))return(wRF1(tree1, normalize, check.labels))
+    
+    if(class(tree1)=="phylo" && class(tree2)=="multiPhylo")return(wRF2(tree1, tree2, normalize, check.labels))
+    if(class(tree2)=="phylo" && class(tree1)=="multiPhylo")return(wRF2(tree2, tree1, normalize, check.labels))
+    else return(NULL)        
 }
 
 
@@ -307,8 +496,8 @@ kf0 <- function(tree1, tree2, check.labels = TRUE){
     bp1 = bip(tree1)
     bp2 = bip(tree2)
     
-    bp1 <- SHORTwise(bp1, length(tree1$tip))
-    bp2 <- SHORTwise(bp2, length(tree2$tip))
+    bp1 <- SHORTwise(bp1, length(tree1$tip.label))
+    bp2 <- SHORTwise(bp2, length(tree2$tip.label))
     bp1 <- sapply(bp1, paste, collapse = "_")
     bp2 <- sapply(bp2, paste, collapse = "_")
     

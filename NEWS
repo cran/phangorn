@@ -1,3 +1,23 @@
+    CHANGES in PHANGORN VERSION 2.0.4
+     
+NEW FEATURES
+
+    o new weighted Robinson-Foulds (1979) distance wRF, suggested by Michelle Kendall
+    
+      and normalized Robinson-Foulds suggested by Sereina Rutschmann
+
+    o codon model "YN98" can be called directly, improved documentation
+
+    o bootstrap.phyDat got an new argument jumble, 
+    
+      which randomizes input order of sequences
+    
+OTHER CHANGES
+
+    o more unit tests
+    
+    
+
      CHANGES in PHANGORN VERSION 2.0.3
 
 NEW FEATURES 
