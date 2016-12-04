@@ -185,7 +185,7 @@ UNJ <- function(x)
     result = list(edge = rbind(c(nam[2], nam[1]), edge), 
                   edge.length=edge.length, tip.label = labels, Nnode=m)
     class(result) <- "phylo"
-    reorder(result)  
+    reorder(result, "postorder")  
 }
 
 
@@ -323,7 +323,7 @@ designUltra <- function (tree, sparse=TRUE)
     v=numeric( n * (n - 1)/2)
     m = 1L
     for (i in 1:length(leri)) {
-        if (!is.null(leri[[i]])) {
+        if (length(leri[[i]])>1) {
             if(length(leri[[i]])==2)ind = getIndex(bp[[leri[[i]][1] ]], bp[[leri[[i]][2] ]], n) 
             else {
                 ind=NULL
@@ -352,7 +352,7 @@ designUltra <- function (tree, sparse=TRUE)
 
 designUnrooted2 <- function (tree, sparse=TRUE) 
 {
-    if (is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise") 
+    if (is.null(attr(tree, "order")) || attr(tree, "order") != "postorder") 
         tree = reorder(tree, "postorder")
     leri = allChildren(tree)
     bp = bip(tree)
@@ -368,8 +368,7 @@ designUnrooted2 <- function (tree, sparse=TRUE)
     p=1L
     m = 1L
     for (i in 1:length(leri)) {
-        if (!is.null(leri[[i]])) {
-            
+        if (length(leri[[i]]) > 1) {
             if(length(leri[[i]])==2){
                 ind =  getIndex(bp[[leri[[i]][1] ]], bp[[leri[[i]][2] ]], n) 
                 ytmp = rep(bp[[leri[[i]][1] ]], each = length(bp[[leri[[i]][2] ]]))
@@ -456,11 +455,11 @@ nnls.tree <- function(dm, tree, rooted=FALSE, trace=1){
     betahat = bhat[tree$edge[,1]] - bhat[tree$edge[,2]]
     
     if(!any(betahat<0)){
-        if(!rooted){
+#        if(!rooted){
             RSS = sum((y-(X%*%betahattmp))^2)    
             if(trace)print(paste("RSS:", RSS))
             attr(tree, "RSS") = RSS
-        }
+#        }
         tree$edge.length = betahat 
         return(tree)
     }
@@ -468,23 +467,42 @@ nnls.tree <- function(dm, tree, rooted=FALSE, trace=1){
     # non-negative LS
     n = dim(X)[2]
     l = nrow(tree$edge)
-    Amat = matrix(0, n, l)
+    
     
     lab = attr(X, "nodes")
     # vielleicht solve.QP.compact
     ind1 = match(tree$edge[,1], lab)
-    Amat[cbind(ind1, 1:l)] = 1
     ind2 = match(tree$edge[,2], lab)
-    Amat[cbind(ind2, 1:l)] = -1  
     
-    betahat <- quadprog::solve.QP(as.matrix(Dmat),as.vector(dvec),Amat)$sol 
+#    Amat = matrix(0, n, l)
+#    Amat[cbind(ind1, 1:l)] = 1
+#    Amat[cbind(ind2, 1:l)] = -1  
+#    betahat <- quadprog::solve.QP(as.matrix(Dmat),as.vector(dvec),Amat)$sol 
+    
+    Amat <- matrix(0, 2, l)
+    Amat[1,] <- 1
+    Amat[2,] <- -1
+    
+    Aind <- matrix(0L, 3, l)
+    Aind[1,] <- 2L
+    Aind[2,] <- as.integer(ind1)
+    Aind[3,] <- as.integer(ind2)
+    
+    if(any(is.na(Aind))){
+        na_ind <- which(is.na(Aind), arr.ind = TRUE)
+        Aind[is.na(Aind)] <- 0L
+        for(i in 1:nrow(na_ind)) Aind[1, na_ind[i, 2]] <- Aind[1, na_ind[i, 2]] - 1L
+    }
+    
+    betahat <- quadprog::solve.QP.compact(as.matrix(Dmat),as.vector(dvec),Amat, Aind)$sol
+
     
     # quadratic programing solving
-    if(!rooted){
+#    if(!rooted){
         RSS = sum((y-(X%*%betahat))^2) 
         if(trace)print(paste("RSS:", RSS))
         attr(tree, "RSS") = RSS
-    }
+#    }
     bhat = numeric(max(tree$edge))
     bhat[as.integer(lab)] = betahat
     betahat = bhat[tree$edge[,1]] - bhat[tree$edge[,2]]
@@ -506,40 +524,7 @@ nnls.splits <- function(x, dm, trace=0){
     y = dm[lower.tri(dm)]
     
     x = SHORTwise(x, k)
-    l <- sapply(x, length)
-    if(any(l==0)) x = x[-which(l==0)]
-    
-    X = splits2design(x)
-    
-    if(any(is.na(y))){
-        ind = which(is.na(y))
-        X = X[-ind,,drop=FALSE]
-        y= y[-ind]
-    }
-    X = as.matrix(X)
-    n = dim(X)[2]
-    int = sapply(x, length)
-    Amat = diag(n) # (int)
-    betahat <- nnls(X, y)  
-    ind = (betahat$x > 1e-8) | int==1  
-    x = x[ind]
-    RSS <- betahat$deviance
-    attr(x, "weights") = betahat$x[ind]
-    if(trace)print(paste("RSS:", RSS))
-    attr(x, "RSS") = RSS
-    x
-}    
-
-
-nnls.splitsOld <- function(x, dm, trace=0){
-    labels=attr(x, "labels")
-    dm = as.matrix(dm)
-    k = dim(dm)[1]
-    dm = dm[labels,labels]
-    y = dm[lower.tri(dm)]
-    
-    x = SHORTwise(x, k)
-    l <- sapply(x, length)
+    l <- lengths(x)
     if(any(l==0)) x = x[-which(l==0)]
     
     X = splits2design(x)
@@ -562,11 +547,17 @@ nnls.splitsOld <- function(x, dm, trace=0){
         return(x)
     }
     n = dim(X)[2]
+    int <- lengths(x)
+
+#    Amat = diag(n) # (int)
+#    betahat <- quadprog::solve.QP(as.matrix(Dmat),as.vector(dvec),Amat)$sol # quadratic programing solving
+# faster version        
+    Amat <- matrix(1, 1, n)
+    Aind <- matrix(0L, 2L, n)
+    Aind[1,] <- 1L
+    Aind[2,] <- as.integer(1L:n)
+    betahat <- quadprog::solve.QP.compact(as.matrix(Dmat),as.vector(dvec),Amat, Aind)$sol
     
-    int = sapply(x, length)
-    #    int = as.numeric(int==1)# (int>1)
-    Amat = diag(n) # (int)
-    betahat <- quadprog::solve.QP(as.matrix(Dmat),as.vector(dvec),Amat)$sol # quadratic programing solving
     RSS = sum((y-(X%*%betahat))^2)
     ind = (betahat > 1e-8) | int==1  
     x = x[ind]
@@ -601,7 +592,7 @@ designSplits <- function (x, splits = "all", ...)
     if (is.na(splits)) stop("invalid splits method")
     if (splits == -1) stop("ambiguous splits method")  
     if(splits==1) X <-  designAll(x)
-    if(splits==2) X <-  designStar(x)
+    if(splits==2) X <-  designStar(x, ...)
     return(X)
 }
 
@@ -625,9 +616,12 @@ designAll <- function(n, add.split=FALSE){
 }
 
 
-designStar = function(n){
-    res=NULL
-    for(i in 1:(n-1)) res = rbind(res,cbind(matrix(0,(n-i),i-1),1,diag(n-i)))
+# faster sparse version
+designStar = function(n, sparse=TRUE){
+#    res=NULL
+#    for(i in 1:(n-1)) res = rbind(res,cbind(matrix(0,(n-i),i-1),1,diag(n-i)))
+    res <- stree(n) %>% as.splits %>% splits2design
+    if(!sparse) return(as.matrix(res))
     res
 }
 

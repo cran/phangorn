@@ -56,7 +56,8 @@ cophenetic.networx <- function(x){
 SHORTwise <- function (x, nTips, delete=FALSE) 
 {
     v <- 1:nTips
-    l <- sapply(x, length)
+#    l <- sapply(x, length)
+    l <- lengths(x)
     lv = floor(nTips/2)  
     for (i in 1:length(x)) { 
         if(l[i]>lv){
@@ -83,9 +84,118 @@ oneWise <- function (x, nTips=NULL)
     for (i in 2:length(x)) {
         y <- x[[i]]
         if (y[1] != 1) 
-            x[[i]] <- v[-y]
+            y <- v[-y]
+        if (y[1] != 1) 
+            y <- v[-y]
+        x[[i]] <- y      
     }
     x
+}
+
+
+# leomrtns addition
+sprdist <- function (tree1, tree2) 
+{
+    tree1 = unroot(tree1)
+    tree2 = unroot(tree2)
+    lt1 = length(tree1$tip.label)
+    lt2 = length(tree2$tip.label)
+    # checking labels is obligatory for spr (user should prune one of them beforehand?)         
+    ind <- match(tree1$tip.label, tree2$tip.label)
+    if (any(is.na(ind)) | lt1 != lt2 )  stop("trees have different labels")
+    tree2$tip.label <- tree2$tip.label[ind]
+    ind2 <- match(1:length(ind), tree2$edge[, 2])
+    tree2$edge[ind2, 2] <- order(ind)
+    # same as in original treedist (will create list of strings with shorter side of splits)
+    tree1 = reorder(tree1, "postorder")
+    tree2 = reorder(tree2, "postorder")
+    if(!is.binary.tree(tree1) | !is.binary.tree(tree2))message("Trees are not binary!")
+    # possibly replace bip with bipart    
+    bp1 = bip(tree1); bp1 <- SHORTwise(bp1, lt1)
+    bp2 = bip(tree2); bp2 <- SHORTwise(bp2, lt2)
+    
+    bp1 <- bp1[ lengths(bp1)>1 ] # only internal nodes 
+    bp2 <- bp2[ lengths(bp2)>1 ] 
+    if (length(bp1) != length(bp2)) stop ("number of bipartitions given to C_sprdist are not the same")
+    # OBS: SPR distance works w/ incompatible splits only, but it needs common cherries (to replace by single leaf)
+    spr <- .Call("C_sprdist", bp1, bp2, lt1);
+    names(spr) <- c("spr", "spr_extra", "rf", "hdist")
+#    list("spr" = spr[1], "spr_extra" = spr[2], "rf" = spr[3], "hdist"= spr[4]);
+    spr
+}
+
+
+SPR1 <- function(trees){
+    trees <- .compressTipLabel(trees)
+    trees <- .uncompressTipLabel(trees)
+    trees <- lapply(trees, unroot)
+    trees <- lapply(trees, reorder, "postorder")
+    
+    nTips <- length(trees[[1]]$tip.label)
+    
+    fun <- function(x, nTips){
+        bp <- bipart(x)
+        bp <- SHORTwise(bp, nTips)
+        bp <- bp[ lengths(bp)>1 ] 
+        bp
+    }    
+    
+    BP <- lapply(trees, fun, nTips)
+    k <- 1
+    l <- length(trees)
+    SPR <- numeric((l * (l - 1))/2)
+    for (i in 1:(l - 1)){
+        bp <- BP[[i]]
+        for (j in (i + 1):l){
+            SPR[k] <-  .Call("C_sprdist", bp, BP[[j]], nTips)[1]
+            k=k+1
+        }
+    }
+    attr(SPR, "Size") <- l
+    if(!is.null(names(trees)))attr(SPR, "Labels") <- names(trees)
+    attr(SPR, "Diag") <- FALSE
+    attr(SPR, "Upper") <- FALSE
+    class(SPR) <- "dist"
+    return(SPR)
+}
+
+
+SPR2 <- function(tree, trees){
+    trees <- .compressTipLabel(trees)
+    tree <- checkLabels(tree, attr(trees, "TipLabel"))
+    trees <- .uncompressTipLabel(trees)
+    if (any(sapply(trees, is.rooted))) {
+        trees <- lapply(trees, unroot)
+    }
+    trees <- lapply(trees, reorder, "postorder")
+    tree <- unroot(tree)                
+    nTips <- length(tree$tip.label)
+    
+    fun <- function(x, nTips){
+        bp <- bipart(x)
+        bp <- SHORTwise(bp, nTips)
+        bp <- bp[ lengths(bp)>1 ] 
+        bp
+    }    
+    
+    bp <-  fun(tree, nTips)
+    k <- 1
+    l <- length(trees)
+    SPR <- numeric(l)
+    for (i in 1:l){
+            SPR[i] <- .Call("C_sprdist", bp, fun(trees[[i]], nTips), nTips)[1]
+    }
+    if(!is.null(names(trees)))names(SPR) <- names(trees)
+    return(SPR)
+}
+
+
+SPR.dist <- function(tree1, tree2=NULL){
+    if(inherits(tree1, "multiPhylo") && is.null(tree2))return(SPR1(tree1)) 
+    if(inherits(tree1, "phylo") && inherits(tree2, "phylo"))return(sprdist(tree1, tree2)[1])
+    if(inherits(tree1, "phylo") && inherits(tree2, "multiPhylo"))return(SPR2(tree1, tree2))
+    if(inherits(tree2, "phylo") && inherits(tree1, "multiPhylo"))return(SPR2(tree2, tree1))
+    return(NULL)
 }
 
 
@@ -324,7 +434,7 @@ wRF1 <- function(trees, normalize=FALSE, check.labels = TRUE){
         }
     }
     attr(wRF, "Size") <- l
-    if(!is.null(names(trees)))attr(KF, "Labels") <- names(trees)
+    if(!is.null(names(trees)))attr(wRF, "Labels") <- names(trees)
     attr(wRF, "Diag") <- FALSE
     attr(wRF, "Upper") <- FALSE
     class(wRF) <- "dist"
@@ -359,6 +469,7 @@ mRF2 <- function(tree, trees, normalize=FALSE, check.labels = TRUE){
         message("Some trees are rooted. Unrooting all trees.\n")
         trees <- lapply(trees, unroot)
     }
+    if(is.rooted(tree)) tree <- unroot(tree)
     if (any(sapply(trees, function(x) !is.binary.tree(x)))) {
         message("Some trees are not binary. Result may not what you expect!")
     }
@@ -433,14 +544,24 @@ mRF<-function(trees, normalize=FALSE){
 RF0 <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, rooted=FALSE){   
     r1 = is.rooted(tree1)
     r2 = is.rooted(tree2)
-    if(r1 != r2){
-        message("one tree is unrooted, unrooted both")
-    }  
     if(!rooted){
-        if(r1) tree1<-unroot(tree1)
-        if(r2) tree2<-unroot(tree2)
+        if(r1) {
+            tree1<-unroot(tree1)
+            r1 <- FALSE
+            }
+        if(r2) {
+            tree2<-unroot(tree2)
+            r2 <- FALSE
+            }
     }
-    
+    else{
+        if(r1 != r2) {
+            message("one tree is unrooted, unrooted both")
+            tree1<-unroot(tree1)
+            tree2<-unroot(tree2)
+            r1 <- r2 <- FALSE
+        }
+    }  
     if (check.labels) {
         ind <- match(tree1$tip.label, tree2$tip.label)
         if (any(is.na(ind)) | length(tree1$tip.label) !=
@@ -451,17 +572,13 @@ RF0 <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, rooted=
         ind2 <- match(1:length(ind), tree2$edge[, 2])
         tree2$edge[ind2, 2] <- order(ind)
     }
-    
-    if(!r1 | !r2){
-        if(r1) tree1 = unroot(tree1)
-        if(r2) tree2 = unroot(tree2)
-    }
     if(!is.binary.tree(tree1) | !is.binary.tree(tree2))message("Trees are not binary!")
     bp1 = bipart(tree1)
     bp2 = bipart(tree2)
+    nTips <- length(tree1$tip.label)
     if(!rooted){
-        bp1 <- SHORTwise(bp1, length(tree1$tip.label))
-        bp2 <- SHORTwise(bp2, length(tree2$tip.label))    
+        bp1 <- SHORTwise(bp1, nTips)
+        bp2 <- SHORTwise(bp2, nTips)    
     }
     RF = sum(match(bp1, bp2, nomatch=0L)==0L) + sum(match(bp2, bp1, nomatch=0L)==0L)
     if(normalize) RF <- RF / (Nnode(tree1) + Nnode(tree2) - 2)
@@ -679,7 +796,10 @@ pd1 <- function(tree, trees, check.labels=TRUE, path=TRUE){
     }    
     trees <- .uncompressTipLabel(trees)
     unclass(trees)
-    if(path)trees <- lapply(trees, unroot)
+    if(path){
+        trees <- lapply(trees, unroot)
+        tree <- unroot(tree)
+    }    
     trees <- lapply(trees, reorder, "postorder")
     l <- length(trees)
     dt <- coph(tree, path)

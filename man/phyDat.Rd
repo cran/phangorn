@@ -3,7 +3,12 @@
 \alias{as.AAbin.phyDat}
 \alias{as.phyDat.DNAbin}
 \alias{as.phyDat.alignment}
+\alias{as.phyDat.character}
+\alias{as.phyDat.data.frame}
+\alias{as.phyDat.factor}
+\alias{as.phyDat.matrix}
 \alias{as.phyDat.MultipleAlignment}
+\alias{as.MultipleAlignment}
 \alias{as.MultipleAlignment.phyDat}
 \alias{as.data.frame.phyDat}
 \alias{as.character.phyDat}
@@ -22,6 +27,8 @@
 \alias{phyDat2alignment}
 \alias{phyDat2MultipleAlignment}
 \alias{image.phyDat}
+\alias{dna2codon}
+\alias{codon2dna}
 \title{Conversion among Sequence Formats}
 \description{
 These functions transform several DNA formats into the \code{phyDat} format. 
@@ -30,9 +37,13 @@ These functions transform several DNA formats into the \code{phyDat} format.
 \usage{
 phyDat(data, type = "DNA", levels = NULL, return.index=TRUE, ...) 
 read.phyDat(file, format="phylip", type="DNA", ...)
-write.phyDat(x, file, format="phylip",...)
+write.phyDat(x, file, format="phylip", colsep = "", nbcol=-1, ...)
 \method{as.phyDat}{DNAbin}(x, ...)
 \method{as.phyDat}{alignment}(x, type="DNA", ...)
+\method{as.phyDat}{character}(x, ...)
+\method{as.phyDat}{data.frame}(x, ...)
+\method{as.phyDat}{factor}(x, ...)
+\method{as.phyDat}{matrix}(x, ...)
 \method{as.phyDat}{MultipleAlignment}(x, ...)
 %\method{as.AAbin}{phyDat}(x, ...)
 \method{as.character}{phyDat}(x, allLevels = TRUE, ...)
@@ -44,6 +55,8 @@ phyDat2alignment(x)
 allSitePattern(n, levels=c("a","c","g","t"), names=NULL)
 acgt2ry(obj)
 baseFreq(obj, freq=FALSE, all=FALSE, drop.unused.levels=FALSE)
+dna2codon(x)
+codon2dna(x)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -56,6 +69,8 @@ baseFreq(obj, freq=FALSE, all=FALSE, drop.unused.levels=FALSE)
   \item{format}{File format of the sequence alignment (see details).
   Several popular formats are supported: "phylip", "interleaved", "sequential", "clustal", "fasta" or "nexus", or any unambiguous abbreviation of these. 
   }
+  \item{colsep}{a character used to separate the columns (a single space by default).}
+  \item{nbcol}{a numeric specifying the number of columns per row (-1 by default); may be negative implying that the nucleotides are printed on a single line.}
   \item{n}{Number of sequences.}
   \item{names}{Names of sequences.}
   \item{subset}{a subset of taxa.}
@@ -66,7 +81,7 @@ baseFreq(obj, freq=FALSE, all=FALSE, drop.unused.levels=FALSE)
   \item{freq}{logical, if 'TRUE', frequencies or counts are returned otherwise proportions}
   \item{all}{all a logical; if all = TRUE, all counts of bases, ambiguous codes, missing data, and alignment gaps are returned as defined in the contrast.}
   \item{drop.unused.levels}{logical, drop unused levels}  
-  \item{incomparables}{for compatability with unique.}
+  \item{incomparables}{for compatibility with unique.}
   \item{identical}{if TRUE (default) sequences have to be identical, if FALSE sequences are considered 
   duplicates if distance between sequences is zero (happens frequently with ambiguous sites).}
   \item{...}{further arguments passed to or from other methods.}

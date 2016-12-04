@@ -732,7 +732,7 @@ likelihoodRatchet <- function(obj, maxit=100, k=10,
     obj
 }
 
-
+ 
 fs <- function (old.el, eig, parent.dat, child.dat, weight, g=g, 
     w=w, bf=bf, ll.0=ll.0, evi, getA=TRUE, getB=TRUE) 
 {
@@ -746,8 +746,8 @@ fs <- function (old.el, eig, parent.dat, child.dat, weight, g=g,
     X <- .Call("getPrep", dad, child.dat, eig[[2]], evi, nr, nc) 
     .Call("FS4", eig, as.integer(length(bf)), as.double(old.el), 
             as.double(w), as.double(g), X, child.dat, dad, as.integer(length(w)), 
-            as.integer(length(weight)), as.double(bf), as.double(weight), 
-            as.double(ll.0), as.integer(getA), as.integer(getB))
+            as.integer(length(weight)), as.double(weight), 
+            as.double(ll.0), as.integer(getA), as.integer(getB))  # as.double(bf),
 }
 
 
@@ -774,8 +774,8 @@ fs3 <- function (old.el, eig, parent.dat, child, weight, g=g,
     }
     .Call("FS4", eig, as.integer(length(bf)), as.double(old.el), 
             as.double(w), as.double(g), X, child.dat, dad, as.integer(length(w)), 
-            as.integer(length(weight)), as.double(bf), as.double(weight), 
-            as.double(ll.0), as.integer(getA), as.integer(getB))
+            as.integer(length(weight)), as.double(weight),  
+            as.double(ll.0), as.integer(getA), as.integer(getB)) # as.double(bf), 
 }
 
 
@@ -852,7 +852,8 @@ pml.move <- function(EDGE, el, data, g, w, eig, k, nTips, bf){
     edge = as.integer(edge - 1L)
     contrast = attr(data, "contrast")
     nco = as.integer(dim(contrast)[1])    
-    tmp <- .Call("PML3", dlist=data, as.double(el), as.double(w), as.double(g), nr, nc, k, eig, as.double(bf), node, edge, nTips, nco, contrast, N=as.integer(length(edge))) 
+    tmp <- .Call("PML3", dlist=data, as.double(el), as.double(g), nr, nc, k, eig, as.double(bf), node, edge, nTips, nco, contrast, N=as.integer(length(edge))) 
+# as.double(w),
     return(NULL)
 }
 
@@ -2680,7 +2681,8 @@ pml.fit <- function (tree, data, bf = rep(1/length(levels), length(levels)),
     nco = as.integer(dim(contrast)[1])    
     # dlist=data, nr, nc, weight, k ausserhalb definieren  
     # pmlPart einbeziehen 
-    resll <- .Call("PML0", dlist=data, el, as.double(w), as.double(g), nr, nc, k, eig, as.double(bf), node, edge, nTips, nco, contrast, N=as.integer(length(edge))) 
+    # as.double(w),
+    resll <- .Call("PML0", dlist=data, el, as.double(g), nr, nc, k, eig, as.double(bf), node, edge, nTips, nco, contrast, N=as.integer(length(edge))) 
     
     # sort(INV@i)+1L  
     ind = which(ll.0>0) # automatic in INV gespeichert
@@ -2707,6 +2709,7 @@ pml <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1,
     rate = 1, model=NULL, ...) 
 {
     Mkv = FALSE
+    if(!is.null(model) && model=="Mkv")Mkv = TRUE
     call <- match.call()
     extras <- match.call(expand.dots = FALSE)$...
     pmla <- c("wMix", "llMix") 
@@ -2719,6 +2722,7 @@ pml <- function (tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1,
 #        warning("tree has no edge length, used nnls.phylo to assign them")
 #        tree <- nnls.phylo(tree, dist.ml(data))
 #    }    
+    if(any(duplicated(tree$tip.label))) stop("tree must have unique labels!")
     if (is.null(attr(tree, "order")) || attr(tree, "order") == 
         "cladewise") 
         tree <- reorder(tree, "postorder")
@@ -3902,7 +3906,8 @@ index2tree2 <- function(x, tree, root=length(tree$tip.label)+1L){
 
 # weight, nr, nc, contrast, nco (Reihenfolge beibehalten)      
 # INV raus
-optimQuartet <- function (tree, data, eig, w, g, bf, rate, ll.0=ll.0, nTips,
+# evi, eve, contrast2 ausserhalb definieren
+optimQuartet <- function (tree, data, eig, w, g, bf, rate, ll.0, nTips,
         weight, nr, nc, contrast, nco, llcomp =-Inf,                  
         control = pml.control(epsilon = 1e-08, maxit = 5, trace=0), ...) 
 {
@@ -3925,7 +3930,7 @@ optimQuartet <- function (tree, data, eig, w, g, bf, rate, ll.0=ll.0, nTips,
     eps = 1
     iter = 0
     
-    treeP = tree
+#    treeP = tree  
     
     child = tree$edge[, 2]
     parent = tree$edge[, 1]
@@ -3953,24 +3958,25 @@ optimQuartet <- function (tree, data, eig, w, g, bf, rate, ll.0=ll.0, nTips,
                     as.double(contrast2), nco, data, as.double(weight), as.double(ll.0))       
         iter = iter + 1
         #        tree$edge.length = EL[tree$edge[,2]]
-        treeP$edge.length = EL  # [treeP$edge[,2]]
-        newll <- pml.quartet(treeP, data, bf=bf, g=g, w=w, eig=eig, ll.0=ll.0, k=k, nTips=nTips,
-            weight=weight, nr=nr, nc=nc, contrast=contrast, nco=nco)
+        tree$edge.length = EL  # [treeP$edge[,2]] # vormals treeP
+        newll <- pml.quartet(tree, data, bf=bf, g=g, w=w, eig=eig, ll.0=ll.0, k=k, nTips=nTips,
+            weight=weight, nr=nr, nc=nc, contrast=contrast, nco=nco) # vormals treeP
         eps = ( old.ll - newll ) / newll
         if( (eps<0) || (newll < llcomp) ) return(list(tree=oldtree, logLik=old.ll, c(eps, iter)))
         
-        oldtree = treeP
+        oldtree = tree # vormals treeP
         if(control$trace>1) cat(old.ll, " -> ", newll, "\n") 
         old.ll = newll
         #        loli = parent[1] 
     }
     if(control$trace>0) cat(start.ll, " -> ", newll, "\n")
-    list(tree=treeP, logLik=newll, c(eps, iter))
+    list(tree=tree, logLik=newll, c(eps, iter)) # vormals treeP
 }
 
 
 # weight, nr, nc, contrast, nco rein
-# inv, INV raus
+# inv, INV, site, ... raus 
+# wMix, rate last
 pml.quartet <- function (tree, data, bf = rep(.25, 4), k = 1, rate = 1, g, w, 
     eig, ll.0 = NULL, ind.ll0=NULL, llMix = NULL, wMix = 0, nTips, 
     weight, nr, nc, contrast, nco, ..., site=FALSE) 

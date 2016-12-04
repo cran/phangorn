@@ -48,7 +48,9 @@ void rowMin2(double *dat, int n,  int k, double *res){
         }        
     }
 
-   
+/*
+ * never used
+  
 void rowMinInt(int *dat, int n,  int k, int *res){
     int i, h;  
     int x;
@@ -58,11 +60,13 @@ void rowMinInt(int *dat, int n,  int k, int *res){
         res[i] = x;               
         }        
     }
-
+ */ 
 
 void sankoff4(double *dat, int n, double *cost, int k, double *result){
     int i, j, h; 
-    double tmp[k], x;
+    double x; //tmp[k], 
+    double *tmp;
+    tmp = malloc(k * sizeof(double));
     for(i = 0; i < n; i++){
         for(j = 0; j < k; j++){
             for(h = 0; h< k; h++){tmp[h] = dat[i + h*n] + cost[h + j*k];}
@@ -71,6 +75,7 @@ void sankoff4(double *dat, int n, double *cost, int k, double *result){
             result[i+j*n] += x;
         }                   
     }        
+    free(tmp);
 }    
 
 

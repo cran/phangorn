@@ -551,7 +551,8 @@ kSPR = function(tree, k=NULL){
     distN = dn(tree)[-c(1:l), -c(1:l)]
     distN[upper.tri(distN)]=Inf
     dN = distN[lower.tri(distN)]
-    tab = table(dN) 
+    tab = tabulate(dN) # should be much faster
+#    tab = table(dN) 
     tab[1] = tab[1] * 2 
     tab[-1] = tab[-1] * 8   
     if(is.null(k)) k = 1:length(tab)
@@ -774,7 +775,7 @@ Ancestors <- function (x, node, type = c("all", "parent"))
 {
     parents <- x$edge[, 1]
     child <- x$edge[, 2]
-    pvector <- numeric(max(x$edge)) # parents
+    pvector <- integer(max(x$edge)) # parents
     pvector[child] <- parents    
     type <- match.arg(type)
     if (type == "parent") 
@@ -794,23 +795,49 @@ Ancestors <- function (x, node, type = c("all", "parent"))
 }
 
 
+#allChildren <- function(x){
+#   l = length(x$tip.label) 
+#   if(l<20){
+#       parent = x$edge[,1]
+#       children = x$edge[,2]
+#       res = vector("list", max(x$edge))
+#       for(i in 1:length(parent)) res[[parent[i]]] = c(res[[parent[i]]], children[i])
+#       return(res)
+#   }
+#   else{
+#       if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
+#           x <- reorder(x, "postorder")
+#       parent = x$edge[,1]
+#       children = x$edge[,2]
+#       res <- .Call("AllChildren", as.integer(children), as.integer(parent), as.integer(max(x$edge))) # , PACKAGE="phangorn"
+#       return(res)
+#   }
+#}
+
+
+# alternative version using Rcpp
 allChildren <- function(x){
-   l = length(x$tip.label) 
-   if(l<20){
-       parent = x$edge[,1]
-       children = x$edge[,2]
-       res = vector("list", max(x$edge))
-       for(i in 1:length(parent)) res[[parent[i]]] = c(res[[parent[i]]], children[i])
-       return(res)
-   }
-   else{
-       if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
-           x <- reorder(x, "postorder")
-       parent = x$edge[,1]
-       children = x$edge[,2]
-       res <- .Call("AllChildren", as.integer(children), as.integer(parent), as.integer(max(x$edge))) # , PACKAGE="phangorn"
-       return(res)
-   }
+    l = length(x$tip.label) 
+    if(l<20){
+        parent = x$edge[,1]
+        children = x$edge[,2]
+        res = vector("list", max(x$edge))
+        for(i in 1:length(parent)) res[[parent[i]]] = c(res[[parent[i]]], children[i])
+        return(res)
+    }
+    else{
+        if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
+            x <- reorder(x, "postorder")
+        allChildrenCPP(x$edge)
+    }
+}
+
+
+allDescendants <- function(x){
+    if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise") 
+        x <- reorder(x, "postorder")
+    nTips <- as.integer(length(x$tip.label))
+    allDescCPP(x$edge, nTips)
 }
 
 
@@ -824,6 +851,8 @@ Descendants = function(x, node, type=c("tips","children","all")){
   type <- match.arg(type)
   if(type=="children") return(Children(x, node))
   if(type=="tips") return(bip(x)[node])
+  # new version using Rcpp
+  if(length(node)>10) return(allDescendants(x)[node])
   ch = allChildren(x) # out of the loop
   isInternal = logical(max(x$edge))
   isInternal[ unique(x$edge[,1]) ] =TRUE  

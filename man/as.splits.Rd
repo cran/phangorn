@@ -7,9 +7,12 @@
 \alias{as.matrix.splits}
 \alias{as.Matrix}
 \alias{as.Matrix.splits}
+\alias{c.splits}
+\alias{distinct.splits}
 \alias{print.splits}
 \alias{write.splits}
 \alias{allSplits}
+\alias{allCircularSplits}
 \alias{compatible}
 \alias{write.nexus.splits}
 \alias{read.nexus.splits}
@@ -33,15 +36,17 @@ as.splits(x, ...)
 \method{as.prop.part}{splits}(x, ...)    
 compatible(obj)
 allSplits(k, labels = NULL)
+allCircularSplits(k, labels = NULL)
 write.nexus.splits(obj, file = "", weights=NULL, taxa=TRUE, append=FALSE)
 read.nexus.splits(file)
 addTrivialSplits(obj)
+distinct.splits(...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{An object of class phylo or multiPhylo.}
   \item{maxp}{integer, default from \code{options(max.print)}, influences how many entries of large matrices are printed at all.} 
-  \item{zero.print}{character which should be printed for zeroes.} 
+  \item{zero.print}{character which should be printed for zeros.} 
   \item{one.print}{character which should be printed for ones.} 
   \item{\dots}{Further arguments passed to or from other methods.}
   \item{obj}{an object of class splits.} 
@@ -75,6 +80,8 @@ The internal representation is likely to change.
 \examples{
 (sp <- as.splits(rtree(5)))
 write.nexus.splits(sp)
+spl <- allCircularSplits(5)
+plot(as.networx(spl), "2D")
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

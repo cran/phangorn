@@ -246,10 +246,16 @@ lowerBound <- function(x, cost=NULL){
  
     y <- as.character(x)
     states <- apply(y, 2, unique.default)
+
 # duplicated function(x)x[duplicated(x)]="?" avoids looping
     if(nr==1) nst <- length(states)   
-    else nst <- sapply(states, length)
-
+    else{
+        if(is.matrix(states)){
+            states = as.data.frame(states, stringsAsFactors=FALSE)
+            class(states) = "list"
+        }
+        nst <- sapply(states, length)
+    }
     res = numeric(nr)
     ust = sort(unique(nst))
 
@@ -647,7 +653,8 @@ optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, rearr
 }
 
 
-pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="SPR", ...) 
+# perturbation="ratchet", "stochastic"
+pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="SPR", perturbation="ratchet", ...) 
 {
     eps = 1e-08
 #    if(method=="fitch" && (is.null(attr(data, "compressed")) || attr(data, "compressed") == FALSE)) 
@@ -689,9 +696,18 @@ pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=
     result = list()
     result[[1]] = tree
     kmax = 1
+    nTips = length(tree$tip.label)
     for (i in 1:maxit) {
-        bstrees <- bootstrap.phyDat(data, FUN, tree = tree, bs = 1, trace = trace, method=method, rearrangements=rearrangements, ...)
-        trees <- lapply(bstrees, optim.parsimony, data, trace = trace, method=method, rearrangements=rearrangements, ...)
+        if(perturbation=="ratchet"){
+            bstrees <- bootstrap.phyDat(data, FUN, tree = tree, bs = 1, trace = trace, method=method, rearrangements=rearrangements, ...)
+            trees <- lapply(bstrees, optim.parsimony, data, trace = trace, method=method, rearrangements=rearrangements, ...)
+        }
+        if(perturbation=="stochastic"){
+            treeNNI <- rNNI(tree, floor(nTips/2))
+            trees <- optim.parsimony(treeNNI, data, trace = trace, 
+                 method = method, rearrangements = rearrangements, ...)
+            trees <- list(trees)
+        }
         if(inherits(result,"phylo"))m=1
         else m = length(result)
         if(m>0) trees[2 : (1+m)] = result[1:m]
@@ -766,9 +782,9 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
         stop("data must be of class phyDat")
     if (is.null(attr(tree, "order")) || attr(tree, "order") == 
         "cladewise") 
-        tree <- reorder(tree, "pruningwise")  
- #   if (!is.binary.tree(tree)) 
- #       stop("Tree must be binary!")
+        tree <- reorder(tree, "postorder")  
+#    if (!is.binary.tree(tree)) 
+#        stop("Tree must be binary!")
     tmp = fitch(tree, data, site = "data")
     nr = attr(data, "nr")
     node <- tree$edge[, 1]
@@ -786,17 +802,17 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
             dat[, ind[2]], dat[, ind[3]], as.integer(nr))
         dat[, root] = rSeq[[1]]
     }
-    result <- .C("ACCTRAN2", dat, as.integer(nr), numeric(nr), 
-        as.integer(node[l:1L]), as.integer(edge[l:1L]), l, as.double(weight), 
-        numeric(l), as.integer(nTips))
-    el = result[[8]][l:1L]
+#    result <- .C("ACCTRAN2", dat, as.integer(nr), numeric(nr), 
+#        as.integer(node[l:1L]), as.integer(edge[l:1L]), l, as.double(weight), numeric(l), as.integer(nTips))
+    result <- .C("ACCTRAN2", dat, as.integer(nr), 
+        as.integer(node[l:1L]), as.integer(edge[l:1L]), l, as.integer(nTips))
+    el = result[[5]][l:1L]
     if (!is.rooted(tree)) {
         ind2 = which(node[] == root)
         dat = matrix(result[[1]], nr, max(node))
         result <- .C("ACCTRAN3", result[[1]], as.integer(nr), 
             numeric(nr), as.integer(node[(l - 3L):1L]), as.integer(edge[(l - 
-                3L):1L]), l - 3L, as.double(weight), numeric(l), 
-            as.integer(nTips))
+                3L):1L]), l - 3L, as.double(weight), numeric(l)) # , as.integer(nTips)
         el = result[[8]][(l - 3L):1L]
         pars = .C("fitchTripletACC4", dat[, root], dat[, ind[1]], 
             dat[, ind[2]], dat[, ind[3]], as.integer(nr), numeric(1), 
@@ -809,7 +825,7 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
     else {
         result <- .C("ACCTRAN3", result[[1]], as.integer(nr), 
             numeric(nr), as.integer(node[l:1L]), as.integer(edge[l:1L]), 
-            l, as.double(weight), numeric(l), as.integer(nTips))
+            l, as.double(weight), numeric(l)) # , as.integer(nTips)
         el = result[[8]][l:1L]
     }
     tree$edge.length = el

@@ -14,7 +14,7 @@
 
 \code{parsimony} returns the parsimony score of a tree using either the sankoff or the fitch algorithm.
 \code{optim.parsimony} tries to find the maximum parsimony tree using either Nearest Neighbor Interchange (NNI) 
-rearrangements or sub tree pruning and regrafting (SPR). \code{pratchet} implements the parsimony ratchet (Nixon, 1999) and is the prefered way to search for the best tree. 
+rearrangements or sub tree pruning and regrafting (SPR). \code{pratchet} implements the parsimony ratchet (Nixon, 1999) and is the preferred way to search for the best tree. 
 \code{random.addition} can be used to produce starting trees. 
 \code{CI} and \code{RI} computes the consistency and retention index.  
 }
@@ -22,7 +22,7 @@ rearrangements or sub tree pruning and regrafting (SPR). \code{pratchet} impleme
 parsimony(tree, data, method="fitch", ...)
 optim.parsimony(tree, data, method="fitch", cost=NULL, trace=1, rearrangements="SPR", ...)
 pratchet(data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, 
-    rearrangements="SPR", ...)
+    rearrangements="SPR", perturbation="ratchet", ...)
 fitch(tree, data, site = "pscore")
 sankoff(tree, data, cost = NULL, site = "pscore")
 random.addition(data, method="fitch")
@@ -43,6 +43,7 @@ acctran(tree, data)
   \item{maxit}{maximum number of iterations in the ratchet.}
   \item{k}{number of rounds ratchet is stopped, when there is no improvement.}
   \item{all}{return all equally good trees or just one of them.} 
+  \item{perturbation}{whether using a ratchet or stochastic (nni) for shuffling the tree.}
   \item{...}{Further arguments passed to or from other methods (e.g. model="sankoff" and cost matrix).} 
   \item{sitewise}{return CI/RI for alignment or sitewise}
 }  

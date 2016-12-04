@@ -256,7 +256,9 @@ SEXP FITCH(SEXP dat, SEXP nrx, SEXP node, SEXP edge, SEXP l, SEXP weight, SEXP m
 /*
 ACCTRAN
 */
-void fitchT(int *dat1, int *dat2, int *nr, double *pars, double *weight, double *w){
+
+//    , double *pars, double *weight, double *w raus
+void fitchT(int *dat1, int *dat2, int *nr){
     int k;
     int tmp;
     for(k = 0; k < (*nr); k++){
@@ -290,6 +292,7 @@ void fitchT3(int *dat1, int *dat2, int *nr, double *pars, double *weight, double
 
 // return lower and upper bound for the number of changes 
 // upper bound very conservative 
+/*
 void countMPR(double *res, int *dat1, int *dat2, int *nr, double *weight, int *external){
     int k;
     int tmp;
@@ -310,18 +313,21 @@ void countMPR(double *res, int *dat1, int *dat2, int *nr, double *weight, int *e
         }
     } 
 }
+*/
 
-
-void ACCTRAN2(int *dat, int *nr, double *pars, int *node, int *edge, int *nl, double *weight, double *pvec, int *nTips) 
+//void ACCTRAN2(int *dat, int *nr, double *pars, int *node, int *edge, int *nl, double *weight, double *pvec, int *nTips) 
+void ACCTRAN2(int *dat, int *nr, int *node, int *edge, int *nl, int *nTips)
 {   
     int i;
-    for (i=0; i< *nl; i++) {       
-        if(edge[i]>nTips[0]) fitchT(&dat[(edge[i]-1L) * (*nr)], &dat[(node[i]-1) * (*nr)], nr, pars, weight, &pvec[i]); 
+    for (i=0; i< *nl; i++) { 
+        // , pars, weight, &pvec[i]
+        if(edge[i]>nTips[0]) fitchT(&dat[(edge[i]-1L) * (*nr)], &dat[(node[i]-1) * (*nr)], nr); 
         }
 }
 
 
-void ACCTRAN3(int *dat, int *nr, double *pars, int *node, int *edge, int *nl, double *weight, double *pvec, int *nTips) 
+// , int *nTips
+void ACCTRAN3(int *dat, int *nr, double *pars, int *node, int *edge, int *nl, double *weight, double *pvec) 
 {   
     int i;
     for (i=0; i< *nr; i++)pars[i]=0.0;

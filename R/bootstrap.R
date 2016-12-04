@@ -1,4 +1,4 @@
-bootstrap.pml = function (x, bs = 100, trees = TRUE, multicore=FALSE, mc.cores = NULL, ...) 
+bootstrap.pml <- function (x, bs = 100, trees = TRUE, multicore=FALSE, mc.cores = NULL, ...) 
 {
     if(multicore && is.null(mc.cores)){
         mc.cores <- detectCores()
@@ -81,11 +81,11 @@ bootstrap.phyDat <- function (x, FUN, bs = 100, multicore=FALSE, mc.cores = NULL
 }
 
 
-matchEdges = function(tree1, tree2){
-    bp1 = bip(tree1)
-    bp2 = bip(tree2)
-    l = length(tree1$tip.label)
-    fn = function(x, y){
+matchEdges <- function(tree1, tree2){
+    bp1 <- bip(tree1)
+    bp2 <- bip(tree2)
+    l <- length(tree1$tip.label)
+    fn <- function(x, y){
         if(x[1]==1)return(x)
         else return(y[-x])
     } 
@@ -120,10 +120,11 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
     else plot(tree, type = type, ...)
     
     if(hasArg(BStrees)){
-        BStrees <- .uncompressTipLabel(BStrees)
-        if(any(unlist(lapply(BStrees, is.rooted)))){
-            BStrees <- lapply(BStrees, unroot)   
-        }
+        BStrees <- .uncompressTipLabel(BStrees) # check if needed
+        if(any(is.rooted(BStrees)))BStrees <- unroot(BStrees)
+#        if(any(unlist(lapply(BStrees, is.rooted)))){
+#            BStrees <- lapply(BStrees, unroot)   
+#        }
         x = prop.clades(tree, BStrees)
         x = round((x/length(BStrees)) * 100)
         tree$node.label = x
@@ -163,12 +164,10 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
 
 maxCladeCred <- function(x, tree=TRUE, part=NULL, rooted=TRUE){
     if(inherits(x, "phylo")) x <- c(x)
-    if(!rooted){
-        x <- lapply(x, unroot) 
-        class(x) <- "multiPhylo"
-        x <- .compressTipLabel(x)
-    }    
-    if(is.null(part))pp <- prop.part(x)
+    if (is.null(part)){ 
+        if (!rooted) pp <- unroot(x) %>% prop.part
+        else pp <- prop.part(x)
+    }
     else pp <- part
     pplabel <- attr(pp, "labels")
     if(!rooted)pp <- oneWise(pp)
@@ -180,6 +179,7 @@ maxCladeCred <- function(x, tree=TRUE, part=NULL, rooted=TRUE){
     res <- numeric(l)
     for(i in 1:l){
         tmp <- checkLabels(x[[i]], pplabel)
+        if(!rooted)tmp <- unroot(tmp)
         ppi <- prop.part(tmp)  # trees[[i]]
         if(!rooted)ppi <- oneWise(ppi)
         indi <- fmatch(ppi, pp)
@@ -200,12 +200,13 @@ mcc <- maxCladeCred
 
 
 cladeMatrix <- function(x, rooted=FALSE){
-    if(!rooted){
-        x <- .uncompressTipLabel(x)
-        x <- lapply(x, unroot) 
-        class(x) <- "multiPhylo"
-        x <- .compressTipLabel(x)
-    }    
+    if(!rooted) x <- unroot(x)
+#    if(!rooted){
+#        x <- .uncompressTipLabel(x)
+#        x <- lapply(x, unroot) 
+#        class(x) <- "multiPhylo"
+#        x <- .compressTipLabel(x)
+#    }    
     pp <- prop.part(x)
     pplabel <- attr(pp, "labels")
     if(!rooted)pp <- oneWise(pp)
@@ -232,7 +233,11 @@ cladeMatrix <- function(x, rooted=FALSE){
 }
 
 
-moving_average <- function(x, window=50){
-     cx <- c(0, cumsum(x))
-     (cx[(window+1):length(cx)] - cx[1:(length(cx)-window)])/(window)
+moving_average <- function(obj, window=50){
+    fun <- function(x){
+        cx <- c(0, cumsum(x))
+        (cx[(window+1):length(cx)] - cx[1:(length(cx)-window)])/(window)
+    }
+    res <- apply(obj$X, 1, fun)
+    rownames(res) <- c()
 }
