@@ -15,6 +15,76 @@ sankoff.quartet <- function (dat, cost, p, l, weight)
 }
 
 
+
+
+#' Parsimony tree.
+#' 
+#' 
+#' \code{parsimony} returns the parsimony score of a tree using either the
+#' sankoff or the fitch algorithm. \code{optim.parsimony} tries to find the
+#' maximum parsimony tree using either Nearest Neighbor Interchange (NNI)
+#' rearrangements or sub tree pruning and regrafting (SPR). \code{pratchet}
+#' implements the parsimony ratchet (Nixon, 1999) and is the preferred way to
+#' search for the best tree.  \code{random.addition} can be used to produce
+#' starting trees. 
+#' 
+#' The "SPR" rearrangements are so far only available for the "fitch" method,
+#' "sankoff" only uses "NNI". The "fitch" algorithm only works correct for
+#' binary trees.
+#' 
+#' @aliases parsimony 
+#' @aliases optim.parsimony sankoff fitch pratchet
+#' random.addition acctran
+#' @param data A object of class phyDat containing sequences.
+#' @param tree tree to start the nni search from.
+#' @param method one of 'fitch' or 'sankoff'.
+#' @param cost A cost matrix for the transitions between two states.
+#' @param site return either 'pscore' or 'site' wise parsimony scores.
+#' @param trace defines how much information is printed during optimisation.
+#' @param rearrangements SPR or NNI rearrangements.
+#' @param start a starting tree can be supplied.
+#' @param maxit maximum number of iterations in the ratchet.
+#' @param k number of rounds ratchet is stopped, when there is no improvement.
+#' @param all return all equally good trees or just one of them.
+#' @param perturbation whether using a ratchet or stochastic (nni) for
+#' shuffling the tree.
+#' @param ... Further arguments passed to or from other methods (e.g.
+#' model="sankoff" and cost matrix).
+#' @return \code{parsimony} returns the maximum parsimony score (pscore).
+#' \code{optim.parsimony} returns a tree after NNI rearrangements.
+#' \code{pratchet} returns a tree or list of trees containing the best tree(s)
+#' found during the search.  \code{acctran} returns a tree with edge length
+#' according to the ACCTRAN criterion.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link{bab}}, \code{\link{CI}}, \code{\link{RI}}, \code{\link{ancestral.pml}}, 
+#' \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}}
+#' ,\code{\link{ancestral.pars}}, \code{\link{bootstrap.pml}}
+#' @references Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer
+#' Associates, Sunderland.
+#' 
+#' Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Parsimony
+#' Analysis. \emph{Cladistics} \bold{15}, 407-414
+#' @keywords cluster
+#' @examples
+#' 
+#' set.seed(3)
+#' data(Laurasiatherian)
+#' dm = dist.hamming(Laurasiatherian)
+#' tree = NJ(dm)
+#' parsimony(tree, Laurasiatherian)
+#' treeRA <- random.addition(Laurasiatherian)
+#' treeNNI <- optim.parsimony(tree, Laurasiatherian)
+#' treeRatchet <- pratchet(Laurasiatherian, start=tree, maxit=100, k=5)
+#' # assign edge length
+#' treeRatchet <- acctran(treeRatchet, Laurasiatherian)
+#' 
+#' plot(midpoint(treeRatchet))
+#' add.scale.bar(0,0, length=100)
+#' 
+#' parsimony(c(tree,treeNNI, treeRatchet), Laurasiatherian)
+#' 
+#' @rdname parsimony
+#' @export
 parsimony <- function(tree, data, method='fitch', ...){
     if (class(data)[1] != "phyDat") stop("data must be of class phyDat")
     if(method=='sankoff') result <- sankoff(tree, data, ...)
@@ -23,6 +93,8 @@ parsimony <- function(tree, data, method='fitch', ...){
 }
 
 
+#' @rdname ancestral.pml
+#' @export
 ancestral.pars <- function (tree, data, type = c("MPR", "ACCTRAN"), cost=NULL) 
 {
     call <- match.call()
@@ -66,6 +138,8 @@ ancestral.pars <- function (tree, data, type = c("MPR", "ACCTRAN"), cost=NULL)
 }
 
 
+#' @rdname ancestral.pml
+#' @export
 pace <- ancestral.pars
 
 
@@ -136,7 +210,8 @@ mpr <- function(tree, data, cost=NULL){
 }
 
 
-
+#' @rdname ancestral.pml
+#' @export
 plotAnc <- function (tree, data, i = 1, col=NULL, cex.pie=par("cex"), pos="bottomright", ...)
 {
    y = subset(data, , i)
@@ -233,7 +308,8 @@ parsinfo <- function (x)
 }
 
 
-lowerBound <- function(x, cost=NULL){
+# had problems with ambiguous states
+lowerBound_old <- function(x, cost=NULL){
     tip <- names(x)
     att = attributes(x)
     nc = attr(x, "nc")
@@ -254,7 +330,8 @@ lowerBound <- function(x, cost=NULL){
             states = as.data.frame(states, stringsAsFactors=FALSE)
             class(states) = "list"
         }
-        nst <- sapply(states, length)
+        nst <- lengths(states)
+#        nst <- sapply(states, length)
     }
     res = numeric(nr)
     ust = sort(unique(nst))
@@ -277,6 +354,49 @@ lowerBound <- function(x, cost=NULL){
 }
 
 
+# greedy algorithm of Maximum Set Packing (MSP) problem (should work in most instances)
+lowerBound <- function(x, cost=NULL){
+    tip <- names(x)
+    att = attributes(x)
+    nc = attr(x, "nc")
+    nr = attr(x, "nr")
+    contrast = attr(x, "contrast")
+    rownames(contrast) = attr(x, "allLevels")
+    colnames(contrast) = attr(x, "levels")
+    attr(x, "weight") = rep(1, nr)
+    attr(x, "index") = NULL
+    
+    y <- as.character(x)
+    states <- apply(y, 2, unique.default)
+    
+    singles <- which(rowSums(contrast) == 1) # 
+    noinfo <- which(rowSums(contrast) == nc) # 
+    ambiguous <- which( (rowSums(contrast) > 1) & (rowSums(contrast) < nc) )  # 
+    singles <- names(singles)
+    noinfo <- names(noinfo)
+    ambiguous <- names(ambiguous)
+    
+    fun <- function(states, contrast, singles, noinfo, ambiguous){
+        if(length(states)==1) return(0)
+        states <- setdiff(states, noinfo) # get rid of "-", "?" in DNA 
+        if( (length(states)==0) | (length(states)==1) ) return(0)
+        if( any(states %in% ambiguous)) {
+            n <- 0
+            contrast <- contrast[states, , drop=FALSE]
+            while(nrow(contrast) > 0){
+                m <- which.max(colSums(contrast))
+                contrast <- contrast[contrast[, m]==0 , , drop=FALSE]
+                n <- n+1
+            }
+            return(n-1)
+        }
+        else return(length(states)-1)
+    }
+    res <- sapply(states, fun, contrast, singles, noinfo, ambiguous)    
+    res
+}
+
+
 upperBound <- function(x, cost=NULL){
     tree = stree(length(x), tip.label=names(x))
     if(is.null(cost))cost <- 1 - diag(attr(x, "nc")) 
@@ -284,6 +404,27 @@ upperBound <- function(x, cost=NULL){
 }
 
 
+
+#' Consistency Index and Retention Index
+#' 
+#' \code{CI} and \code{RI} compute the Consistency Index (CI) and Retention Index (RI).
+#' 
+#' @details The Consistency Index is defined as minimum number of changes divided by the 
+#' number of changes required on the tree (parsimony score). The Consistency 
+#' Index is equal to one if there is no homoplasy.
+#' And the Retention Index is defined as
+#' \deqn{RI = \frac{MaxChanges - ObsChanges}{MaxChanges - MinChanges}}{RI = (MaxChanges - ObsChanges) / (MaxChanges - MinChanges)}
+#' 
+#' @param data A object of class phyDat containing sequences.
+#' @param tree tree to start the nni search from.
+#' @param cost A cost matrix for the transitions between two states.
+#' @param sitewise return CI/RI for alignment or sitewise
+#' 
+#' @seealso \code{\link{parsimony}}, \code{\link{pratchet}}, \code{\link{fitch}}, 
+#' \code{\link{sankoff}}, \code{\link{bab}}, \code{\link{ancestral.pars}}
+#' 
+#' @rdname CI
+#' @export
 CI <- function (tree, data, cost = NULL, sitewise=FALSE) 
 {
     if(sitewise) pscore = sankoffNew(tree, data, cost = cost, site="site")
@@ -298,6 +439,8 @@ CI <- function (tree, data, cost = NULL, sitewise=FALSE)
 }
 
 
+#' @rdname CI
+#' @export
 RI <- function (tree, data, cost = NULL, sitewise=FALSE) 
 {
     if(sitewise) pscore = sankoffNew(tree, data, cost = cost, site="site")
@@ -482,7 +625,8 @@ prepareDataSankoff <- function(data){
 }
 
 
-
+#' @rdname parsimony
+#' @export
 sankoff <- function (tree, data, cost = NULL, site = 'pscore') 
 {
     if (!inherits(data,"phyDat")) 
@@ -646,6 +790,8 @@ sankoff.nni = function (tree, data, cost, ...)
 }
 
 
+#' @rdname parsimony
+#' @export
 optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, rearrangements="SPR", ...){
     if(method=='fitch') result <- optim.fitch(tree=tree, data=data, trace=trace, rearrangements=rearrangements, ...) 
     if(method=='sankoff') result <- optim.sankoff(tree=tree, data=data, cost=cost, trace=trace, ...)
@@ -653,6 +799,8 @@ optim.parsimony <- function(tree,data, method='fitch', cost=NULL, trace=1, rearr
 }
 
 
+#' @rdname parsimony
+#' @export
 # perturbation="ratchet", "stochastic"
 pratchet <- function (data, start=NULL, method="fitch", maxit=1000, k=10, trace=1, all=FALSE, rearrangements="SPR", perturbation="ratchet", ...) 
 {
@@ -835,6 +983,8 @@ ptree <- function (tree, data, type = "ACCTRAN", retData = FALSE)
 }
 
 
+#' @rdname parsimony
+#' @export
 acctran <- function(tree, data) ptree(tree, data, type="ACCTRAN", retData=FALSE)
 
 

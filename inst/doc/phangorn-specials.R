@@ -65,10 +65,11 @@ fit
 
 
 ###################################################
-### code chunk number 7: phangorn-specials.Rnw:233-243
+### code chunk number 7: phangorn-specials.Rnw:233-244
 ###################################################
 library(phangorn)
-primates = read.phyDat("primates.dna", format="phylip", type="DNA")
+fdir <- system.file("extdata/trees", package = "phangorn")
+primates <- read.phyDat(file.path(fdir, "primates.dna"), format = "phylip", type = "DNA")
 tree <- NJ(dist.ml(primates))
 dat <- phyDat(as.character(primates), "CODON")
 fit <- pml(tree, dat)
@@ -97,13 +98,13 @@ for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 
 
 ###################################################
-### code chunk number 10: phangorn-specials.Rnw:271-272
+### code chunk number 10: phangorn-specials.Rnw:272-273
 ###################################################
 trees = nni(trees[[1]])
 
 
 ###################################################
-### code chunk number 11: phangorn-specials.Rnw:283-284
+### code chunk number 11: phangorn-specials.Rnw:284-285
 ###################################################
 toLatex(sessionInfo())
 

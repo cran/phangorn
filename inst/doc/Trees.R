@@ -12,8 +12,8 @@ options("show.signif.stars" = FALSE)
 ### code chunk number 2: Trees.Rnw:68-71
 ###################################################
 library(phangorn)
-primates <- read.phyDat("primates.dna", format="phylip", 
-    type="DNA")
+fdir <- system.file("extdata/trees", package = "phangorn")
+primates <- read.phyDat(file.path(fdir, "primates.dna"), format = "phylip")
 
 
 ###################################################

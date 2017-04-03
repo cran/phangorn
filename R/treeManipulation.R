@@ -4,6 +4,8 @@
 
 
 # no checks for postorder
+#' @rdname midpoint
+#' @export
 getRoot <- function (tree) 
 {
     if(!is.null(attr(tree, "order")) && attr(tree, "order") == 
@@ -69,8 +71,53 @@ changeEdgeLength = function (tree, edge, edge.length)
 }
 
 
-# O(n) statt O(n^2) Speicher und Geschwindigkeit
-midpoint <- function(tree, node.labels = "support"){
+## @aliases midpoint pruneTree getRoot
+#' Tree manipulation
+#' 
+#' \code{midpoint} performs midpoint rooting of a tree.  \code{pruneTree}
+#' produces a consensus tree.
+#' 
+#' \code{pruneTree} prunes back a tree and produces a consensus tree, for trees
+#' already containing nodelabels.  It assumes that nodelabels are numerical or
+#' character that allows conversion to numerical, it uses
+#' as.numeric(as.character(tree$node.labels)) to convert them.  \code{midpoint}
+#' so far does not transform node.labels properly.
+#' 
+
+#' @param tree an object of class \code{phylo}
+#' @param FUN a function evaluated on the nodelabels, result must be logical.
+#' @param node.labels are nodel labels 'support' values, 'label' or should be
+#' 'deleted'
+#' @param \dots further arguments, passed to other methods.
+#' @return \code{pruneTree} and \code{midpoint} a tree. \code{getRoot} returns
+#' the root node.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link[ape]{consensus}}, \code{\link[ape]{root}},
+#' \code{\link[ape]{di2multi}}
+#' @keywords cluster
+#' @examples
+#' 
+#' tree = unroot(rtree(10))
+#' tree$node.label = c("", round(runif(tree$Nnode-1), 3))
+#' 
+#' tree2 = midpoint(tree)
+#' tree3 = pruneTree(tree, .5)
+#' 
+#' par(mfrow = c(3,1))
+#' plot(tree, show.node.label=TRUE)
+#' plot(tree2, show.node.label=TRUE)
+#' plot(tree3, show.node.label=TRUE)
+#' 
+#' @rdname midpoint
+#' @export midpoint
+midpoint <- function(tree, node.labels = "support", ...)
+    UseMethod("midpoint")
+
+
+#' @rdname midpoint
+#' @method midpoint phylo
+#' @export
+midpoint.phylo <- function(tree, node.labels = "support", ...){
 # distance from node to root
 node2root <- function(x){
     x = reorder(x, "postorder")
@@ -151,6 +198,21 @@ node2root <- function(x){
 }
 
 
+#' @rdname midpoint
+#' @method midpoint multiPhylo
+#' @export
+midpoint.multiPhylo <- function(tree, node.labels = "support", ...){
+    if(!is.null(attr(tree, "TipLabel"))) compress <- TRUE
+    else compress <- FALSE
+    tree <- lapply(tree, midpoint.phylo, node.labels = node.labels)
+    class(tree) <- "multiPhylo"
+    if(compress) tree <- .compressTipLabel(tree)
+    tree
+}
+        
+    
+#' @rdname midpoint
+#' @export
 pruneTree = function(tree, ..., FUN = ">="){
      if(is.null(tree$node)) stop("no node labels")
      if(is.rooted(tree)) tree = unroot(tree)
@@ -406,6 +468,34 @@ nnin <- function (tree, n)
 } 
 
 
+
+## @aliases nni rNNI rSPR
+#' Tree rearrangements.
+#' 
+#' \code{nni} returns a list of all trees which are one nearest neighbor
+#' interchange away. \code{rNNI} and \code{rSPR} are two methods which simulate
+#' random trees which are a specified number of rearrangement apart from the
+#' input tree. Both methods assume that the input tree is bifurcating. These
+#' methods may be useful in simulation studies.
+#' 
+#' 
+#' @param tree A phylogenetic \code{tree}, object of class \code{phylo}.
+#' @param moves Number of tree rearrangements to be transformed on a tree.  Can
+#' be a vector
+#' @param n Number of trees to be simulated.
+#' @param k If defined just SPR of distance k are performed.
+#' @return an object of class multiPhylo.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link{allTrees}}, \code{\link{SPR.dist}}
+#' @keywords cluster
+#' @examples
+#' 
+#' tree = unroot(rtree(20))
+#' trees1 <- nni(tree)
+#' trees2 <- rSPR(tree, 2, 10)
+#' 
+#' @rdname nni
+#' @export nni
 nni <- function (tree) 
 {
     tip.label <- tree$tip.label
@@ -426,6 +516,28 @@ nni <- function (tree)
 }
 
 
+
+
+#' Compute all trees topologies.
+#' 
+#' \code{allTrees} computes all tree topologies for rooted or unrooted trees
+#' with up to 10 tips. \code{allTrees} returns bifurcating trees.
+#' 
+#' 
+#' @param n Number of tips (<=10).
+#' @param rooted Rooted or unrooted trees (default: rooted).
+#' @param tip.label Tip labels.
+#' @return an object of class \code{multiPhylo}.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link[ape]{rtree}}, \code{\link{nni}}
+#' @keywords cluster
+#' @examples
+#' 
+#' trees <- allTrees(5)
+#' par(mfrow = c(3,5))
+#' for(i in 1:15)plot(trees[[i]])
+#' 
+#' @export allTrees
 allTrees <- function (n, rooted = FALSE, tip.label = NULL) 
 {
 	n <- as.integer(n)  
@@ -520,6 +632,8 @@ dn <- function(x){
 }
 
 
+#' @rdname nni
+#' @export
 rSPR = function (tree, moves = 1, n = length(moves), k=NULL) 
 {
     if (n == 1) {
@@ -726,6 +840,8 @@ sprMove <- function(tree, m){
 }
  
 
+#' @rdname nni
+#' @export
 rNNI <- function (tree, moves = 1, n = length(moves)) 
 {
     k = length(na.omit(match(tree$edge[, 2], tree$edge[, 1])))
@@ -771,6 +887,45 @@ allAncestors <- function(x){
 }
 
 
+
+## @aliases Ancestors Children Descendants Siblings mrca.phylo
+#' tree utility function
+#' 
+#' Functions for describing relationships among phylogenetic nodes.
+#' 
+#' These functions are inspired by \code{treewalk} in phylobase package, but
+#' work on the S3 \code{phylo} objects.  The nodes are the indices as given in
+#' edge matrix of an phylo object. From taxon labels these indices can be
+#' easily derived matching against the \code{tip.label} argument of an phylo
+#' object, see example below.  All the functions allow \code{node} to be either
+#' a scalar or vector.  \code{mrca} is a faster version of the mrca in ape, in
+#' phangorn only because of dependencies.
+#' 
+#' @param x a tree (a phylo object).
+#' @param node an integer or a vector of integers corresponding to a node ID
+#' @param type specify whether to return just direct children / parents or all
+#' @param include.self whether to include self in list of siblings
+#' @return a vector or a list containing the indices of the nodes.
+#' @seealso \code{treewalk}, \code{\link[ape]{phylo}},
+#' \code{\link[ape]{nodelabels}}
+#' @keywords misc
+#' @examples
+#' 
+#' tree = rtree(10)
+#' plot(tree, show.tip.label = FALSE)
+#' nodelabels()
+#' tiplabels()
+#' Ancestors(tree, 1:3, "all")
+#' Children(tree, 11)
+#' Descendants(tree, 11, "tips")
+#' Siblings(tree, 3)
+#' mrca.phylo(tree, 1:3)
+#' mrca.phylo(tree, match(c("t1", "t2", "t3"), tree$tip))
+#' mrca.phylo(tree)
+#' # same as mrca(tree), but faster for large trees
+#' 
+#' @export 
+#' @rdname Ancestors
 Ancestors <- function (x, node, type = c("all", "parent")) 
 {
     parents <- x$edge[, 1]
@@ -841,12 +996,16 @@ allDescendants <- function(x){
 }
 
 
+#' @rdname Ancestors
+#' @export
 Children <- function(x, node){
    if(length(node)==1)return(x$edge[x$edge[,1]==node,2])
    allChildren(x)[node]
 }
 
 
+#' @rdname Ancestors
+#' @export
 Descendants = function(x, node, type=c("tips","children","all")){
   type <- match.arg(type)
   if(type=="children") return(Children(x, node))
@@ -871,6 +1030,8 @@ Descendants = function(x, node, type=c("tips","children","all")){
 }
 
 
+#' @rdname Ancestors
+#' @export
 Siblings = function (x, node, include.self = FALSE) 
 {
     l = length(node)
@@ -902,7 +1063,8 @@ Siblings = function (x, node, include.self = FALSE)
 }
 
 
-
+#' @rdname Ancestors
+#' @export
 mrca.phylo <- function(x, node=NULL){
     if(is.null(node)) return(mrca2(x))
     anc <- Ancestors(x, node, type = "all")

@@ -46,6 +46,22 @@ cophenetic.splits <- function(x){
 }
 
 
+
+
+#' Pairwise Distances from a Phylogenetic Network
+#' 
+#' \code{cophenetic.networx} computes the pairwise distances between the pairs
+#' of tips from a phylogenetic network using its branch lengths.
+#' 
+#' 
+#' @aliases cophenetic.networx cophenetic.splits
+#' @param x an object of class \code{networx}.
+#' @return an object of class \code{dist}, names are set according to the tip
+#' labels (as given by the element \code{tip.label} of the argument \code{x}).
+#' @author Klaus Schliep
+#' @seealso \code{\link[stats]{cophenetic}} for the generic function,
+#' \code{neighborNet} to construct a network from a distance matrix
+#' @keywords manip
 cophenetic.networx <- function(x){
 #    spl <- attr(x, "splits")
     spl <- x$splits
@@ -81,7 +97,7 @@ oneWise <- function (x, nTips=NULL)
 {
     if(is.null(nTips))nTips <- length(x[[1L]])
     v <- 1:nTips
-    for (i in 2:length(x)) {
+    for (i in 1:length(x)) {
         y <- x[[i]]
         if (y[1] != 1) 
             y <- v[-y]
@@ -93,7 +109,173 @@ oneWise <- function (x, nTips=NULL)
 }
 
 
+## @aliases treedist RF.dist wRF.dist KF.dist path.dist sprdist SPR.dist
+
+#' Distances between trees
+#' 
+#' \code{treedist} computes different tree distance methods and \code{RF.dist}
+#' the Robinson-Foulds or symmetric distance. The Robinson-Foulds distance only 
+#' depends on the toplogy of the trees. If edge weights should be considered
+#' \code{wRF.dist} calculates the weighted RF distance (Robinson & Foulds
+#' 1981). and \code{KF.dist} calculates the branch score distance (Kuhner &
+#' Felsenstein 1994).  \code{path.dist} computes the path difference metric as
+#' described in Steel and Penny 1993).
+#' \code{sprdist} computes the approximate SPR distance (Oliveira Martins et
+#' al. 2008, de Oliveira Martins 2016). 
+#' 
+#' @details The Robinson-Foulds distance between two trees \eqn{T_1} and \eqn{T_2} with
+#' \eqn{n} tips is defined as (following the notation Steel and Penny 1993):
+#' \deqn{d(T_1, T_2) = i(T_1) + i(T_2) - 2v_s(T_1, T_2)} where \eqn{i(T_1)}
+#' denotes the number of internal edges and \eqn{v_s(T_1, T_2)} denotes the
+#' number of internal splits shared by the two trees. The normalized
+#' Robinson-Foulds distance is derived by dividing \eqn{d(T_1, T_2)} by the
+#' maximal possible distance \eqn{i(T_1) + i(T_2)}. If both trees are unrooted
+#' and binary this value is \eqn{2n-6}.
+#' 
+#' Functions like \code{RF.dist} returns the Robinson-Foulds distance (Robinson and Foulds 1981)
+#' between either 2 trees or computes a matrix of all pairwise distances if a
+#' \code{multiPhylo} object is given. 
+#' 
+#' For large number of trees the distance functions can use a lot of memory!
+#' 
+#' @param tree1 A phylogenetic tree (class \code{phylo}) or vector of trees (an
+#' object of class \code{multiPhylo}). See details
+#' @param tree2 A phylogenetic tree.
+#' @param normalize compute normalized RF-distance, see details.
+#' @param check.labels compares labels of the trees.
+#' @param rooted take bipartitions for rooted trees into account, default is
+#' unrooting the trees.
+#' @param use.weight use edge.length argument or just count number of edges on
+#' the path (default)
+#' @return \code{treedist} returns a vector containing the following tree
+#' distance methods \item{symmetric.difference}{symmetric.difference or
+#' Robinson-Foulds distance}
+#' \item{branch.score.difference}{branch.score.difference}
+#' \item{path.difference}{path.difference}
+#' \item{weighted.path.difference}{weighted.path.difference}
+#' @author Klaus P. Schliep \email{klaus.schliep@@gmail.com},
+#' Leonardo de Oliveira Martins
+#' @seealso \code{\link[ape]{dist.topo}}, \code{\link{nni}},
+#' \code{\link{superTree}}
+#' @references de Oliveira Martins L., Leal E., Kishino H. (2008)
+#' \emph{Phylogenetic Detection of Recombination with a Bayesian Prior on the
+#' Distance between Trees}. PLoS ONE \bold{3(7)}. e2651. doi:
+#' 10.1371/journal.pone.0002651
+#' 
+#' de Oliveira Martins L., Mallo D., Posada D. (2016) \emph{A Bayesian
+#' Supertree Model for Genome-Wide Species Tree Reconstruction}. Syst. Biol.
+#' \bold{65(3)}: 397-416, doi:10.1093/sysbio/syu082
+#' 
+#' Steel M. A. and Penny P. (1993) \emph{Distributions of tree comparison
+#' metrics - some new results}, Syst. Biol., \bold{42(2)}, 126--141
+#' 
+#' Kuhner, M. K. and Felsenstein, J. (1994) \emph{A simulation comparison of
+#' phylogeny algorithms under equal and unequal evolutionary rates}, Molecular
+#' Biology and Evolution, \bold{11(3)}, 459--468
+#' 
+#' D.F. Robinson and L.R. Foulds (1981) \emph{Comparison of phylogenetic
+#' trees}, Mathematical Biosciences, \bold{53(1)}, 131--147
+#' 
+#' D.F. Robinson and L.R. Foulds (1979) Comparison of weighted labelled trees.
+#' In Horadam, A. F. and Wallis, W. D. (Eds.), \emph{Combinatorial Mathematics
+#' VI: Proceedings of the Sixth Australian Conference on Combinatorial
+#' Mathematics, Armidale, Australia}, 119--126
+#' @keywords classif
+#' @examples
+#' 
+#' tree1 <- rtree(100, rooted=FALSE)
+#' tree2 <- rSPR(tree1, 3)
+#' RF.dist(tree1, tree2)
+#' treedist(tree1, tree2)
+#' sprdist(tree1, tree2)
+#' trees <- rSPR(tree1, 1:5)
+#' SPR.dist(tree1, trees)
+#' 
+#' @rdname treedist
+#' @export treedist
+treedist <- function (tree1, tree2, check.labels=TRUE) 
+{
+    tree1 = unroot(tree1)
+    tree2 = unroot(tree2)
+    
+    if (check.labels) {
+        ind <- match(tree1$tip.label, tree2$tip.label)
+        if (any(is.na(ind)) | length(tree1$tip.label) !=
+            length(tree2$tip.label))
+            stop("trees have different labels")
+        tree2$tip.label <- tree2$tip.label[ind]
+        ind2 <- match(1:length(ind), tree2$edge[, 2])
+        tree2$edge[ind2, 2] <- order(ind)
+    }
+    
+    tree1 = reorder(tree1, "postorder")
+    tree2 = reorder(tree2, "postorder")
+    
+    symmetric.difference = NULL
+    branch.score.difference = NULL
+    path.difference = NULL
+    quadratic.path.difference = NULL
+    if(!is.binary.tree(tree1) | !is.binary.tree(tree2))message("Trees are not binary!")
+    
+    bp1 = bip(tree1)
+    bp2 = bip(tree2)
+    bp1 <- SHORTwise(bp1, length(tree1$tip.label))
+    bp2 <- SHORTwise(bp2, length(tree2$tip.label))
+    bp1 <- sapply(bp1, paste, collapse = "_")
+    bp2 <- sapply(bp2, paste, collapse = "_")
+    
+    l = length(tree1$tip.label)
+    
+    if (!is.null(tree1$edge.length) & !is.null(tree2$edge.length)) {      
+        dv1 = coph(tree1)
+        dv2 = coph(tree2)
+        quadratic.path.difference = sqrt(sum((dv1 - dv2)^2))
+        
+    }
+    
+    RF = sum(match(bp1, bp2, nomatch=0L)==0L) + sum(match(bp2, bp1, nomatch=0L)==0L)
+    
+    symmetric.difference = RF #2 * (p - sum(r1))
+    if (!is.null(tree1$edge.length) & !is.null(tree2$edge.length)) {
+        w1 = numeric(max(tree1$edge))
+        w2 = numeric(max(tree2$edge))
+        w1[tree1$edge[,2]] = tree1$edge.length
+        w2[tree2$edge[,2]] = tree2$edge.length
+        
+        v1 = tree1$edge.length
+        v2 = tree2$edge.length
+        
+        ind3 = match(bp1, bp2, nomatch=0L)
+        ind4 = ind3[ind3>0]
+        ind3 = which(ind3>0)
+        
+        s1 = sum((w1[ind3] - w2[ind4])^2)
+        
+        s2 = sum(w1[-ind3]^2)
+        s3 = sum(w2[-ind4]^2)
+        branch.score.difference = sqrt(s1 + s2 + s3)
+    }
+    
+    tree1$edge.length = rep(1, nrow(tree1$edge))
+    tree2$edge.length = rep(1, nrow(tree2$edge))
+    
+    dt1 = coph(tree1)
+    dt2 = coph(tree2)  
+    path.difference = sqrt(sum((dt1 - dt2)^2))
+    
+    result = c(symmetric.difference = symmetric.difference, 
+               branch.score.difference = branch.score.difference, 
+               path.difference = path.difference, 
+               quadratic.path.difference = quadratic.path.difference)
+    result              
+}
+
+
+
+
 # leomrtns addition
+#' @rdname treedist
+#' @export
 sprdist <- function (tree1, tree2) 
 {
     tree1 = unroot(tree1)
@@ -190,90 +372,14 @@ SPR2 <- function(tree, trees){
 }
 
 
+#' @rdname treedist
+#' @export
 SPR.dist <- function(tree1, tree2=NULL){
     if(inherits(tree1, "multiPhylo") && is.null(tree2))return(SPR1(tree1)) 
     if(inherits(tree1, "phylo") && inherits(tree2, "phylo"))return(sprdist(tree1, tree2)[1])
     if(inherits(tree1, "phylo") && inherits(tree2, "multiPhylo"))return(SPR2(tree1, tree2))
     if(inherits(tree2, "phylo") && inherits(tree1, "multiPhylo"))return(SPR2(tree2, tree1))
     return(NULL)
-}
-
-
-treedist <- function (tree1, tree2, check.labels=TRUE) 
-{
-    tree1 = unroot(tree1)
-    tree2 = unroot(tree2)
-    
-    if (check.labels) {
-        ind <- match(tree1$tip.label, tree2$tip.label)
-        if (any(is.na(ind)) | length(tree1$tip.label) !=
-                length(tree2$tip.label))
-            stop("trees have different labels")
-        tree2$tip.label <- tree2$tip.label[ind]
-        ind2 <- match(1:length(ind), tree2$edge[, 2])
-        tree2$edge[ind2, 2] <- order(ind)
-    }
-    
-    tree1 = reorder(tree1, "postorder")
-    tree2 = reorder(tree2, "postorder")
-    
-    symmetric.difference = NULL
-    branch.score.difference = NULL
-    path.difference = NULL
-    quadratic.path.difference = NULL
-    if(!is.binary.tree(tree1) | !is.binary.tree(tree2))message("Trees are not binary!")
-    
-    bp1 = bip(tree1)
-    bp2 = bip(tree2)
-    bp1 <- SHORTwise(bp1, length(tree1$tip.label))
-    bp2 <- SHORTwise(bp2, length(tree2$tip.label))
-    bp1 <- sapply(bp1, paste, collapse = "_")
-    bp2 <- sapply(bp2, paste, collapse = "_")
-    
-    l = length(tree1$tip.label)
-
-    if (!is.null(tree1$edge.length) & !is.null(tree2$edge.length)) {      
-        dv1 = coph(tree1)
-        dv2 = coph(tree2)
-        quadratic.path.difference = sqrt(sum((dv1 - dv2)^2))
-        
-    }
-   
-    RF = sum(match(bp1, bp2, nomatch=0L)==0L) + sum(match(bp2, bp1, nomatch=0L)==0L)
-
-    symmetric.difference = RF #2 * (p - sum(r1))
-    if (!is.null(tree1$edge.length) & !is.null(tree2$edge.length)) {
-        w1 = numeric(max(tree1$edge))
-        w2 = numeric(max(tree2$edge))
-        w1[tree1$edge[,2]] = tree1$edge.length
-        w2[tree2$edge[,2]] = tree2$edge.length
-        
-        v1 = tree1$edge.length
-        v2 = tree2$edge.length
-     
-        ind3 = match(bp1, bp2, nomatch=0L)
-        ind4 = ind3[ind3>0]
-        ind3 = which(ind3>0)
-
-        s1 = sum((w1[ind3] - w2[ind4])^2)
-
-        s2 = sum(w1[-ind3]^2)
-        s3 = sum(w2[-ind4]^2)
-        branch.score.difference = sqrt(s1 + s2 + s3)
-    }
-    
-    tree1$edge.length = rep(1, nrow(tree1$edge))
-    tree2$edge.length = rep(1, nrow(tree2$edge))
-
-    dt1 = coph(tree1)
-    dt2 = coph(tree2)  
-    path.difference = sqrt(sum((dt1 - dt2)^2))
-    
-    result = c(symmetric.difference = symmetric.difference, 
-               branch.score.difference = branch.score.difference, 
-               path.difference = path.difference, 
-               quadratic.path.difference = quadratic.path.difference)
-    result              
 }
 
 
@@ -586,6 +692,8 @@ RF0 <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, rooted=
 }
 
 
+#' @rdname treedist
+#' @export
 RF.dist <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, rooted=FALSE)
 {
     if(class(tree1)=="phylo" && class(tree2)=="phylo")return(RF0(tree1, tree2, normalize, check.labels, rooted))
@@ -596,6 +704,8 @@ RF.dist <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, roo
 }
 
 
+#' @rdname treedist
+#' @export
 wRF.dist <- function(tree1, tree2=NULL, normalize=FALSE, check.labels = TRUE, rooted=FALSE){
     if(class(tree1)=="phylo" && class(tree2)=="phylo")return(wRF0(tree1, tree2, normalize, check.labels, rooted))
     if(class(tree1)=="multiPhylo" && is.null(tree2))return(wRF1(tree1, normalize, check.labels))
@@ -739,7 +849,8 @@ kf2 <- function(trees, check.labels = TRUE){
 }
 
 
-# TODO distance matrices
+#' @rdname treedist
+#' @export
 KF.dist <- function(tree1, tree2=NULL, check.labels = TRUE, rooted=FALSE){
     if(inherits(tree1, "multiPhylo") && is.null(tree2))return(kf2(tree1)) 
     if(inherits(tree1, "phylo") && inherits(tree2, "phylo"))return(kf0(tree1, tree2, check.labels))
@@ -749,6 +860,8 @@ KF.dist <- function(tree1, tree2=NULL, check.labels = TRUE, rooted=FALSE){
 }
 
 
+#' @rdname treedist
+#' @export
 path.dist <- function(tree1, tree2=NULL, check.labels = TRUE, use.weight=FALSE){
     if(inherits(tree1, "phylo") && inherits(tree2, "phylo"))
          return(pd0(tree1, tree2, check.labels, !use.weight))

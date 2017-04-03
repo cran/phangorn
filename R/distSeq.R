@@ -1,6 +1,66 @@
 #
 # dist
 #
+
+
+#' Pairwise Distances from Sequences
+#' 
+#' \code{dist.hamming}, \code{dist.ml} and \code{dist.logDet} compute pairwise
+#' distances for an object of class \code{phyDat}.  \code{dist.ml} uses DNA /
+#' AA sequences to compute distances under different substitution models.
+#' 
+#' So far 17 amino acid models are supported ("WAG", "JTT", "LG", "Dayhoff",
+#' "cpREV", "mtmam", "mtArt", "MtZoa", "mtREV24", "VT","RtREV", "HIVw", "HIVb",
+#' "FLU", "Blossum62", "Dayhoff_DCMut" and "JTT_DCMut") and additional rate
+#' matrices and frequencies can be supplied.
+#' 
+#' The "F81" model uses empirical base frequencies, the "JC69" equal base
+#' frequencies. This is even the case if the data are not nucleotides.
+#' 
+#' @param x An object of class \code{phyDat}
+#' @param ratio Compute uncorrected ('p') distance or character difference.
+#' @param model One of "JC69", "F81" or one of 17 amino acid models see
+#' details.
+#' @param exclude One of "none", "all", "pairwise" indicating whether to delete
+#' the sites with missing data (or ambiguous states). The default is handle
+#' missing data as in pml.
+#' @param bf A vector of base frequencies.
+#' @param Q A vector containing the lower triangular part of the rate matrix.
+#' @param k Number of intervals of the discrete gamma distribution.
+#' @param shape Shape parameter of the gamma distribution.
+#' @param \dots Further arguments passed to or from other methods.
+#' @return an object of class \code{dist}
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso For more distance methods for nucleotide data see
+#' \code{\link[ape]{dist.dna}} and \code{\link{dist.p}} for pairwise
+#' polymorphism p-distances. \code{\link{writeDist}} for export and import distances.
+#' @references Lockhart, P. J., Steel, M. A., Hendy, M. D. and Penny, D. (1994)
+#' Recovering evolutionary trees under a more realistic model of sequence
+#' evolution. \emph{Molecular Biology and Evolution}, \bold{11}, 605--602.
+#' 
+#' Jukes TH and Cantor CR (1969). \emph{Evolution of Protein Molecules}. New
+#' York: Academic Press. 21--132.
+#' @keywords cluster
+#' @examples
+#' 
+#' data(Laurasiatherian)
+#' dm1 <- dist.hamming(Laurasiatherian)
+#' tree1 <- NJ(dm1)
+#' dm2 <- dist.logDet(Laurasiatherian)
+#' tree2 <- NJ(dm2)
+#' treedist(tree1,tree2)
+#' # JC model
+#' dm3 <- dist.ml(Laurasiatherian)
+#' tree3 <- NJ(dm3)
+#' treedist(tree1,tree3)
+#' # F81 + Gamma
+#' dm4 <- dist.ml(Laurasiatherian, model="F81", k=4, shape=.4)
+#' tree4 <- NJ(dm4)
+#' treedist(tree1,tree4)
+#' treedist(tree3,tree4)
+#' 
+#' @rdname dist.hamming 
+#' @export 
 dist.hamming <- function (x, ratio = TRUE, exclude = "none") 
 {
     if (!inherits(x,"phyDat")) 
@@ -69,7 +129,8 @@ dist.hamming <- function (x, ratio = TRUE, exclude = "none")
 }
 
 
-
+#' @rdname dist.hamming
+#' @export
 dist.ml <- function (x, model = "JC69", exclude = "none", bf = NULL, Q = NULL, k=1L, shape=1, ...) 
 {
     if (!inherits(x,"phyDat")) 
@@ -161,7 +222,9 @@ dist.ml <- function (x, model = "JC69", exclude = "none", bf = NULL, Q = NULL, k
     return(d)
 }
 
-   
+
+#' @rdname dist.hamming
+#' @export   
 dist.logDet = function (x) 
 {
     if (!inherits(x,"phyDat")) 
@@ -199,6 +262,113 @@ dist.logDet = function (x)
 }
 
 
+
+
+#' Writing and reading distances in phylip and nexus format
+#' 
+#' \code{readDist}, \code{writeDist} and \code{write.nexus.dist} are useful to 
+#' exchange distance matrices with other phylogenetic programs.  
+#' 
+#' 
+#' @param x A \code{dist} object.
+#' @param file A file name.
+#' @param format file format, default is "phylip", only other option so far is "nexus". 
+#' @param \dots Further arguments passed to or from other methods. 
+#' @param upper	logical value indicating whether the upper triangle of the distance 
+#' matrix should be printed.
+#' @param diag	logical value indicating whether the diagonal of the distance matrix 
+#' should be printed.
+#' @param digits passed to format inside of \code{write.nexus.dist}.
+#' @param taxa logical. If TRUE a taxa block is added.
+#' @param append logical. If TRUE the nexus blocks will be added to a file.
+#' @return an object of class \code{dist}
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso To compute distance matrices see \code{\link{dist.ml}}
+#' \code{\link[ape]{dist.dna}} and \code{\link{dist.p}} for pairwise
+#' polymorphism p-distances
+#' @references Maddison, D. R., Swofford, D. L. and Maddison, W. P. (1997) 
+#' NEXUS: an extensible file format for systematic information. 
+#' \emph{Systematic Biology}, \bold{46}, 590--621.
+#' 
+#' @keywords cluster
+#' @examples
+#' 
+#' data(yeast)
+#' dm <- dist.ml(yeast)
+#' writeDist(dm)
+#' write.nexus.dist(dm)
+#' 
+#' @rdname writeDist 
+#' @export writeDist
+writeDist <- function(x, file="", format="phylip", ...){ 
+    format <- match.arg(format, c("phylip", "nexus"))
+    if(format=="phylip"){
+        x <- as.matrix(x)
+#        x <- format(x, digits = digits, justify = "none")
+        cat(ncol(x), "\n", file=file)
+        write.table(x, file, append=TRUE, quote=FALSE, col.names=FALSE)
+    }
+    else write.nexus.dist(x, file=file, ...)
+}    
+    
+
+#' @rdname writeDist
+#' @export 
+write.nexus.dist <- function(x, file="", append=FALSE, upper=FALSE, diag=TRUE, digits = getOption("digits"), taxa=!append){
+    
+    taxa.labels <- attr(x, "Labels")
+    ntaxa <- length(taxa.labels)
+    
+    m <- as.matrix(x)
+    cf <- format(m, digits = digits, justify = "none")    
+    l <-  length(attr(x, "Labels"))
+    if(upper) diag <- TRUE
+    if (!upper) cf[row(cf) < col(cf)] <- ""
+    if (!diag) cf[row(cf) == col(cf)] <- ""    
+    
+    cf2 <- apply(cf, 1, "paste0", collapse=" ")
+    cf2 <- paste(attr(x, "Labels"), cf2)
+    cf2 <- trimws(cf2, "right")
+    
+    if(!append)cat("#NEXUS\n\n", file = file)  
+    
+    if(taxa){
+        cat(paste("BEGIN TAXA;\n\tDIMENSIONS ntax=", ntaxa, ";\n", 
+                  sep = ""), file = file, append = TRUE)
+        cat("\tTAXLABELS", paste(taxa.labels, sep = " "), ";\nEND;\n\n", 
+            file = file, append = TRUE)
+    }
+    
+    cat("BEGIN DISTANCES; \n", file = file, append = TRUE)
+    if(upper) cat("\tFORMAT TRIANGLE = BOTH;\n", file = file, append = TRUE)
+    else cat("\tFORMAT TRIANGLE = LOWER;\n", file = file, append = TRUE)
+    if(!diag) cat("\tFORMAT NODIAGONAL;\n", file = file, append = TRUE)
+    cat("\tMatrix \n", file = file, append = TRUE)
+    #    for(i in 1:(l-1)) cat("\t", cf2[i], "\n", sep="", file = file, append = TRUE)
+    for(i in 1:l) cat("\t", cf2[i], "\n", sep="", file = file, append = TRUE)
+    #    cat("\t", cf2[l], ";\n", file = file, sep="", append = TRUE)
+    #    cat("END; \n", file = file, append = TRUE)
+    cat("\t;\nEND; \n", file = file, append = TRUE)
+}
+
+
+
+RSS <- function(x, dm, trace=0){
+    labels=attr(x, "labels")
+    dm = as.matrix(dm)
+    k = dim(dm)[1]
+    dm = dm[labels,labels]
+    y = dm[lower.tri(dm)]
+    betahat <- attr(x, "weights")
+    X = splits2design(x)
+    RSS = sum((y-(X%*%betahat))^2)
+    RSS
+}    
+
+
+
+#' @rdname writeDist
+#' @export  
 readDist <- function(file){ #, format="phylip"
     tmp <- read.table(file, skip=1, stringsAsFactors = FALSE)
     labels = tmp[,1]
@@ -206,14 +376,3 @@ readDist <- function(file){ #, format="phylip"
     dimnames(dm)=list(labels, labels)    
     as.dist(dm)
 }
-    
-    
-writeDist <- function(dm, file=""){ # , format="phylip"
-    dm <- as.matrix(dm)
-    cat(ncol(dm), "\n", file=file)
-    write.table(dm, file, append=TRUE, quote=FALSE, col.names=FALSE)
-}    
-    
-    
-
-

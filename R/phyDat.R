@@ -93,8 +93,11 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE, contrast =
     
     row.names(data) = as.character(1:p)
     data = na.omit(data)
-    
     aaa = match(index, attr(data, "na.action"))
+    
+
+    if(!is.null(attr(data, "na.action"))) warning("Found unknown characters (not supplied in levels). Deleted sites with with unknown states.")
+    
     index = index[is.na(aaa)] 
     index = match(index, unique(index))
     rn = as.numeric(rownames(data))
@@ -169,7 +172,9 @@ phyDat.DNA = function (data, return.index = TRUE)
     row.names(data) = as.character(1:p)
     data = na.omit(data)
     rn = as.numeric(rownames(data))
-
+    
+    if(!is.null(attr(data, "na.action"))) warning("Found unknown characters. Deleted sites with with unknown states.")
+    
     aaa = match(index, attr(data, "na.action"))
     index = index[is.na(aaa)] 
     index = match(index, unique(index))
@@ -251,6 +256,8 @@ phyDat.AA <- function (data, return.index = TRUE)
     data = na.omit(data)
     rn = as.numeric(rownames(data))
 
+    if(!is.null(attr(data, "na.action"))) warning("Found unknown characters. Deleted sites with with unknown states.")
+    
     aaa = match(index, attr(data, "na.action"))
     index = index[is.na(aaa)] 
     index = match(index, unique(index))
@@ -342,7 +349,9 @@ phyDat.codon <- function (data, return.index = TRUE)
     row.names(data) = as.character(1:p)
     data = na.omit(data)
     rn = as.numeric(rownames(data))
-
+    
+    if(!is.null(attr(data, "na.action"))) warning("Found unknown characters. Deleted sites with with unknown states.")
+    
     aaa = match(index, attr(data, "na.action"))
     index = index[is.na(aaa)] 
     index = match(index, unique(index))
@@ -368,24 +377,135 @@ phyDat.codon <- function (data, return.index = TRUE)
 }
 
 
+#' Conversion among Sequence Formats
+#' 
+#' These functions transform several DNA formats into the \code{phyDat} format.
+#' \code{allSitePattern} generates an alignment of all possible site patterns.
+#' 
+#' If \code{type} "USER" a vector has to be give to \code{levels}. For example
+#' c("a", "c", "g", "t", "-") would create a data object that can be used in
+#' phylogenetic analysis with gaps as fifth state.  There is a more detailed
+#' example for specifying "USER" defined data formats in the vignette
+#' "phangorn-specials".
+#' 
+#' \code{allSitePattern} returns all possible site patterns and can be useful
+#' in simulation studies. For further details see the vignette
+#' phangorn-specials.
+#' 
+#' \code{write.phyDat} calls the function write.dna or write.nexus.data and
+#' \code{read.phyDat} calls the function \code{read.dna}, \code{read.aa} or
+#' \code{read.nexus.data} see for more details over there.
+#' 
+#' You may import data directly with \code{\link[ape]{read.dna}} or
+#' \code{\link[ape]{read.nexus.data}} and convert the data to class phyDat.
+#' 
+#' The generic function \code{c} can be used to to combine sequences and
+#' \code{unique} to get all unique sequences or unique haplotypes.
+#' 
+#' \code{acgt2ry} converts a \code{phyDat} object of nucleotides into an binary
+#' ry-coded dataset.
+#' 
+#' @aliases 
+#' as.phyDat.character as.phyDat.data.frame as.phyDat.matrix
+#' as.MultipleAlignment as.MultipleAlignment.phyDat cbind.phyDat c.phyDat 
+#' acgt2ry removeUndeterminedSites phyDat2MultipleAlignment 
+#' @param data An object containing sequences.
+#' @param x An object containing sequences.
+#' @param type Type of sequences ("DNA", "AA", "CODON" or "USER").
+#' @param levels Level attributes.
+#' @param return.index If TRUE returns a index of the site patterns.
+#' @param file A file name.
+#' @param format File format of the sequence alignment (see details).  Several
+#' popular formats are supported: "phylip", "interleaved", "sequential",
+#' "clustal", "fasta" or "nexus", or any unambiguous abbreviation of these.
+#' @param colsep a character used to separate the columns (a single space by
+#' default).
+#' @param nbcol a numeric specifying the number of columns per row (-1 by
+#' default); may be negative implying that the nucleotides are printed on a
+#' single line.
+#' @param n Number of sequences.
+#' @param names Names of sequences.
+#' @param subset a subset of taxa.
+#' @param select a subset of characters.
+#' @param site.pattern select site pattern or sites.
+#' @param allLevels return original data.
+#' @param obj as object of class phyDat
+#' @param freq logical, if 'TRUE', frequencies or counts are returned otherwise
+#' proportions
+#' @param all all a logical; if all = TRUE, all counts of bases, ambiguous
+#' codes, missing data, and alignment gaps are returned as defined in the
+#' contrast.
+#' @param drop.unused.levels logical, drop unused levels
+#' @param incomparables for compatibility with unique.
+#' @param identical if TRUE (default) sequences have to be identical, if FALSE
+#' sequences are considered duplicates if distance between sequences is zero
+#' (happens frequently with ambiguous sites).
+#' @param ambiguity character for ambiguous character and no contrast is provided.
+#' @param ... further arguments passed to or from other methods.
+#' @return The functions return an object of class \code{phyDat}.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link{DNAbin}}, \code{\link{as.DNAbin}},
+#' \code{\link{read.dna}}, \code{\link{read.aa}}, \code{\link{read.nexus.data}}
+#' and the chapter 1 in the \code{vignette("phangorn-specials",
+#' package="phangorn")} and the example of \code{\link{pmlMix}} for the use of
+#' \code{allSitePattern}
+#' @keywords cluster
+#' @examples
+#' 
+#' data(Laurasiatherian)
+#' class(Laurasiatherian)
+#' Laurasiatherian
+#' baseFreq(Laurasiatherian)
+#' baseFreq(Laurasiatherian, all=TRUE)
+#' subset(Laurasiatherian, subset=1:5)
+#' # transform into old ape format
+#' LauraChar <- as.character(Laurasiatherian)
+#' # and back 
+#' Laura <- phyDat(LauraChar, return.index=TRUE)
+#' all.equal(Laurasiatherian, Laura)
+#' allSitePattern(5)
+#' 
+#' @rdname phyDat
+#' @export 
+phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...) 
+{
+    if (inherits(data,"DNAbin")) type <- "DNA"
+    pt <- match.arg(type, c("DNA", "AA", "CODON", "USER"))  
+    if(pt=="DNA") dat <- phyDat.DNA(data, return.index=return.index,...)
+    if(pt=="AA") dat <- phyDat.AA(data, return.index=return.index, ...)
+    if(pt=="CODON") dat <- phyDat.codon(data, return.index=return.index, ...)
+    if(pt=="USER") dat <- phyDat.default(data, levels = levels, return.index=return.index, ...)
+    dat
+}
+
+
+#' @rdname phyDat
+#' @export
 dna2codon <- function(x){
     if(!inherits(x, "phyDat"))stop("x needs to be of class phyDat!")
     phyDat.codon(as.character(x))
 }
 
 
+#' @rdname phyDat
+#' @export
 codon2dna <- function(x){
     if(!inherits(x, "phyDat"))stop("x needs to be of class phyDat!")
     phyDat.DNA(as.character(x))
 }
 
 
+#' @rdname phyDat
+#' @export
 as.phyDat <- function (x, ...){
     if (inherits(x,"phyDat")) return(x)
     UseMethod("as.phyDat")
 }
 
 
+#' @rdname phyDat
+#' @method as.phyDat factor
+#' @export
 as.phyDat.factor <- function(x, ...){
     nam <- names(x)
     lev <- levels(x)
@@ -394,9 +514,16 @@ as.phyDat.factor <- function(x, ...){
     phyDat(x, type="USER", levels = lev, ...)
 }
 
+
+#' @rdname phyDat
+#' @method as.phyDat DNAbin
+#' @export
 as.phyDat.DNAbin <- function(x,...) phyDat.DNA(x,...)
 
 
+#' @rdname phyDat
+#' @method as.phyDat alignment
+#' @export
 as.phyDat.alignment <- function (x, type="DNA",...) 
 {
     x$seq <- tolower(x$seq)
@@ -411,7 +538,8 @@ as.phyDat.alignment <- function (x, type="DNA",...)
 
 
 #as.alignment.phyDat <- function(x, ...) as.alignment(as.character(x))
-
+#' @rdname phyDat
+#' @export
 phyDat2alignment <-  function(x){
     z = as.character(x)
     nam = rownames(z)
@@ -426,6 +554,9 @@ phyDat2alignment <-  function(x){
 }
 
 
+#' @rdname phyDat
+#' @method as.phyDat MultipleAlignment
+#' @export
 as.phyDat.MultipleAlignment <- function(x, ...){
     if (requireNamespace('Biostrings')){
     if(inherits(x, "DNAMultipleAlignment"))
@@ -495,6 +626,8 @@ acgt2ry <- function(obj){
 }
 
 
+#' @rdname phyDat
+#' @export
 # replace as.character.phyDat weniger Zeilen, works also for codons
 as.character.phyDat <- function (x, allLevels=TRUE, ...) 
 {
@@ -538,6 +671,8 @@ as.character.phyDat <- function (x, allLevels=TRUE, ...)
 }
 
 
+#' @rdname phyDat
+#' @export
 as.data.frame.phyDat <- function(x, ...){
   nr <- attr(x, "nr")
   nc <- attr(x, "nc")
@@ -565,6 +700,8 @@ as.data.frame.phyDat <- function(x, ...){
 #}
 
 # quite abit faster
+#' @rdname phyDat
+#' @export
 as.DNAbin.phyDat <- function (x, ...) 
 {
     if(attr(x, "type")=="DNA"){
@@ -601,22 +738,11 @@ as.DNAbin.phyDat <- function (x, ...)
 }
 
 
-#if (getRversion() >= "2.15.1") utils::globalVariables("as.AAbin")
+#' @rdname phyDat
+#' @export
 as.AAbin.phyDat <- function(x,...) {
    if(attr(x, "type")=="AA") return(as.AAbin(as.character(x, ...)))
    else stop("x must be a amino acid sequence")
-}
-
- 
-phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE,...) 
-{
-    if (inherits(data,"DNAbin")) type <- "DNA"
-    pt <- match.arg(type, c("DNA", "AA", "CODON", "USER"))  
-    if(pt=="DNA") dat <- phyDat.DNA(data, return.index=return.index,...)
-    if(pt=="AA") dat <- phyDat.AA(data, return.index=return.index, ...)
-    if(pt=="CODON") dat <- phyDat.codon(data, return.index=return.index, ...)
-    if(pt=="USER") dat <- phyDat.default(data, levels = levels, return.index=return.index, ...)
-    dat
 }
 
 
@@ -725,6 +851,8 @@ cbind.phyDat <- function(..., gaps="-", compress=TRUE){
 c.phyDat <- cbind.phyDat
 
 
+#' @rdname phyDat
+#' @export
 write.phyDat <- function(x, file, format="phylip", colsep = "", nbcol=-1, ...){
     formats <- c("phylip", "nexus", "interleaved", "sequential", "fasta")
     format <- match.arg(tolower(format), formats)
@@ -740,6 +868,8 @@ write.phyDat <- function(x, file, format="phylip", colsep = "", nbcol=-1, ...){
 }
 
 
+#' @rdname phyDat
+#' @export
 read.phyDat <- function(file, format="phylip", type="DNA", ...){
     
     formats <- c("phylip", "nexus", "interleaved", "sequential", "fasta", "clustal")
@@ -752,12 +882,21 @@ read.phyDat <- function(file, format="phylip", type="DNA", ...){
             data = read.dna(file, format, as.character = TRUE, ...)
         }
         if (type == "AA") data = read.aa(file, format=format, ...)
+        if (type == "USER"){
+            data = read.dna(file, format, as.character = TRUE)
+            extras <- match.call(expand.dots = FALSE)$...
+            extras <- lapply(extras, eval)
+            return(phyDat(data, type, levels=extras$levels, ambiguity = extras$ambiguity, 
+                contrast = extras$contrast))
+        }
         # raus
     }
     phyDat(data, type, return.index = TRUE)
 }
 
 
+#' @rdname phyDat
+#' @export
 baseFreq <- function(obj, freq=FALSE, all=FALSE, drop.unused.levels = FALSE){
     if (!inherits(obj,"phyDat")) 
         stop("data must be of class phyDat")
@@ -819,6 +958,9 @@ getRows <- function (data, rows, site.pattern = TRUE)
 }
 
 
+#' @rdname phyDat
+#' @method subset phyDat
+#' @export
 subset.phyDat <- function (x, subset, select, site.pattern = TRUE,...) 
 {  
      
@@ -883,6 +1025,9 @@ duplicated_map <- function(x, ...){
 }   
 
 
+#' @rdname phyDat
+#' @method unique phyDat
+#' @export
 unique.phyDat <- function(x, incomparables=FALSE, identical=TRUE, ...){
     if(identical) return(getCols(x, !duplicated(x)))
     getCols(x, !duplicated_phyDat(x))
@@ -910,7 +1055,8 @@ removeParsUninfoSites <- function(data){
 }
 
 
-
+#' @rdname phyDat
+#' @export
 allSitePattern <- function(n,levels=c("a","c","g","t"), names=NULL){
     l=length(levels)
     X=vector("list", n)
@@ -944,16 +1090,29 @@ write.phylip <- function(data, weight, file=""){
 
 read.FASTA.AA <- function (file) 
 {
-    if (length(grep("^(ht|f)tp:", file))) {
+    if (length(grep("^(ht|f)tp(s|):", file))) {
         url <- file
         file <- tempfile()
         download.file(url, file)
     }
-    sz <- file.info(file)$size
-    x <- readBin(file, "raw", sz)
-    icr <- which(x == as.raw(13))
-    if (length(icr)) 
-        x <- x[-icr]
+    if (is(file, "connection")) {
+        if (!isOpen(file, "rt")) {
+            open(file, "rt")
+            on.exit(close(file))
+        }
+        x <- scan(file, what = character(), sep = "\n", quiet = TRUE)
+        x <- charToRaw(paste(x, collapse = "\n"))
+        sz <- length(x)
+    } else {
+        sz <- file.size(file)
+        x <- readBin(file, "raw", sz)
+    }
+    ## if the file is larger than 1 Gb we assume that it is
+    ## UNIX-encoded and skip the search-replace of carriage returns
+    if (sz < 1e9) {
+        icr <- which(x == as.raw(0x0d)) # CR
+        if (length(icr)) x <- x[-icr]
+    }
     res <- .Call("rawStream2phyDat", x)
     
     aa <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i", 
@@ -989,6 +1148,39 @@ read.FASTA.AA <- function (file)
 
 
 # throw out
+
+
+#' Read Amino Acid Sequences in a File
+#' 
+#' This function reads amino acid sequences in a file, and returns a matrix
+#' list of DNA sequences with the names of the taxa read in the file as row
+#' names.
+#' 
+#' 
+#' @param file a file name specified by either a variable of mode character, or
+#' a double-quoted string.
+#' @param format a character string specifying the format of the DNA sequences.
+#' Three choices are possible: \code{"interleaved"}, \code{"sequential"}, or
+#' \code{"fasta"}, or any unambiguous abbreviation of these.
+#' @param skip the number of lines of the input file to skip before beginning
+#' to read data.
+#' @param nlines the number of lines to be read (by default the file is read
+#' until its end).
+#' @param comment.char a single character, the remaining of the line after this
+#' character is ignored.
+#' @param seq.names the names to give to each sequence; by default the names
+#' read in the file are used.
+#' @return a matrix of amino acid sequences.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link[ape]{read.dna}}, \code{\link[ape]{read.GenBank}},
+#' \code{\link[phangorn]{phyDat}}, \code{\link[seqinr]{read.alignment}}
+#' @references % Anonymous. FASTA format description. %
+#' \url{https://www.ncbi.nlm.nih.gov/blast/fasta.shtml} Felsenstein, J. (1993)
+#' Phylip (Phylogeny Inference Package) version 3.5c. Department of Genetics,
+#' University of Washington.
+#' \url{http://evolution.genetics.washington.edu/phylip/phylip.html}
+#' @keywords IO
+#' @export read.aa
 read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0, 
     comment.char = "#", seq.names = NULL) 
 {
@@ -1093,6 +1285,8 @@ read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
 }
 
 
+#' @rdname phyDat
+#' @export
 genlight2phyDat <- function(x, ambiguity=NA){
     tmp <- as.matrix(x)
     lev <- na.omit(unique(as.vector(tmp)))
@@ -1100,6 +1294,9 @@ genlight2phyDat <- function(x, ambiguity=NA){
 }
 
 
+#' @rdname phyDat
+#' @method image phyDat
+#' @export
 image.phyDat <- function(x, ...){
     if(attr(x, "type")=="AA")image(as.AAbin(x), ...)
     if(attr(x, "type")=="DNA")image(as.DNAbin(x), ...)

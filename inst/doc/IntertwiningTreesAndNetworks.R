@@ -1,7 +1,12 @@
 ## ----setup, echo=FALSE---------------------------------------------------
 # set global chunk options: images will be bigger
-knitr::opts_chunk$set(fig.width=7, fig.height=7) 
+  knitr::opts_chunk$set(fig.width=6, fig.height=6)
+#, global.par=TRUE
 options(digits = 4)
+
+knitr::knit_hooks$set(small.mar=function(before, options, envir){
+   if (before && options$fig.show!='none') par(mar=c(.5,.5,.5,.5))
+})
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  install.packages("phangorn", dependencies=TRUE)
@@ -12,6 +17,7 @@ options(digits = 4)
 
 ## ------------------------------------------------------------------------
 library(phangorn)    # load the phangorn library
+library(magrittr)  
 
 ## ------------------------------------------------------------------------
 ## automatically set the correct working directory for the examples below
@@ -41,7 +47,7 @@ mrbayes.trees <- c(run1[251:1001],run2[251:1001])
 Nnet <- read.nexus.networx(file.path(fdir,"woodmouse.nxs"))
 
 ## ------------------------------------------------------------------------
-par(mfrow=c(1,2), mar=c(2,2,2,2)) # Setting plot parameters
+par(mfrow=c(1,2), mar=c(1,1,1,1)) # Setting plot parameters
 ### Plotting trees with support values:
 ##  RAxML
 plot(raxml.tree)
@@ -52,21 +58,20 @@ nodelabels(mrbayes.tree$node.label, adj = c(1, 0), frame = "none")
 
 par(mfrow=c(1,1)) # Setting plot parameters
 # NeighbourNet
-plot.networx(Nnet,"2D")
+plot(Nnet,"2D")
 ## alternatively,
 # plot(Nnet,"2D")
 
 
-## ------------------------------------------------------------------------
+## ---- fig.width=7, fig.height=4, small.mar=TRUE--------------------------
 # create a vector of labels for the network corresponding to edges in the tree
 edge.lab <- createLabel(Nnet, raxml.tree, raxml.tree$edge[,2], "edge")
 # could be also 1:27 instead of raxml.tree$edge[,2]
 
 # Show the correspondingly labelled tree and network in R
-par(mfrow=c(1,2), mar=c(1,1,1,1))
-#plotBS(raxml.tree, rotate.tree = 180) 
-plot(raxml.tree, "u", rotate.tree = 180) 
-edgelabels(raxml.tree$edge[,2],col="blue", frame="none")
+par(mfrow=c(1,2))  
+plot(raxml.tree, "u", rotate.tree = 180, cex=.7) 
+edgelabels(raxml.tree$edge[,2],col="blue", frame="none", cex=.7)
 
 # find edges that are in the network but not in the tree
 edge.col <- rep("black", nrow(Nnet$edge))
@@ -74,14 +79,16 @@ edge.col[ is.na(edge.lab) ] <- "red"
 # or a simpler alternative...
 edge.col <- createLabel(Nnet, raxml.tree, "black", nomatch="red")
 
-x <- plot.networx(Nnet, edge.label = edge.lab, show.edge.label = T, "2D", edge.color = edge.col,
-                  col.edge.label = "blue")
+x <- plot(Nnet, edge.label = edge.lab, show.edge.label = T, "2D", edge.color = edge.col,
+                  col.edge.label = "blue", cex=.7)
 # the above plot function returns an invisible networx object and this object also  
 # contains the colors for the edges.
 
 
-## ------------------------------------------------------------------------
-x <- addConfidences(Nnet,raxml.tree)
+## ---- small.mar=TRUE-----------------------------------------------------
+# the scaler argument multiplies the confidence values. This is useful to switch
+# confidences values between total, percentage or ratios.   
+x <- addConfidences(Nnet,raxml.tree, scaler = .01)
 # find splits that are in the network but not in the tree
 split.col <- rep("black", length(x$splits))
 split.col[ !matchSplits(as.splits(x), as.splits(raxml.tree)) ] <- "red"
@@ -90,15 +97,14 @@ split.col[ !matchSplits(as.splits(x), as.splits(raxml.tree)) ] <- "red"
 split.col2 <- createLabel(x, raxml.tree, label="black", "split", nomatch="red")
 
 # Plotting in R
-par(mfrow=c(1,1))
-out.x <- plot.networx(x,"2D",show.edge.label=TRUE, split.color=split.col, col.edge.label = "blue")
+out.x <- plot(x,"2D",show.edge.label=TRUE, split.color=split.col, col.edge.label = "blue")
 
 ## ------------------------------------------------------------------------
 # write.nexus.networx(out.x,"woodmouse.tree.support.nxs")
 ## or we can also export the splits alone (for usage in software other than SplitsTree)
 # write.nexus.splits(as.splits(out.x),"woodmouse.splits.support.nxs")
 
-## ------------------------------------------------------------------------
+## ---- small.mar=TRUE-----------------------------------------------------
 y <- addConfidences(Nnet, as.splits(raxml.bootstrap))
 edge.col <- createLabel(y, raxml.tree, label="black", "edge", nomatch="grey")
 
@@ -107,17 +113,78 @@ y <- plot(y,"2D",show.edge.label=TRUE, edge.color=edge.col)
 ## Write to SplitsTree for viewing
 # write.nexus.networx(y,"NN.with.bs.support.nxs")
 
-## ------------------------------------------------------------------------
+## ---- small.mar=TRUE-----------------------------------------------------
 cnet <- consensusNet(raxml.bootstrap,prob=0.10)
 edge.col <- createLabel(cnet, Nnet, label="black", "edge", nomatch="grey")
-cnet <- plot.networx(cnet, "2D", show.edge.label = TRUE, edge.color=edge.col)
+cnet <- plot(cnet, "2D", show.edge.label = TRUE, edge.color=edge.col)
 
 edge.col <- createLabel(Nnet, cnet, label="black", "edge", nomatch="grey")
-z <- plot.networx(Nnet, "2D", show.edge.label = TRUE, edge.color=edge.col)
+z <- plot(Nnet, "2D", show.edge.label = TRUE, edge.color=edge.col)
 
 obj <- addConfidences(Nnet,cnet)
-plot.networx(obj,"2D",show.edge.label=T, edge.color=edge.col, col.edge.label = "blue")
+plot(obj,"2D",show.edge.label=T, edge.color=edge.col, col.edge.label = "blue")
 
 ## Write to SplitsTree for viewing
 # write.nexus.networx(obj,"Nnet.with.ML.Cnet.Bootstrap.nxs")
+
+## ---- fig.width=7, fig.height=6------------------------------------------
+Nnet <- read.nexus.networx(file.path(fdir,"RAxML_distances.Wang.nxs"))
+raxml.tree <- read.tree(file.path(fdir,"RAxML_bestTree.Wang.out")) %>% unroot
+raxml.bootstrap <- read.tree(file.path(fdir,"RAxML_bootstrap.Wang.out"))
+
+bs_splits <- as.splits(raxml.bootstrap)
+tree_splits <- as.splits(raxml.tree) %>% unique %>% removeTrivialSplits
+# we overwrite bootstrap values and set the weights 
+# to 1e-6 (almost zero), as we plot them on a log scale later on
+attr(bs_splits, "weights")[] <- 1e-6
+# combine the splits from the bootstrap and neighbor net
+# and delete duplicates and add the confidence values
+# we get rid of trivial splits
+all_splits <- c(Nnet$splits, bs_splits) %>% unique %>% removeTrivialSplits %>% addConfidences(bs_splits, scaler=100)
+
+# For easier plotting we create a matrix with the confidences and 
+# weights as columns
+tab <- data.frame(SplitWeight = attr(all_splits, "weights"), Bootstrap=attr(all_splits, "confidences"), Tree=FALSE)
+# we add a logical variable pto indicate which splits are in the RAxML tree
+tab$Tree[matchSplits(tree_splits, all_splits, FALSE)] = TRUE
+
+tab[is.na(tab[,"Bootstrap"]),"Bootstrap"] <- 0
+tab[,"Bootstrap"] <- round(tab[,"Bootstrap"])
+rownames(tab) <- apply(as.matrix(all_splits, zero.print = ".", one.print = "|"), 1, paste0, collapse="")
+tab[1:10,]
+
+col <- rep("blue", nrow(tab))
+col[tab[,"Bootstrap"]==0] <- "green"
+col[tab[,"SplitWeight"]==1e-6] <- "red"
+
+pch = rep(19, nrow(tab))
+pch[tab$Tree] <- 17
+
+par(mar=c(5.1, 4.1, 4.1, 8.1), xpd=TRUE)
+plot(tab[,"SplitWeight"], tab[,"Bootstrap"], log="x", col=col, pch=pch,  
+     xlab="Split weight (log scale)", ylab="Bootstrap (%)")
+legend("topright", inset=c(-0.35,0), c("Pattern 1", "Pattern 2", "Pattern 3", "Pattern in the\nbest tree"), pch=c(19,19,19,17), col=c("blue", "green", "red", "black"), bty="n")
+
+## ------------------------------------------------------------------------
+YCh <- read.tree(file.path(fdir, "RAxML_bestTree.YCh")) 
+mtG <- read.tree(file.path(fdir, "RAxML_bestTree.mtG")) 
+ncAI <- read.tree(file.path(fdir, "RAxML_bestTree.AIs")) 
+all_data <- read.tree(file.path(fdir, "RAxML_bestTree.3moles")) 
+YCh_boot <- read.tree(file.path(fdir, "RAxML_bootstrap.YCh")) 
+mtG_boot <- read.tree(file.path(fdir, "RAxML_bootstrap.mtG")) 
+ncAI_boot <- read.tree(file.path(fdir, "RAxML_bootstrap.AIs")) 
+all_data_boot <- read.tree(file.path(fdir, "RAxML_bootstrap.3moles")) 
+
+## ------------------------------------------------------------------------
+par(mfrow=c(2,2), mar = c(2,2,4,2))
+YCh <- plotBS(midpoint(YCh), YCh_boot, "phylogram", p=0, main = "YCh")
+mtG <- plotBS(midpoint(mtG), mtG_boot, "phylogram", p=0, main = "mtG")
+ncAI <- plotBS(midpoint(ncAI), ncAI_boot, "phylogram", p=0, main = "ncAI")
+all_data <- plotBS(midpoint(all_data), all_data_boot, "phylogram", p=0, main = "All data")
+
+## ---- small.mar=TRUE-----------------------------------------------------
+par(mfrow=c(1,1))
+cn <- consensusNet(c(YCh, mtG, ncAI))
+cn <- addConfidences(cn, YCh_boot) %>% addConfidences(mtG_boot, add=TRUE) %>% addConfidences(ncAI_boot, add=TRUE) %>% addConfidences(all_data_boot, add=TRUE)
+plot(cn, "2D", show.edge.label=TRUE)
 

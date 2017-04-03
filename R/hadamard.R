@@ -27,13 +27,36 @@ dec2bin <- function (x, k=ceiling(log2(x)))
 }
 
 # double factorial: log version
-"ldfactorial" <- function(x){
+#' @rdname dfactorial
+#' @export
+ldfactorial <- function(x){
     x = (x+1)/2
     res = lgamma(2*x)-(lgamma(x)+(x-1)*log(2))
     res
 }
 
 # double factorial
+
+
+#' Arithmetic Operators
+#' 
+#' double factorial function
+#' 
+#' 
+#' @param x a numeric scalar or vector
+#' @return \code{dfactorial(x)} returns the double factorial, that is
+#' \eqn{x\!\! = 1 * 3 * 5 * \ldots * x } and \code{ldfactorial(x)} is the
+#' natural logarithm of it.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link[base:Special]{factorial}},
+#' \code{\link[ape]{howmanytrees}}
+#' @keywords classif
+#' @examples
+#' 
+#' dfactorial(1:10)
+#' 
+#' @rdname dfactorial
+#' @export dfactorial
 "dfactorial" <- function(x){exp(ldfactorial(x))}
 
 
@@ -41,6 +64,74 @@ dec2bin <- function (x, k=ceiling(log2(x)))
 # Hadamard Conjugation
 #
 
+
+### @aliases hadamard fhm h4st h2st
+
+#' Hadamard Matrices and Fast Hadamard Multiplication
+#' 
+#' A collection of functions to perform Hadamard conjugation.  %Hv of a
+#' Hadamard matrix H with a vector v using fast Hadamard multiplication.
+#' 
+#' \code{h2st} and \code{h4st} perform Hadamard conjugation for 2-state
+#' (binary, RY-coded) or 4-state (DNA/RNA) data. \code{write.nexus.splits}
+#' writes splits returned from \code{h2st} or
+#' \code{\link[phangorn]{distanceHadamard}} to a nexus file, which can be
+#' processed by Spectronet or Splitstree.
+#' 
+#' @param x a vector of length \eqn{2^n}, where n is an integer.
+#' @param v a vector of length \eqn{2^n}, where n is an integer.
+#' @param obj a data.frame or character matrix, typical a sequence alignment.
+#' @param eps Threshold value for splits.
+#' @param levels levels of the sequences.
+#' @return \code{hadamard} returns a Hadamard matrix. \code{fhm} returns the
+#' fast Hadamard multiplication.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link{distanceHadamard}}, \code{\link{lento}},
+#' \code{\link{plot.networx}}
+#' @references Hendy, M.D. (1989). The relationship between simple evolutionary
+#' tree models and observable sequence data. \emph{Systematic Zoology},
+#' \bold{38} 310--321.
+#' 
+#' Hendy, M. D. and Penny, D. (1993). Spectral Analysis of Phylogenetic Data.
+#' \emph{Journal of Classification}, \bold{10}, 5--24.
+#' 
+#' Hendy, M. D. (2005). Hadamard conjugation: an analytical tool for
+#' phylogenetics. In O. Gascuel, editor, \emph{Mathematics of evolution and
+#' phylogeny}, Oxford University Press, Oxford
+#' 
+#' Waddell P. J. (1995). Statistical methods of phylogenetic analysis:
+#' Including hadamard conjugation, LogDet transforms, and maximum likelihood.
+#' \emph{PhD thesis}.
+#' @keywords cluster
+#' @examples
+#' 
+#' H <- hadamard(3)
+#' v <- 1:8
+#' H %*% v
+#' fhm(v)
+#' 
+#' data(yeast)
+#' 
+#' # RY-coding
+#' dat_ry <- acgt2ry(yeast)
+#' fit2 <- h2st(dat_ry)
+#' lento(fit2)
+#' 
+#' # write.nexus.splits(fit2, file = "test.nxs")
+#' # read this file into Spectronet or Splitstree to show the network
+#' \dontrun{
+#' dat = as.character(yeast)
+#' dat4 = phyDat(dat, type="USER", levels=c("a","c", "g", "t"), ambiguity=NULL)
+#' fit4 = h4st(dat4)
+#' 
+#' par(mfrow=c(3,1))
+#' lento(fit4[[1]], main="Transversion")
+#' lento(fit4[[2]], main="Transition 1")
+#' lento(fit4[[3]], main="Transition 2")
+#' }
+#' 
+#' @rdname hadamard
+#' @export hadamard
 hadamard <- function(x){
     res=1
     while(x>0){
@@ -51,6 +142,8 @@ hadamard <- function(x){
 }
 
 
+#' @rdname hadamard
+#' @export
 fhm <- function(v){
     n = length(v)
     n = log2(n)
@@ -73,6 +166,34 @@ split2seq = function(q){
 }
 
 
+
+
+#' Distance Hadamard
+#' 
+#' Distance Hadamard produces spectra of splits from a distance matrix.
+#' 
+#' 
+#' @param dm A distance matrix.
+#' @param eps Threshold value for splits.
+#' @return \code{distanceHadamard} returns a matrix. The first column contains
+#' the distance spectra, the second one the edge-spectra. If eps is positive an
+#' object of with all splits greater eps is returned.
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}, Tim White
+#' @seealso \code{\link{hadamard}}, \code{\link{lento}},
+#' \code{\link{plot.networx}}, \code{\link{neighborNet}}
+#' @references Hendy, M. D. and Penny, D. (1993). Spectral Analysis of
+#' Phylogenetic Data. \emph{Journal of Classification}, \bold{10}, 5-24.
+#' @keywords cluster
+#' @examples
+#' 
+#' data(yeast)
+#' dm = dist.hamming(yeast)
+#' dm = as.matrix(dm)
+#' fit = distanceHadamard(dm)
+#' lento(fit)
+#' plot(as.networx(fit), "2D")
+#' 
+#' @export distanceHadamard
 distanceHadamard <- function (dm, eps = 0.001) 
 {
     if (inherits(dm,"dist")) {
@@ -109,6 +230,8 @@ distanceHadamard <- function (dm, eps = 0.001)
 }
 
 
+#' @rdname hadamard
+#' @export
 h4st = function(obj, levels=c('a','c','g','t')){
     if (is.matrix(obj)) 
         obj = as.data.frame(t(obj))
@@ -163,6 +286,8 @@ h4st = function(obj, levels=c('a','c','g','t')){
 }
 
 
+#' @rdname hadamard
+#' @export
 h2st <- function (obj, eps=0.001) 
 {
     if (!inherits(obj,"phyDat")) stop("Error") 

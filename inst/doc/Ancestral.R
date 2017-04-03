@@ -9,17 +9,18 @@ foo <- packageDescription("phangorn")
 
 
 ###################################################
-### code chunk number 2: Ancestral.Rnw:62-67
+### code chunk number 2: Ancestral.Rnw:62-68
 ###################################################
 library(phangorn)
-primates = read.phyDat("primates.dna", format = "phylip", type = "DNA")
-tree = pratchet(primates, trace=0)
-tree = acctran(tree, primates) 
+library(magrittr)
+fdir <- system.file("extdata/trees", package = "phangorn")
+primates <- read.phyDat(file.path(fdir, "primates.dna"), format = "phylip", type = "DNA")
+tree <- pratchet(primates, trace=0) %>% acctran(primates) 
 parsimony(tree, primates)
 
 
 ###################################################
-### code chunk number 3: Ancestral.Rnw:73-75
+### code chunk number 3: Ancestral.Rnw:74-76
 ###################################################
 anc.acctran = ancestral.pars(tree, primates, "ACCTRAN")
 anc.mpr = ancestral.pars(tree, primates, "MPR")
@@ -41,7 +42,7 @@ if(tmp) seqLogo( t(subset(anc.mpr, getRoot(tree), 1:20)[[1]]), ic.scale=FALSE)
 
 
 ###################################################
-### code chunk number 6: Ancestral.Rnw:94-96
+### code chunk number 6: Ancestral.Rnw:95-97
 ###################################################
 options(SweaveHooks=list(fig=function()
 par(mar=c(2.1, 4.1, 2.1, 2.1))))
@@ -69,14 +70,14 @@ title("ACCTRAN")
 
 
 ###################################################
-### code chunk number 9: Ancestral.Rnw:123-125
+### code chunk number 9: Ancestral.Rnw:124-126
 ###################################################
 fit = pml(tree, primates)
 fit = optim.pml(fit, model="F81", control = pml.control(trace=0))
 
 
 ###################################################
-### code chunk number 10: Ancestral.Rnw:137-139
+### code chunk number 10: Ancestral.Rnw:138-140
 ###################################################
 anc.ml = ancestral.pml(fit, "ml")
 anc.bayes = ancestral.pml(fit, "bayes")
@@ -104,7 +105,7 @@ title("Bayes")
 
 
 ###################################################
-### code chunk number 13: Ancestral.Rnw:163-164
+### code chunk number 13: Ancestral.Rnw:164-165
 ###################################################
 toLatex(sessionInfo())
 

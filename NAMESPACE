@@ -1,3 +1,4 @@
+
 useDynLib(phangorn, .registration=TRUE)
 
 importFrom(ape, as.DNAbin, as.phylo, plot.phylo, as.prop.part, nj,old2new.phylo, dist.dna,
@@ -7,7 +8,8 @@ importFrom(ape, as.DNAbin, as.phylo, plot.phylo, as.prop.part, nj,old2new.phylo,
     node.depth.edgelength, drop.tip, stree, rtree, rcoal, rmtree, is.ultrametric, .PlotPhyloEnv,
     nodelabels, edgelabels, BOTHlabels, read.nexus.data, write.nexus.data, 
     read.dna, write.dna, reorder.phylo, dist.nodes, collapse.singles, rotate, prop.clades,
-    fastme.bal, fastme.ols, Nnode, image.DNAbin, ONEwise, as.AAbin, as.phyDat.AAbin, image.AAbin)
+    fastme.bal, fastme.ols, Nnode, image.DNAbin, ONEwise, as.AAbin, as.phyDat.AAbin, image.AAbin, 
+    as.bitsplits, as.bitsplits.prop.part, arecompatible, is.compatible, is.compatible.bitsplits)
 # is.binary,
 importFrom(igraph, graph, graph_from_adjacency_matrix, layout_with_kk, plot.igraph,
     shortest_paths, set.edge.attribute, set_edge_attr, decompose, components, groups,
@@ -16,7 +18,7 @@ importFrom(igraph, graph, graph_from_adjacency_matrix, layout_with_kk, plot.igra
 
 
 importFrom(Rcpp,sourceCpp)
-importFrom(magrittr,"%>%")
+importFrom(magrittr,"%>%", "%<>%")
 importFrom(Matrix, Matrix, sparseMatrix, spMatrix, crossprod, solve) #, %*%
 importFrom(fastmatch, fmatch)
 #importFrom(nnls, nnls)
@@ -27,11 +29,11 @@ importFrom(quadprog, solve.QP, solve.QP.compact)
 importFrom(stats, AIC, BIC, logLik, reorder, update, optim, optimize, constrOptim, na.omit, 
            cophenetic, hclust, as.dist, pchisq, reshape, qgamma, pgamma, model.matrix,
            aggregate, lm.fit, xtabs, quantile, sd) 
-importFrom(graphics, plot.new, plot.window, text, par, plot, abline, strwidth, axis, title, segments, 
+importFrom(graphics, plot, plot.default, plot.new, plot.window, text, par, abline, strwidth, axis, title, segments, 
            points, image, matplot, legend, hist) 
 importFrom(utils, read.table, download.file, citation, stack, installed.packages, write.table, combn) 
 importFrom(grDevices, rgb, rainbow, adjustcolor, col2rgb)
-importFrom(methods, hasArg)
+importFrom(methods, hasArg, is)
 #importFrom(Rcpp, evalCpp)
 #importMethodsFrom(Biostrings,as.matrix)
 #importFrom(Biostrings,DNAMultipleAlignment)
@@ -44,9 +46,9 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UN
     dfactorial, ldfactorial, hadamard, nni, allSitePattern, allSplits, allCircularSplits, fhm, 
     distanceHadamard, treedist, sankoff, fitch, h2st, h4st, dist.logDet, dist.hamming, 
     dist.ml, dist.p, upgma, wpgma, write.nexus.splits, read.nexus.splits,
-    read.nexus.networx, write.nexus.networx, write.splits, pmlPart, 
+    read.nexus.networx, write.nexus.networx, write.splits, write.nexus.dist, pmlPart, 
     pmlCluster, pmlMix, pmlPen, read.aa, allTrees, designTree, designSplits, nnls.tree,
-    nnls.splits, nnls.phylo, nnls.networx, neighborNet, pmlPart2multiPhylo,
+    nnls.splits, nnls.phylo, nnls.networx, neighborNet, pmlPart2multiPhylo, multiphyDat2pmlPart,
     splitsNetwork, simSeq, SH.test, bootstrap.pml, bootstrap.phyDat, RF.dist, wRF.dist, 
     KF.dist, path.dist, sprdist, SPR.dist, rNNI, 
     rSPR, plotBS, Ancestors, Descendants, mrca.phylo, Children, Siblings, pace, modelTest, 
@@ -54,10 +56,11 @@ export(pml, optim.pml, pml.control, parsimony, optim.parsimony, pratchet, NJ, UN
     getClips, getDiversity, midpoint, pruneTree, acctran, getRoot, plotAnc, consensusNet, 
     bab, random.addition, diversity, baseFreq, densiTree, superTree, coalSpeciesTree, 
     pml.fit, pml.init, pml.free, edQt, lli, cladePar, addConfidences, createLabel,
-    countCycles, SOWH.test, plot.networx, presenceAbsence, as.networx.splits, addTrivialSplits,
+    SOWH.test, presenceAbsence, as.networx.splits, addTrivialSplits, removeTrivialSplits,
     phyDat2alignment, AICc, readDist, writeDist, discrete.gamma, matchSplits, 
-    distinct.splits, c.splits, dna2codon, codon2dna,
+    distinct.splits, c.splits, dna2codon, codon2dna, genlight2phyDat,
     removeUndeterminedSites, phyDat2MultipleAlignment, delta.score, maxCladeCred, as.MultipleAlignment)
+# plot.networx, countCycles, 
 
 S3method('[', splits)          
 S3method(addConfidences, phylo)
@@ -72,9 +75,11 @@ S3method(c, phyDat)
 S3method(c, splits)
 S3method(cbind, phyDat)
 S3method(unique, phyDat) 
+S3method(as.bitsplits, splits)
 S3method(as.matrix, splits)
 S3method(as.Matrix, splits) 
 S3method(as.networx, splits)
+S3method(unique, splits)
 S3method(as.networx, phylo)
 #S3method(as.igraph, networx)
 S3method(as.phyDat, DNAbin)
@@ -99,6 +104,8 @@ S3method(image, phyDat)
 S3method(logLik, pml)
 S3method(logLik, pmlPart)
 S3method(logLik, pmlMix)
+S3method(midpoint, phylo)
+S3method(midpoint, multiPhylo)
 S3method(plot, pml)
 S3method(plot, pmlPart)
 S3method(plot, networx)
@@ -119,6 +126,3 @@ S3method(summary, clanistics)
 S3method(summary, SOWH)
 S3method(update, pml)
 S3method(vcov, pml)
-
-
-
