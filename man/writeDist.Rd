@@ -4,6 +4,7 @@
 \alias{writeDist}
 \alias{write.nexus.dist}
 \alias{readDist}
+\alias{unique.dist}
 \title{Writing and reading distances in phylip and nexus format}
 \usage{
 writeDist(x, file = "", format = "phylip", ...)
@@ -12,27 +13,32 @@ write.nexus.dist(x, file = "", append = FALSE, upper = FALSE,
   diag = TRUE, digits = getOption("digits"), taxa = !append)
 
 readDist(file)
+
+\method{unique}{dist}(x, incomparables, ...)
 }
 \arguments{
 \item{x}{A \code{dist} object.}
 
 \item{file}{A file name.}
 
-\item{format}{file format, default is "phylip", only other option so far is "nexus".}
+\item{format}{file format, default is "phylip", only other option so far is 
+"nexus".}
 
 \item{\dots}{Further arguments passed to or from other methods.}
 
 \item{append}{logical. If TRUE the nexus blocks will be added to a file.}
 
-\item{upper}{logical value indicating whether the upper triangle of the distance 
-matrix should be printed.}
+\item{upper}{logical value indicating whether the upper triangle of the 
+distance matrix should be printed.}
 
-\item{diag}{logical value indicating whether the diagonal of the distance matrix 
-should be printed.}
+\item{diag}{logical value indicating whether the diagonal of the distance 
+matrix should be printed.}
 
 \item{digits}{passed to format inside of \code{write.nexus.dist}.}
 
 \item{taxa}{logical. If TRUE a taxa block is added.}
+
+\item{incomparables}{Not used so far.}
 }
 \value{
 an object of class \code{dist}

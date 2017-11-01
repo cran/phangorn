@@ -20,9 +20,11 @@
 #' @param print.labels logical. If TRUE labels are printed.
 #' @param \dots Further arguments passed to or from other methods.
 #' @param labels names of taxa.
-#' @return \code{write.nexus.splits} and \code{write.nexus.networx} write out the  \code{splits} and \code{networx} object to read with
+#' @return \code{write.nexus.splits} and \code{write.nexus.networx} write out 
+#' the \code{splits} and \code{networx} object to read with
 #' other software like Splitstree.
-#' \code{read.nexus.splits} and \code{read.nexus.networx} return an \code{splits} and \code{networx} object. 
+#' \code{read.nexus.splits} and \code{read.nexus.networx} return an \code{splits} 
+#' and \code{networx} object. 
 #' @note \code{read.nexus.splits} reads in the splits block of a nexus file. It
 #' assumes that different co-variables are tab delimited and the bipartition
 #' are separated with white-space. Comments in square brackets are ignored.
@@ -44,7 +46,7 @@ read.nexus.splits <- function(file)
 {
     X <- scan(file = file, what = "", sep = "\n", quiet = TRUE)
     semico <- grep(";", X)
-    X=gsub("\\[(.*?)\\]", "", X) # get rid of comments
+    X <- gsub("\\[(.*?)\\]", "", X) # get rid of comments
     i1 <- grep("TAXLABELS", X, ignore.case = TRUE)    
     taxlab <- ifelse(length(i1)>0, TRUE, FALSE) 
     if (taxlab) {
@@ -68,58 +70,57 @@ read.nexus.splits <- function(file)
     format <- format[(format>sp) & (format<spEnd)]
     
     res <- vector("list", end - start + 1)
-    weights = numeric(end - start + 1)
-    j=1
+    weights <- numeric(end - start + 1)
+    j <- 1
     
-    flab = fwei = fcon = fint = FALSE
+    flab <- fwei <- fcon <- fint <- FALSE
     
     if(length(format)>0){
-        tmp = X[format]    
-        tmp = gsub("\\;", "", tmp)
-        tmp = gsub("\\s+", "", tmp)
-        flab = grepl("labels=left", tmp, ignore.case = TRUE) 
-        fwei = grepl("weights=yes", tmp, ignore.case = TRUE) 
-        fcon = grepl("confidences=yes", tmp, ignore.case = TRUE) 
-        fint = grepl("intervals=yes", tmp, ignore.case = TRUE) 
+        tmp <- X[format]    
+        tmp <- gsub("\\;", "", tmp)
+        tmp <- gsub("\\s+", "", tmp)
+        flab <- grepl("labels=left", tmp, ignore.case = TRUE) 
+        fwei <- grepl("weights=yes", tmp, ignore.case = TRUE) 
+        fcon <- grepl("confidences=yes", tmp, ignore.case = TRUE) 
+        fint <- grepl("intervals=yes", tmp, ignore.case = TRUE) 
         # = as.numeric(na.omit(as.numeric(strsplit(tmp, " ")[[1]])))        
-        ind = cumsum(c(flab, fwei, fcon, fint))
-        mformat = sum(c(flab, fwei, fcon, fint))
+        ind <- cumsum(c(flab, fwei, fcon, fint))
+        mformat <- sum(c(flab, fwei, fcon, fint))
     }
     
-    if(fint)intervals = numeric(end - start + 1)
-    if(fcon)confidences = numeric(end - start + 1)
-    if(flab)labels = vector("character", end - start + 1)
+    if(fint)intervals <- numeric(end - start + 1)
+    if(fcon)confidences <- numeric(end - start + 1)
+    if(flab)labels <- vector("character", end - start + 1)
     
     for(i in start:end){
-        tmp = X[i]
-        tmp = sub("\\s+", "", tmp) 
-        tmp = strsplit(tmp, "\t")[[1]]
+        tmp <- X[i]
+        tmp <- sub("\\s+", "", tmp) 
+        tmp <- strsplit(tmp, "\t")[[1]]
         if(flab){
             labels[j] <- gsub("'", "", tmp[ind[1]]) %>% as.numeric
-            #            labels[j] = as.numeric(tmp[ind[1]])
         }    
-        if(fwei)weights[j] = as.numeric(tmp[ind[2]])
-        if(fcon)confidences[j] = as.numeric(tmp[ind[3]])
-        if(fint)intervals[j] = as.numeric(tmp[ind[4]])
-        tmp = tmp[length(tmp)]
-        tmp = gsub("\\,", "", tmp)
-        res[[j]] = as.integer(na.omit(as.numeric(strsplit(tmp, " ")[[1]])))
-        j=j+1
+        if(fwei)weights[j] <- as.numeric(tmp[ind[2]])
+        if(fcon)confidences[j] <- as.numeric(tmp[ind[3]])
+        if(fint)intervals[j] <- as.numeric(tmp[ind[4]])
+        tmp <- tmp[length(tmp)]
+        tmp <- gsub("\\,", "", tmp)
+        res[[j]] <- as.integer(na.omit(as.numeric(strsplit(tmp, " ")[[1]])))
+        j <- j+1
     }
     if(length(cyc)>0){
-        tmp = X[cyc]    
-        tmp = gsub("\\;", "", tmp)
-        tmp = gsub("CYCLE", "", tmp, ignore.case = TRUE)
-        tmp = sub("\\s+", "", tmp)
-        cyc = as.integer(na.omit(as.numeric(strsplit(tmp, " ")[[1]])))
+        tmp <- X[cyc]    
+        tmp <- gsub("\\;", "", tmp)
+        tmp <- gsub("CYCLE", "", tmp, ignore.case = TRUE)
+        tmp <- sub("\\s+", "", tmp)
+        cyc <- as.integer(na.omit(as.numeric(strsplit(tmp, " ")[[1]])))
     }
-    attr(res, "labels") = x
-    if(fwei)attr(res, "weights") = weights
-    if(fint)attr(res, "intervals") = intervals
-    if(fcon)attr(res, "confidences") = confidences
-    if(flab)attr(res, "splitlabels") = labels
-    attr(res, "cycle") = cyc 
-    class(res) = "splits"
+    attr(res, "labels") <- x
+    if(fwei)attr(res, "weights") <- weights
+    if(fint)attr(res, "intervals") <- intervals
+    if(fcon)attr(res, "confidences") <- confidences
+    if(flab)attr(res, "splitlabels") <- labels
+    attr(res, "cycle") <- cyc 
+    class(res) <- "splits"
     res
 }
 
@@ -127,7 +128,8 @@ read.nexus.splits <- function(file)
 
 #' @rdname read.nexus.splits
 #' @export
-write.nexus.splits <- function (obj, file = "", weights=NULL, taxa=TRUE, append=FALSE) 
+write.nexus.splits <- function (obj, file = "", weights=NULL, taxa=TRUE, 
+                                append=FALSE) 
 {
     taxa.labels <- attr(obj, "labels")
     ntaxa <- length(taxa.labels)
@@ -141,10 +143,13 @@ write.nexus.splits <- function (obj, file = "", weights=NULL, taxa=TRUE, append=
     else fwei <- TRUE
     #    if (is.null(weight)) weight = numeric(nsplits) + 100
     if(!append){cat("#NEXUS\n\n", file = file)
-        cat("[Splits block for Spectronet or Splitstree]\n", file = file, append = TRUE)
-        cat("[generated by phangorn:\n", file = file, append = TRUE)
-        cat(format(citation("phangorn"), "text"), "]\n\n",
-            file = file, append = TRUE)}
+        cat("[Splits block for Spectronet or Splitstree]\n", file = file, 
+            append = TRUE)
+        cat("[generated by phangorn", packageDescription("phangorn", 
+                    fields = "Version"),"]\n\n", file = file, append = TRUE)
+#        cat(format(citation("phangorn"), "text"), "]\n\n",
+#            file = file, append = TRUE)
+    }
     # TAXON BLOCK    
     if(taxa){
         cat(paste("BEGIN TAXA;\n\tDIMENSIONS ntax=", ntaxa, ";\n", 
@@ -155,32 +160,31 @@ write.nexus.splits <- function (obj, file = "", weights=NULL, taxa=TRUE, append=
     # SPLITS BLOCK      
     cat(paste("BEGIN SPLITS;\n\tDIMENSIONS ntax=", ntaxa, " nsplits=", nsplits,
               ";\n", sep = ""), file = file, append = TRUE)     
-    format = "\tFORMAT labels=left" 
-    # weights=yes
-    if(fwei) format = paste(format, "weights=yes") 
-    else format = paste(format, "weights=no") 
-    fcon = fint = flab = FALSE
+    format <- "\tFORMAT labels=left" 
+    if(fwei) format <- paste(format, "weights=yes") 
+    else format <- paste(format, "weights=no") 
+    fcon <- fint <- flab <- FALSE
     if(!is.null(attr(obj, "confidences"))){ 
-        format = paste(format, "confidences=yes")
-        fcon=TRUE
-        conf = attr(obj, "confidences")
+        format <- paste(format, "confidences=yes")
+        fcon <- TRUE
+        conf <- attr(obj, "confidences")
         if(any(is.na(conf))){ 
-            conf[is.na(conf)] = 0
-            attr(obj, "confidences") = conf
+            conf[is.na(conf)] <- 0
+            attr(obj, "confidences") <- conf
         }
         if(storage.mode(conf) == "character"){ 
-            conf[conf==""] = "0"
-            attr(obj, "confidences") = conf
+            conf[conf==""] <- "0"
+            attr(obj, "confidences") <- conf
         }
     }
-    else format = paste(format, "confidences=no") 
+    else format <- paste(format, "confidences=no") 
     if(!is.null(attr(obj, "intervals"))){ 
-        format = paste(format, "intervals=yes")
-        fint=TRUE
+        format <- paste(format, "intervals=yes")
+        fint <- TRUE
     }
-    else format = paste(format, "intervals=no") 
-    if(!is.null(attr(obj, "splitlabels"))) flab=TRUE
-    format = paste(format, ";\n",  sep = "")
+    else format <- paste(format, "intervals=no") 
+    if(!is.null(attr(obj, "splitlabels"))) flab <- TRUE
+    format <- paste(format, ";\n",  sep = "")
     cat(format, file = file, append = TRUE)
     if(!is.null(attr(obj, "cycle"))){
         cycle <- paste(attr(obj, "cycle"), collapse = " ")
@@ -193,8 +197,6 @@ write.nexus.splits <- function (obj, file = "", weights=NULL, taxa=TRUE, append=
         swei <- ifelse(fwei, paste(weight[i], "\t"), "")
         scon <- ifelse(fcon, paste(attr(obj, "confidences")[i], "\t"), "")
         sint <- ifelse(fint, paste(attr(obj, "intervals")[i], "\t"), "")
-        #        cat("\t\t", slab, "\t", weight[i], "\t", scon, sint, paste(obj[[i]], collapse=" "), 
-        #            ",\n", file = file, append = TRUE, sep = "") 
         cat("\t\t", slab, "\t", swei, scon, sint, paste(obj[[i]], collapse=" "), 
             ",\n", file = file, append = TRUE, sep = "")      
     }
@@ -204,13 +206,16 @@ write.nexus.splits <- function (obj, file = "", weights=NULL, taxa=TRUE, append=
 
 #' @rdname read.nexus.splits
 #' @export
-write.nexus.networx <- function(obj, file = "", taxa=TRUE, splits=TRUE, append=FALSE){
+write.nexus.networx <- function(obj, file = "", taxa=TRUE, splits=TRUE,
+                                append=FALSE){
     if(!append){
         cat("#NEXUS\n\n", file = file)
-        cat("[Network block for Spectronet or Splitstree]\n", file = file, append = TRUE)
-        cat("[generated by phangorn:\n", file = file, append = TRUE)
-        cat(format(citation("phangorn"), "text"), "]\n\n",
-            file = file, append = TRUE)
+        cat("[Network block for Spectronet or Splitstree]\n", file = file, 
+            append = TRUE)
+        cat("[generated by phangorn", packageDescription("phangorn", 
+                    fields = "Version"),"]\n\n", file = file, append = TRUE)
+#        cat(format(citation("phangorn"), "text"), "]\n\n",
+#            file = file, append = TRUE)
     }
     ntaxa <- length(obj$tip.label)
     # TAXON BLOCK    
@@ -226,7 +231,8 @@ write.nexus.networx <- function(obj, file = "", taxa=TRUE, splits=TRUE, append=F
     spl <- obj$splits
     if(splits){
         #        spl <- changeOrder(spl, obj$tip.label) # orderSplitLabel
-        write.nexus.splits(spl, file = file, weights=NULL, append = TRUE, taxa=FALSE) 
+        write.nexus.splits(spl, file = file, weights=NULL, append = TRUE, 
+                           taxa=FALSE) 
     }
     nvertices <- max(obj$edge)
     
@@ -238,60 +244,68 @@ write.nexus.networx <- function(obj, file = "", taxa=TRUE, splits=TRUE, append=F
     vertices[,2] <- -vertices[,2]
     
     if(is.null(obj$.plot)) edge.col <- obj$.plot$edge.color 
-    else edge.col=NULL 
+    else edge.col <- NULL 
     nedges <- nrow(obj$edge)
     # NETWORK BLOCK
     cat(paste("BEGIN NETWORK;\nDIMENSIONS ntax=", ntaxa,
-              "\tnvertices=", nvertices, "\tnedges=", nedges,";\n", sep = ""), file = file, append = TRUE)  
+              "\tnvertices=", nvertices, "\tnedges=", nedges,";\n", sep = ""), 
+        file = file, append = TRUE)  
     cat("DRAW to_scale;\n", file = file, append = TRUE)
     cat("TRANSLATE\n", file = file, append = TRUE)
     if(is.null(obj$translate)){
         for(i in 1:ntaxa){
-            cat(i, " ", obj$tip.label[i], ",\n", sep="", file = file, append = TRUE)
+            cat(i, " ", obj$tip.label[i], ",\n", sep="", file=file, append=TRUE)
         }
     }
     else {
         translate <- obj$translate
-        for(i in 1:length(translate$label)){
-            cat(translate$node[i], " ", translate$label[i], ",\n", sep="", file = file, append = TRUE)
+        for(i in seq_along(translate$label)){
+            cat(translate$node[i], " ", translate$label[i], ",\n", sep="", 
+                file = file, append = TRUE)
         }        
     }
     cat(";\nVERTICES\n", file = file, append = TRUE)
     for(i in 1:nvertices){
-        cat(i, "\t", vertices[i,1], "\t", vertices[i,2], ",\n", sep="", file = file, append = TRUE)
+        cat(i, "\t", vertices[i,1], "\t", vertices[i,2], ",\n", sep="", 
+            file = file, append = TRUE)
     }
     if(!is.null(obj$tip.label)){
         cat(";\nVLABELS\n", file = file, append = TRUE)
         if(is.null(obj$translate)){    
             for(i in 1:ntaxa){
-                cat(i, "\t", obj$tip.label[i], ",\n", sep="", file = file, append = TRUE)
+                cat(i, "\t", obj$tip.label[i], ",\n", sep="", file = file, 
+                    append = TRUE)
             }
         }
         else{
-            for(i in 1:length(translate$node)){
-                cat(translate$node[i], " ", translate$label[i], ",\n", sep="", file = file, append = TRUE)
+            for(i in seq_along(translate$node)){
+                cat(translate$node[i], " ", translate$label[i], ",\n", sep="", 
+                    file = file, append = TRUE)
             }           
         }     
     }    
     # cnet$splitIndex if splits = TRUE    
     cat(";\nEDGES\n", file = file, append = TRUE)
     
-    if(is.null(obj$.plot$edge.color)) edge.col="black"
+    if(is.null(obj$.plot$edge.color)) edge.col <- "black"
     else edge.col <- obj$.plot$edge.color
     if(length(edge.col)<nedges) edge.col <- rep(edge.col, length=nedges) 
     
     splI <- TRUE
     if(is.null(obj$splitIndex))splI <- FALSE
     for(i in 1:nedges){
-        ecoli = edge.col[i]
+        ecoli <- edge.col[i]
         spInd <- ifelse(splI, paste("\ts=", obj$splitIndex[i], sep=""), "")
-        edgeCol <- ifelse(ecoli=="black", "", paste("\tfg=", paste(col2rgb(ecoli), collapse=" "), sep=""))
-        cat(i, "\t", obj$edge[i,1], "\t", obj$edge[i,2], spInd, edgeCol, ",\n", sep="", file = file, append = TRUE)
+        edgeCol <- ifelse(ecoli=="black", "", paste("\tfg=", 
+                                paste(col2rgb(ecoli), collapse=" "), sep=""))
+        cat(i, "\t", obj$edge[i,1], "\t", obj$edge[i,2], spInd, edgeCol, ",\n", 
+            sep="", file = file, append = TRUE)
     }
     cat(";\n", file = file, append = TRUE)
     cat("END;\n", file = file, append = TRUE)
     # force SplitsTree to accept the file    
-    cat("\nBEGIN st_Assumptions;\n    uptodate;\nEND; [st_Assumptions]\n", file = file, append = TRUE)
+    cat("\nBEGIN st_Assumptions;\n    uptodate;\nEND; [st_Assumptions]\n", 
+        file = file, append = TRUE)
 }
 
 
@@ -303,7 +317,7 @@ read.nexus.networx <- function(file, splits=TRUE){
     
     X <- scan(file = file, what = "", sep = "\n", quiet = TRUE)
     semico <- grep(";", X)
-    X=gsub("\\[(.*?)\\]", "", X) # get rid of comments
+    X <- gsub("\\[(.*?)\\]", "", X) # get rid of comments
     
     netStart <- grep("BEGIN NETWORK;", X, ignore.case = TRUE)
     netEnd <- grep("END;", X, ignore.case = TRUE)
@@ -311,18 +325,18 @@ read.nexus.networx <- function(file, splits=TRUE){
     dims <- grep("DIMENSION", X, ignore.case = TRUE)
     dims <- dims[(dims>netStart) & (dims<netEnd)]
     
-    ntaxa = 0
-    nvertices = 0 
-    nedges = 0
+    ntaxa <- 0
+    nvertices <- 0 
+    nedges <- 0
     
     if(length(dims)>0){
-        tmp = X[dims]    
-        tmp = gsub("\\s+", "", tmp)
+        tmp <- X[dims]    
+        tmp <- gsub("\\s+", "", tmp)
         
         ntaxa <- as.numeric(sub("(.+?)(ntax\\s*\\=\\s*)(\\d+)(.+)", 
                                 "\\3", tmp, perl = TRUE, ignore.case = TRUE))
         nvertices  <- as.numeric(sub("(.+?)(nvertices\\s*\\=\\s*)(\\d+)(.+)", 
-                                     "\\3", tmp, perl = TRUE, ignore.case = TRUE))
+                                "\\3", tmp, perl = TRUE, ignore.case = TRUE))
         nedges <- as.numeric(sub("(.+?)(nedges\\s*\\=\\s*)(\\d+)(.+)", 
                                  "\\3", tmp, perl = TRUE, ignore.case = TRUE))
     }
@@ -347,14 +361,14 @@ read.nexus.networx <- function(file, splits=TRUE){
             y <- as.numeric(x)
             node <- numeric(ntaxa)
             label <- character(ntaxa)
-            k=1
-            for(i in 1:length(x)){
+            k <- 1
+            for(i in seq_along(x)){
                 if(!is.na(y[i])) tmp <- y[i]
                 else{
                     node[k] <- tmp
                     label[k] <- x[i]
                     #                    TRANS[k, ] <- c(tmp, x[i])
-                    k=k+1
+                    k <- k+1
                 }
                 
             }
@@ -368,7 +382,7 @@ read.nexus.networx <- function(file, splits=TRUE){
     start <- vert[vert>max(dims, netStart)][1] + 1
     end <- semico[semico>start][1] -1
     VERT <- matrix(0, nvertices, 3, dimnames = list(NULL, c("id", "x", "y")))
-    j=1
+    j <- 1
     for(i in start:end){
         tmp <- X[i]
         #        tmp <- sub("\\s+", "", tmp) 
@@ -377,16 +391,18 @@ read.nexus.networx <- function(file, splits=TRUE){
         VERT[j,1] <- as.numeric(tmp[1]) 
         VERT[j,2] <- as.numeric(tmp[2])
         VERT[j,3] <- as.numeric(tmp[3])
-        j=j+1
+        j <- j+1
     }
     
     edges <- grep("EDGES", X, ignore.case = TRUE)
     start <- edges[edges>max(dims, netStart)][1] + 1
     end <- semico[semico>start][1] -1
     EDGE <- NULL
-    if(splits) EDGE <- matrix(0, nedges, 4, dimnames = list(NULL, c("id", "vert_id_2", "vert_id_2", "splits_id")))
-    else EDGE <- matrix(0, nedges, 3, dimnames = list(NULL, c("id", "vert_id_2", "vert_id_2")))
-    j=1
+    if(splits) EDGE <- matrix(0, nedges, 4, dimnames = list(NULL, c("id", 
+            "vert_id_2", "vert_id_2", "splits_id")))
+    else EDGE <- matrix(0, nedges, 3, dimnames = list(NULL, c("id", "vert_id_2",
+            "vert_id_2")))
+    j <- 1
     for(i in start:end){
         tmp <- X[i]
         tmp <- gsub("\\,", "", tmp)
@@ -398,7 +414,7 @@ read.nexus.networx <- function(file, splits=TRUE){
         if(splits){
             EDGE[j,4] <- as.numeric(sub("s=", "", tmp[4], ignore.case = TRUE))
         }    
-        j=j+1
+        j <- j+1
     }
     
     swapEdge <- function(x, old, new) {
@@ -416,13 +432,12 @@ read.nexus.networx <- function(file, splits=TRUE){
     splitIndex <- if(ncol(EDGE)==4) EDGE[,4]
     else NULL
     # quick and dirty   
-    el = sqrt(rowSums((VERT[EDGE[,2],c(2:3)] - VERT[EDGE[,3],c(2:3)])^2))
+    el <- sqrt(rowSums((VERT[EDGE[,2],c(2:3)] - VERT[EDGE[,3],c(2:3)])^2))
     edge <- EDGE[,c(2:3)]
     vert <- VERT[,c(2:3)]
     
     
     if(translate.nodes){
-        #        oldLabel <- as.integer(as.numeric(TRANS[,1]))
         oldLabel <- as.integer(TRANS$node)
         for(i in 1:ntaxa){
             edge <- swapEdge(edge, oldLabel[i], i) 
@@ -432,11 +447,12 @@ read.nexus.networx <- function(file, splits=TRUE){
     dimnames(edge) <- NULL
     # y-axis differs between in R and SplitsTree
     vert[,2] <- -vert[,2]  
-    #    translate=data.frame(as.numeric(TRANS[,1]), TRANS[,2], stringsAsFactors=FALSE)
     plot <- list(vertices=vert)        
-    obj <- list(edge=edge, tip.label=TRANS$label, edge.length=el, Nnode=max(edge)-ntaxa,
-                splitIndex=splitIndex, splits=spl, translate=TRANS) 
-    obj$.plot <- list(vertices = vert, edge.color="black", edge.width=3, edge.lty = 1)
+    obj <- list(edge=edge, tip.label=TRANS$label, edge.length=el, 
+            Nnode=max(edge)-ntaxa, splitIndex=splitIndex, splits=spl, 
+            translate=TRANS) 
+    obj$.plot <- list(vertices = vert, edge.color="black", edge.width=3, 
+                      edge.lty = 1)
     class(obj) <- c("networx", "phylo")
     reorder(obj)
     obj
@@ -445,39 +461,41 @@ read.nexus.networx <- function(file, splits=TRUE){
 
 #' @rdname read.nexus.splits
 #' @export
-write.splits = function (x, file = "", zero.print = ".", one.print = "|", print.labels = TRUE, ...) 
+write.splits <- function (x, file = "", zero.print = ".", one.print = "|", 
+                         print.labels = TRUE, ...) 
 {
-    labels = attr(x, "labels")
+    labels <- attr(x, "labels")
     x.orig <- x
     cx <- as.matrix(x, zero.print = zero.print, one.print = one.print)
-    w = FALSE
+    w <- FALSE
     if (!is.null(attr(x, "names"))) {
-        nam = TRUE
-        vnames = format(attr(x, "names"))
+        nam <- TRUE
+        vnames <- format(attr(x, "names"))
     }
-    nam = FALSE
+    nam <- FALSE
     if (!is.null(attr(x, "weights"))) {
-        w = TRUE
-        weight = format(attr(x, "weights"))
+        w <- TRUE
+        weight <- format(attr(x, "weights"))
     }
-    d = FALSE
+    d <- FALSE
     if (!is.null(attr(x, "data"))) {
-        d = TRUE
-        data = attr(x, "data")
+        d <- TRUE
+        data <- attr(x, "data")
     }
-    if(print.labels){for(i in 1:length(labels)) cat(labels[i], "\n", file = file, append = TRUE)}
+    if(print.labels){for(i in seq_along(labels)) cat(labels[i], "\n", file=file, 
+                                                    append = TRUE)}
     if (w) 
         cat("weight", "\t", file = file, append = TRUE)
     if (d) 
         cat(paste(colnames(data), "\t"), file = file, append = TRUE)
     cat("\n", file = file, append = TRUE) #"Matrix", 
-    for (i in 1:length(x)) {
+    for (i in seq_along(x)) {
         if (nam) 
             cat(vnames[i], "\t", file = file, append = TRUE)
         if (d) 
             cat(paste(data[i, ], "\t"), file = file, append = TRUE)
         if (w) 
             cat(weight[i], "\t", file = file)
-        cat("\n", paste(cx[i, ], collapse = ""),"\n",  file = file, append = TRUE)
+        cat("\n", paste(cx[i, ], collapse = ""),"\n", file=file, append = TRUE)
     }
 }

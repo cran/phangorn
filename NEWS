@@ -1,3 +1,30 @@
+     CHANGES in PHANGORN VERSION 2.3.0
+
+NEW FEATURES
+
+    o new function mast to compute the maximum agreement subtree
+
+    o identify.networx to identify splits in a network
+
+    o densiTree got more attributes
+    
+    o unique.dist, to filter duplicate distances 
+    
+    o ancestral.pml and ancestral.pars are now may return proper phyDat objects
+
+      and in for DNA may return ambiguous states
+
+BUG FIXES
+
+    o densiTree may if the consensus tree had different ordering of labels
+ 
+OTHER CHANGES
+
+    o acctran allows multiPhylo objects as input
+    
+    o rNNI has been completely rewritten and is faster
+
+
      CHANGES in PHANGORN VERSION 2.2.0
 
 NEW FEATURES

@@ -2,6 +2,8 @@ context("Partitioned likelihood models")
 
 X <- allSitePattern(5)
 tree <- read.tree(text = "((t1:0.3,t2:0.3):0.1,(t3:0.3,t4:0.3):0.1,t5:0.5);")
+tree2 <- read.tree(text = "((t1:0.3,t3:0.3):0.1,(t2:0.3,t4:0.3):0.1,t5:0.5);")
+
 fit0 <- pml(tree, X, k=4)
 
 fit1 <- update(fit0, rate=.5)
@@ -19,12 +21,14 @@ colnames(W) = c("g1", "g2", "g3")
 # rate
 test_that("rate optimisation works properly", {
     skip_on_cran()
-    sp <- pmlPart(edge ~ rate, fit0, weight=W)
+    sp <- pmlPart(edge ~ rate, fit0, weight=W, control = pml.control(trace=0))
     expect_equal( sp$fits[[1]]$rate  / sp$fits[[2]]$rate , 2, tolerance = 1e-5)
     expect_equal( sp$fits[[1]]$rate  / sp$fits[[3]]$rate , 0.5, tolerance = 1e-5)
 })    
 
 # nni
+
+
 
 # Q
 test_that("transition rate optimisation works properly", {

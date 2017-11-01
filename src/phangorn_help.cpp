@@ -64,6 +64,9 @@ List bipCPP(IntegerMatrix orig, int nTips) {
     // create list for results
     std::vector< std::vector<int> > out(m) ;
     std::vector<int> y;
+    for(int i = 0; i<nTips; i++){
+        out[i].push_back(i + 1L);
+    }
     for(int i = 0; i<parent.size(); i++){
         j = parent[i] - 1L;
         if(children[i] > nTips){ 
@@ -83,7 +86,7 @@ List bipCPP(IntegerMatrix orig, int nTips) {
 // import: edge matrix
 // export: list of children 
 // [[Rcpp::export]]
-List allChildrenCPP(IntegerMatrix orig) {
+List allChildrenCPP(const IntegerMatrix orig) {
     IntegerVector parent = orig( _, 0);
     IntegerVector children = orig( _, 1);
     int m = max(parent);
@@ -95,6 +98,21 @@ List allChildrenCPP(IntegerMatrix orig) {
     return wrap(out);
 }
 
-
-
+// [[Rcpp::export]]
+IntegerVector p2dna(NumericMatrix xx, double eps=0.999){
+    int nr = xx.nrow(); //xx.ncol(), nc = 4; 
+    double m=0.0;
+    IntegerVector tmp = IntegerVector::create(1,2,4,8);
+    IntegerVector res(nr);
+    for(int i=0; i<nr; ++i){
+        m=xx(i,0);
+        for(int j=1; j<4; ++j){
+            if(m<xx(i,j)) m=xx(i,j); 
+        }
+        for(int j=0; j<4; ++j){
+            if(xx(i,j) > (m * eps)) res(i)+=tmp[j];
+        }
+    }
+    return res;
+}
 

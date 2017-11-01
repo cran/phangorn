@@ -124,10 +124,12 @@ simSeq.phylo = function(x, l=1000, Q=NULL, bf=NULL, rootseq=NULL, type = "DNA", 
     root <- as.integer(parent[!match(parent, child, 0)][1])  
     res[, root] = rootseq   
     tl = x$edge.length
-    for(i in 1:length(tl)){
+    for(i in seq_along(tl)){
         from = parent[i] 
         to = child[i]
         P = getP(tl[i], eig, rate)[[1]]
+        # avoid numerical problems for larger P and small t        
+        if(any(P < 0)) P[P<0] = 0
         for(j in 1:m){
             ind = res[,from]==levels[j]
             res[ind,to] = sample(levels, sum(ind), replace=TRUE, prob=P[,j])

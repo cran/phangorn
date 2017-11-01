@@ -14,6 +14,8 @@
 .gEps <- 1e-30
 
 
+.PlotNetworxEnv <- new.env()
+
 # .onLoad  <- function(libname, pkgname) {
 #    library.dynam("phangorn", pkgname, libname)
 #}

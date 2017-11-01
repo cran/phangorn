@@ -74,8 +74,14 @@ NULL
 NULL
 
 
-
-
+#' Internal phangorn Functions
+#' 
+#' Internal \pkg{phangorn} functions.
+#' 
+#' @name phangorn-internal
+#' @aliases phangorn-internal threshStateC
+#' @keywords internal
+NULL
 
 #' Yeast alignment (Rokas et al.)
 #' 
