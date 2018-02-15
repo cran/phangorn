@@ -21,19 +21,6 @@ getRoot <- function (tree)
 }
 
 
-getRoot_old <- function (tree) 
-{
-    if(!is.null(attr(tree, "order")) && attr(tree, "order") == 
-           "postorder"){
-        return(tree$edge[nrow(tree$edge), 1])
-    }    
-    res <-  unique(tree$edge[, 1][!match(tree$edge[, 1], tree$edge[, 2], 0)])
-    if (length(res) == 1) 
-        return(res)
-    else stop("There are apparently two root edges in your tree")
-}
-
-
 # renames root node 
 reroot <-  function (tree, node) 
 {
@@ -147,6 +134,10 @@ node2root <- function(x){
      } 
      res
 }
+    if(is.null(tree$edge.length)){
+        warning("tree needs edge length")
+        return(tree)
+    }
     oldtree <- tree
     tree <- unroot(tree)   
     nTips <- length(tree$tip.label)
@@ -320,7 +311,7 @@ dropNode <- function(x, i, check.binary=FALSE, check.root=TRUE, all.ch=NULL){
   pa <- edge[ch,1] 
   if(i>nTips){
 #    kids <- Descendants(x, i, "all")
-    if(is.null(all.ch)) all.ch=allChildren(x)  
+    if(is.null(all.ch)) all.ch <- allChildren(x)  
     kids <- descAll(edge, i, nTips, all.ch)  
     ind <- match(kids,edge[,2])
     edge2 <- edge[sort(ind),]            
@@ -432,23 +423,98 @@ reorderPruning <- function (x, ...)
 }
 
 
-add.tip <- function(phy, n, edgeLength=NULL, tip=""){ 
-     ind <- which(phy$edge[,2] == n)
-     phy <- new2old.phylo(phy) 
-     edge <- matrix(as.numeric(phy$edge),ncol=2)
-     k <- min(edge)
-     l <- max(edge)
-     phy$edge <- rbind(phy$edge, c(k-1,phy$edge[ind,2]))
-     phy$edge <- rbind(phy$edge, c(k-1,l+1))
-     phy$edge[ind,2] <- k-1 
-     phy$edge.length[ind] <- edgeLength[1]
-     phy$edge.length <- c(phy$edge.length, edgeLength[-1])
-     phy$tip.label <- c(phy$tip.label, tip) 
-     phy <- old2new.phylo(phy)
-     phy <- reorder(phy, "postorder") 
-     phy
-}
 
+#' Add tips to a tree
+#' 
+#' This function binds tips to nodes of a phylogenetic trees.
+#' 
+#'
+#' @param tree an object of class "phylo".
+#' @param tips a character vector containing the names of the tips.
+#' @param where an integer or character vector of the same length as tips giving 
+#' the number of the node or tip of the tree x where the tree y is binded.
+#' @param edge.length optional numeric vector with edge length
+#' @return an object of class phylo
+#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
+#' @seealso \code{\link{bind.tree}}
+#' @keywords cluster 
+#' @examples
+#' 
+#' tree <- rcoal(10)
+#' plot(tree)
+#' nodelabels()
+#' tiplabels()
+#' tree1 <- add.tips(tree, c("A", "B", "C"), c(1,2,15)) 
+#' plot(tree1) 
+#' @export
+add.tips <- function(tree, tips, where, edge.length=NULL){
+    nTips <- length(tree$tip.label)
+    nTips_new <- length(tips)
+    if(nTips_new < 1) return(tree)
+    edge <- tree$edge
+    if(is.character(where)){
+        where <- match(where, c(tree$tip.label, tree$node.label))
+    }
+    ind <- match(where, edge[,2])
+    
+    n_internal <- sum(unique(where)<=nTips)
+    edge[edge>nTips] <- edge[edge>nTips] + nTips_new
+    p_vec <- integer(max(edge) + n_internal)
+    p_vec[edge[,2]] <- edge[,1]
+    tip_index <- (nTips +1) : (nTips + nTips_new)
+    c_vec <- c(edge[,2], tip_index)
+    # first handle internal nodes (easy)
+    if(any(where>nTips)){
+        ind1 <- where>nTips
+        p_vec[tip_index[ind1]] <- where[ind1]  + nTips_new
+    }
+    # handle tips 
+    if(any(where<=nTips)){   
+        m <- max(edge) 
+        tmp <- unique(where) 
+        tmp <- tmp[tmp<=nTips]
+        new_internal <- as.integer((m+1L) : (m + n_internal))
+        # add new internal node
+        p_vec[new_internal] <- edge[match(tmp,edge[,2]),1]
+        p_vec[tmp] <- new_internal
+        # add tip    
+        ind2 <- (where <= nTips)
+        p_vec[tip_index[ind2]] <- p_vec[where[ind2]]
+#        browser()
+        ind <- match(tmp, edge[,2])
+        c_vec[ind] <- new_internal
+        c_vec <- c(c_vec, tmp)
+        if(!is.null(tree$node.label)){
+            tree$node.label <- c(tree$node.label, rep("", n_internal))
+        }
+    }
+    tree$edge <- matrix(c(p_vec[c_vec], c_vec), ncol=2)
+    
+    if(!is.null(tree$edge.length)){
+        if(is.null(edge.length)){
+            tree$edge.length <- c(tree$edge.length, 
+                                  rep(0, nTips_new + n_internal))
+        }    
+        else {
+            if(length(edge.length) < nTips_new) edge.length <- rep(edge.length, 
+                                                          length.out=nTips_new)
+            tree$edge.length <- c(tree$edge.length, edge.length, 
+                                  rep(0, n_internal))
+        }
+    }
+    tree$Nnode <- tree$Nnode + n_internal
+    tree$tip.label <- c(tree$tip.label, tips)
+    attr(tree, "order") <- NULL
+    tree <- reorder(tree)
+    if(!is.null(tree$edge.length)){
+        if(is.null(edge.length)){
+            nh <- nodeHeight(tree)
+            nh[tip_index] <- 0
+            tree$edge.length <- nh[tree$edge[,1]] - nh[tree$edge[,2]]
+        }    
+    }
+    tree
+}
 
 
 
@@ -477,9 +543,8 @@ allTrees <- function (n, rooted = FALSE, tip.label = NULL)
 	n <- as.integer(n)  
     nt <- as.integer(round(dfactorial(2 * (n + rooted) - 5))) 
     if ((n + rooted) > 10) {
-        nt <- dfactorial(2 * (n + rooted) - 5)
-        stop("That would generate ", round(nt)," trees, and take up more than ", 
-            round(nt/1000), " MB of memory!")
+        stop(gettextf("That would generate %d trees, and take up more than %d MB of memory!", 
+                      nt, as.integer(round(nt/1000)), domain = "R-phangorn"))
     }
     if (n < 2) {
         stop("A tree must have at least two taxa.")
@@ -730,7 +795,7 @@ Siblings <- function (x, node, include.self = FALSE)
                 tmp <- ch[[ pvector[i] ]]
                 res[[k]] <- tmp[tmp != i]
             } 
-            k=k+1    
+            k <- k+1    
         }     
     }
     res

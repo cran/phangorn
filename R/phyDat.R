@@ -27,7 +27,8 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE,
         nam <- row.names(data)
     else nam <- names(data)
     if(is.null(nam))stop("data object must contain taxa names")
-    if(inherits(data, "character")) data <- as.matrix(data)
+    if(inherits(data, "character") | inherits(data, "numeric")) 
+        data <- as.matrix(data)
     if (inherits(data,"DNAbin")) 
         data <- as.character(data)
     if (is.matrix(data)) 
@@ -36,7 +37,6 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE,
     #    if (is.vector(data) && !is.list(data))data = as.data.frame(data, stringsAsFactors = FALSE)
     else data <- as.data.frame(data, stringsAsFactors = FALSE)
     #    data = data.frame(as.matrix(data), stringsAsFactors = FALSE)    
-    
     
     if(length(data[[1]])==1) compress <- FALSE 
     if(compress){
@@ -204,13 +204,14 @@ phyDat.AA <- function (data, return.index = TRUE)
 {
     if(is.matrix(data)) nam <- row.names(data)
     else nam <- names(data)  
-    if (inherits(data,"DNAbin")) 
+    # AAbin
+    if (inherits(data,"AAbin")) 
         data <- as.character(data)
     if(inherits(data, "character")) data <- as.matrix(data)
     if (is.matrix(data)) 
         data <- as.data.frame(t(data), stringsAsFactors = FALSE)
     else data <- as.data.frame(data, stringsAsFactors = FALSE)
-  
+
     data <- data.frame(tolower(as.matrix(data)), stringsAsFactors = FALSE)
 
     aa <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i", 
@@ -228,8 +229,8 @@ phyDat.AA <- function (data, return.index = TRUE)
 #    ddd <- fast.table(data)
 #    data <- ddd$data
 #    index <- ddd$index
-    compress=TRUE
-    if(length(data[[1]])==1) compress=FALSE 
+    compress <- TRUE
+    if(length(data[[1]])==1) compress <- FALSE 
     if(compress){
         ddd <- fast.table(data)
         data <- ddd$data
@@ -262,7 +263,7 @@ phyDat.AA <- function (data, return.index = TRUE)
     index <- index[is.na(aaa)] 
     index <- match(index, unique(index))
     rn <- as.numeric(rownames(data))
-    attr(data, "na.action") = NULL
+    attr(data, "na.action") <- NULL
   
 #    weight = ddd$weight[rn]
     weight <- weight[rn]  
@@ -307,8 +308,8 @@ phyDat.codon <- function (data, return.index = TRUE)
  
     data <- data.frame(lapply(data, splseq))
 #    ddd = fast.table(data)
-    compress=TRUE
-    if(nrow(data)==1) compress=FALSE 
+    compress <- TRUE
+    if(nrow(data)==1) compress <- FALSE 
     if(compress){
             ddd <- fast.table(data)
             data <- ddd$data
@@ -886,9 +887,9 @@ read.phyDat <- function(file, format="phylip", type="DNA", ...){
     formats <- c("phylip", "nexus", "interleaved", "sequential", "fasta", "clustal")
     format <- match.arg(tolower(format), formats)
     
-    if(format=="nexus") data=read.nexus.data(file, ...)
+    if(format=="nexus") data <- read.nexus.data(file, ...)
     else {
-        if(format=="phylip")format="interleaved"  #"sequential"
+        if(format=="phylip") format <- "interleaved"  #"sequential"
         if (type == "DNA" || type == "CODON"){ 
             data <- read.dna(file, format, as.character = TRUE, ...)
         }
@@ -927,7 +928,7 @@ baseFreq <- function(obj, freq=FALSE, all=FALSE, drop.unused.levels = FALSE){
 
 phylo <- function(edge, tip, edge.length=NULL){
     res <- list(edge=edge, tip.label=tip, edge.length=edge.length)
-    class(res)="phylo"
+    class(res) <- "phylo"
     res
     }
 
@@ -988,52 +989,38 @@ subset.phyDat <- function (x, subset, select, site.pattern = TRUE,...)
 }
 
 
-duplicated_phyDat <- function(x, ...){
-    dm <- as.matrix(dist.hamming(x))
-    diag(dm) <- 1
-    res <- logical(nrow(dm))
-    if(all(dm>0)) return(res)
-    tmp <- which(dm==0, arr.ind = TRUE, useNames = FALSE)
-    tmp <- tmp[tmp[,1] < tmp[,2],2]
-    res[unique(tmp)]=TRUE
+map_duplicates <-  function(x, ...){
+    labels <- names(x)
+    y <- as.matrix(dist.hamming(x, FALSE)) 
+    l <- nrow(y)
+    z <- character(l)
+    for(i in seq_len(l)) z[i] <- paste( round(y[i, ] ,8), collapse="_")
+    res <- NULL
+    if(any(duplicated(z))){
+        ind <- duplicated(z)
+        ind2 <- match(z[ind], z)
+        res <- data.frame(duplicates=labels[ind], where=labels[ind2],
+                          stringsAsFactors = FALSE)
+    }
     res
 }
 
 
-duplicated_map2 <- function(x, ...){
-    dm <- dist.hamming(x)
-    if(all(dm>0)) return(NULL)
-    dm <- as.matrix(dm)
-    tmp <- which(dm==0, arr.ind = TRUE, useNames = FALSE)
-    tmp <- tmp[tmp[,1] < tmp[,2],] 
-    tmp[] <- names(x)[tmp]
-    g <- graph_from_edgelist(tmp, directed = FALSE)
-    clu <- components(g)
-    gr <- groups(clu)
-    mapping <- matrix(NA, 1,2)
-    for(i in seq_along(gr)){
-        if(length(gr[[i]])==2)mapping <- rbind(mapping, gr[[i]])
-        else{
-            tmplab <- gr[[i]]
-            sg <- sum(dm[tmplab, tmplab])
-            if(sg==0)mapping <- rbind(mapping, cbind(tmplab[1], tmplab[-1]))
-        }
-    }
-    mapping[-1,c(2,1)]
-}
+#duplicated_phyDat <- function(x, ...){
+#    tmp <- map_duplicates(x)[,1]
+#    getCols(x, setdiff(names(x), tmp))
+#}
 
-
-duplicated_map <- function(x, ...){
-# exact matches    
-   dup <-  duplicated(x)
-   mapping <- NULL
-   if(any(dup)){ # && optNNI
-       labels <- names(x)
-       ind <- match(subset(x, dup), x)
-       mapping <- cbind(labels[dup], labels[ind])
-   }
-   mapping
-}   
+# duplicated_phyDat <- function(x, ...){
+#    dm <- as.matrix(dist.hamming(x))
+#    diag(dm) <- 1
+#    res <- logical(nrow(dm))
+#    if(all(dm>0)) return(res)
+#    tmp <- which(dm==0, arr.ind = TRUE, useNames = FALSE)
+#    tmp <- tmp[tmp[,1] < tmp[,2],2]
+#    res[unique(tmp)] <- TRUE
+#    res
+#}
 
 
 #' @rdname phyDat
@@ -1041,7 +1028,9 @@ duplicated_map <- function(x, ...){
 #' @export
 unique.phyDat <- function(x, incomparables=FALSE, identical=TRUE, ...){
     if(identical) return(getCols(x, !duplicated(x)))
-    getCols(x, !duplicated_phyDat(x))
+    tmp <- map_duplicates(x)[,1]
+    getCols(x, setdiff(names(x), tmp))
+#    getCols(x, !duplicated_phyDat(x))
 } 
 
 
@@ -1062,8 +1051,13 @@ removeUndeterminedSites <- function(x, use.contrast=TRUE,
 removeParsUninfoSites <- function(data){
     nr <- attr(data, "nr")
     pis <- parsinfo(data)
-    if (length(pis) > 0) 
+    if (length(pis) > 0){ 
+        p0 <- sum(attr(data, "weight")[pis[, 1]] * pis[, 2])
         data <- getRows(data, c(1:nr)[-pis[, 1]], TRUE)
+        if(length(attr(data, "p0"))) p0 <- p0 + attr(data, "p0")
+        attr(data, "p0") <-  p0
+    }
+    data
 }
 
 

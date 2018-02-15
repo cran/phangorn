@@ -5,7 +5,6 @@ tree <- read.tree(text = "((t1:0.3,t2:0.3):0.1,(t3:0.3,t4:0.3):0.1,t5:0.5);")
 tree2 <- read.tree(text = "((t1:0.3,t3:0.3):0.1,(t2:0.3,t4:0.3):0.1,t5:0.5);")
 
 fit0 <- pml(tree, X, k=4)
-
 fit1 <- update(fit0, rate=.5)
 fit2 <- update(fit0, rate=2)
 
@@ -14,8 +13,8 @@ weights1 <- 1000*exp(fit1$site)
 weights2 <- 1000*exp(fit2$site) 
 
 
-W = cbind(weights0, weights1, weights2) 
-colnames(W) = c("g1", "g2", "g3")
+W <- cbind(weights0, weights1, weights2) 
+colnames(W) <- c("g1", "g2", "g3")
 
 
 # rate
@@ -46,8 +45,8 @@ test_that("transition rate optimisation works properly", {
     weights0 <- weights1
     weights2 <- weights1
 
-    W = cbind(weights0, weights1, weights2) 
-    colnames(W) = c("g1", "g2", "g3")
+    W <- cbind(weights0, weights1, weights2) 
+    colnames(W) <- c("g1", "g2", "g3")
     
     # linked parameter
     
@@ -80,8 +79,8 @@ test_that("base frequency optimisation works properly", {
     weights0 <- weights1
     weights2 <- weights1
     
-    W = cbind(weights0, weights1, weights2) 
-    colnames(W) = c("g1", "g2", "g3")
+    W <- cbind(weights0, weights1, weights2) 
+    colnames(W) <- c("g1", "g2", "g3")
     
     # linked parameter
     
@@ -101,7 +100,7 @@ test_that("base frequency optimisation works properly", {
 test_that("shape parameter optimisation works properly", {
     skip_on_cran()
     
-    shape=2
+    shape <- 2
     
     fit0 <- pml(tree, X, k=4)
     fit1 <- pml(tree, X, k=4, shape=shape)
@@ -113,8 +112,8 @@ test_that("shape parameter optimisation works properly", {
     weights0 <- weights1
     weights2 <- weights1
     
-    W = cbind(weights0, weights1, weights2) 
-    colnames(W) = c("g1", "g2", "g3")
+    W <- cbind(weights0, weights1, weights2) 
+    colnames(W) <- c("g1", "g2", "g3")
     
     # linked parameter
   
@@ -134,7 +133,7 @@ test_that("shape parameter optimisation works properly", {
 test_that("Invariant sites optimisation works properly", {
     skip_on_cran()
     
-    inv=.2
+    inv <- .2
     
     fit0 <- pml(tree, X, k=4)
     fit1 <- pml(tree, X, k=4, inv=inv)
@@ -146,8 +145,8 @@ test_that("Invariant sites optimisation works properly", {
     weights0 <- weights1
     weights2 <- weights1
     
-    W = cbind(weights0, weights1, weights2) 
-    colnames(W) = c("g1", "g2", "g3")
+    W <- cbind(weights0, weights1, weights2) 
+    colnames(W) <- c("g1", "g2", "g3")
     
     # linked parameter
     
@@ -164,8 +163,24 @@ test_that("Invariant sites optimisation works properly", {
 })
 
 
-# model
+# linked parameters
+test_that("Linked parameters optimisation works properly", {
+    skip_on_cran()
+    Z <- X
 
+    fit0 <- pml(tree, X, k=4)
+    weights0 <- 1000*exp(fit0$site) 
+    weights1 <- 1000*exp(update(fit0, rate=.5)$site) 
+    weights2 <- 1000*exp(update(fit0, tree=tree2)$site) 
 
+    attr(Z, "weight") <- weights0 + weights1 + weights2
+    W <- cbind(weights0, weights1, weights2) 
 
+    fit_Z <- update(fit0, data=Z)
+    fit_Z <- optim.pml(fit_Z, model="GTR", rearrangement="NNI", optGamma=TRUE, 
+                   optInv=TRUE)
+    sp <- pmlPart(edge + bf + Q + shape + inv + nni ~ ., fit_Z, weight=W)    
+
+    expect_equal(sp$logLik[[1]], fit_Z$logLik, tolerance = 1e-5)
+})    
 

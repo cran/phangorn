@@ -83,7 +83,7 @@ anova(fit0, fit2, fit3, fit1)
 ###################################################
 ### code chunk number 8: plotAll
 ###################################################
-trees = allTrees(5)
+trees <- allTrees(5)
 par(mfrow=c(3,5), mar=rep(0,4)) 
 for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 
@@ -92,7 +92,7 @@ for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 ### code chunk number 9: figAll
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
-trees = allTrees(5)
+trees <- allTrees(5)
 par(mfrow=c(3,5), mar=rep(0,4)) 
 for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 

@@ -113,8 +113,8 @@ ancestral.pml <- function(object, type="marginal", return="prob")
     eps <- 1.0e-5
     ind1 <- which( apply(contrast, 1, function(x)sum(x > eps)) == 1L)
     ind2 <- which( contrast[ind1, ] > eps, arr.ind = TRUE)
-    pos <- ind2[match(as.integer(1L:ncol(contrast)),  ind2[,2]),1]
-    
+#    pos <- ind2[match(as.integer(1L:ncol(contrast)),  ind2[,2]),1]
+    pos <- ind2[match(seq_len(ncol(contrast)),  ind2[,2]),1]
     nco <- as.integer(dim(contrast)[1])
     for(i in 1:l)dat[i,(nTips + 1):m] <- .Call("LogLik2", data, P[i,], nr, nc, 
                 node, edge, nTips, mNodes, contrast, nco, PACKAGE = "phangorn")
@@ -168,7 +168,8 @@ ancestral2phyDat <- function(x) {
     # a bit too complicated    
     ind1 <- which( apply(contr, 1, function(x)sum(x > eps)) == 1L)
     ind2 <- which( contr[ind1, ] > eps, arr.ind = TRUE)
-    pos <- ind2[match(as.integer(1L:ncol(contr)),  ind2[,2]),1]
+#    pos <- ind2[match(as.integer(1L:ncol(contr)),  ind2[,2]),1]
+    pos <- ind2[match(seq_len(ncol(contr)),  ind2[,2]),1]
     # only first hit    
 #    res <- lapply(x, function(x, pos) pos[apply(x, 1, which.max)], pos)
     res <- lapply(x, function(x, pos) pos[max.col(x)], pos)
@@ -195,13 +196,13 @@ fitchCoding2ambiguous <- function(x, type="DNA"){
 
 fitchCoding2ambiguous2 <- function(x, type="DNA"){
     y <- c(1L, 2L, 4L, 8L, 8L, 3L, 5L, 9L, 6L, 10L, 12L, 7L, 11L, 13L, 14L, 15L)
-    dna <- c("a", "c", "g", "t", "u", "m", "r", "w", "s", "y", "k", "v", "h", 
+    dna <- c("a", "c", "g", "t", "t", "m", "r", "w", "s", "y", "k", "v", "h", 
              "d", "b", "n")    
     rna <- c("a", "c", "g", "u", "u", "m", "r", "w", "s", "y", "k", "v", "h", 
              "d", "b", "n") 
     res <- switch(type, 
                   "DNA" = dna[match(x,y)],
-                  "DNA" = dna[match(x,y)])
+                  "RNA" = rna[match(x,y)])
     res
 }
 
@@ -260,7 +261,8 @@ ancestral.pars <- function (tree, data, type = c("MPR", "ACCTRAN"), cost=NULL,
         eps <- 1.0e-5
         ind1 <- which( apply(contrast, 1, function(x)sum(x > eps)) == 1L)
         ind2 <- which( contrast[ind1, ] > eps, arr.ind = TRUE)
-        pos <- ind2[match(as.integer(1L:ncol(contrast)),  ind2[,2]),1]
+#        pos <- ind2[match(as.integer(1L:ncol(contrast)),  ind2[,2]),1]
+        pos <- ind2[match(seq_len(ncol(contrast)),  ind2[,2]),1]
         result[1:l] <- subset(data, nam)
         for(i in (l+1) : length(result)) {
             tmp <- result[[i]]

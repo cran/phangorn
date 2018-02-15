@@ -773,12 +773,10 @@ addConfidences <- function (x, y, ...) UseMethod("addConfidences")
 
 
 # some function to add confidences on splits if trees have different taxa
-#
+# used in addConfidences.splits
 addConfidencesMultiPhylo <- function(spl, trees){
-    
     fun <- function(spl, intersect_labels){
         spl2 <- spl
-        
         index <- match(attr(spl, "labels"), intersect_labels)
         attr(spl2, "labels") <- intersect_labels 
         for(i in seq_along(spl2)){
@@ -794,9 +792,7 @@ addConfidencesMultiPhylo <- function(spl, trees){
     spl_labels <- attr(spl, "labels")
     zaehler <- numeric(length(spl))
     nenner <- numeric(length(spl))
-    
     for(i in seq_along(trees)){
-#        print(i)
         intersect_labels <- intersect(trees[[i]]$tip.label, spl_labels)
         if(length(intersect_labels) > 3){    
             tmp <- fun(spl, intersect_labels)
@@ -805,19 +801,16 @@ addConfidencesMultiPhylo <- function(spl, trees){
                 if(!identical(intersect_labels, trees[[i]]$tip.label))
                     tree_spl <- fun(tree_spl, intersect_labels)[[1]]
                 comp <- compatible_2(as.bitsplits(tmp[[1]]), as.bitsplits(tree_spl))
-                #            print(comp)
                 ind <- tmp$index
                 zaehler[ind] <- zaehler[ind] + comp 
                 nenner[ind] <- nenner[ind] + 1L
             }
         }    
-        #        print(zaehler)
     }
     confidences <- zaehler / nenner
     attr(spl, "confidences") <- confidences
     spl
 }            
-
 
 
 # y now more general 
@@ -1092,9 +1085,9 @@ plot.networx <- function(x, type="3D", use.edge.length = TRUE, show.tip.label=TR
     
     chk <- FALSE
     
-    if(type=="3D") chk <- requireNamespace("rgl", quietly = TRUE) #.check.pkg("rgl")
+    if(type=="3D") chk <- requireNamespace("rgl", quietly = TRUE) 
     if(!chk && type=="3D"){
-        warning("type=\"3D\" requires the package \"rgl\"\n, plotting =\"2D\" instead!\n")
+        warning("type='3D' requires the package 'rgl', plotting in '2D' instead!\n")
         type <- "2D"
     }
     # use precomputed vertices when available
@@ -1269,6 +1262,14 @@ closest.edge <- function(x,y,P1,P2){
     d[beta>(pi/2)] <- A[beta>(pi/2)]
     d
 }
+
+closest.node <- function(x, y, P){
+    x1 <- P[,1]
+    y1 <- P[,2]
+    d <- sqrt( (x1-x)^2 + (y1-y)^2 )
+    d
+}
+
 
 #' Identify splits in a network
 #'

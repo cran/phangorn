@@ -249,7 +249,14 @@ options(continue="  ")
 
 
 ###################################################
-### code chunk number 27: Trees.Rnw:290-291
+### code chunk number 27: Trees.Rnw:281-283
+###################################################
+options(prompt="> ")
+options(continue="+ ")
+
+
+###################################################
+### code chunk number 28: Trees.Rnw:295-296
 ###################################################
 toLatex(sessionInfo())
 

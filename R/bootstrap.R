@@ -222,8 +222,7 @@ plotBS <- function (tree, BStrees, type = "unrooted", bs.col = "black",
         tree$node.label <- x
     }
     else{
-        if(is.null(tree$node.label))stop("You need to supply BStrees or tree needs 
-        needs BS-values as node.label")
+        if(is.null(tree$node.label))stop("You need to supply 'trees' or the tree needs support-values as node.label")
         x <- tree$node.label
     }
     
@@ -341,18 +340,13 @@ mcc <- maxCladeCred
 
 cladeMatrix <- function(x, rooted=FALSE){
     if(!rooted) x <- unroot(x)
-#    if(!rooted){
-#        x <- .uncompressTipLabel(x)
-#        x <- lapply(x, unroot) 
-#        class(x) <- "multiPhylo"
-#        x <- .compressTipLabel(x)
-#    }    
     pp <- prop.part(x)
     pplabel <- attr(pp, "labels")
     if(!rooted)pp <- oneWise(pp)
     x <- .uncompressTipLabel(x)
+    nnodes <- Nnode(x) 
     class(x) <- NULL
-    nnodes <- sapply(x, Nnode)
+    #nnodes <- sapply(x, Nnode)
     l <-  length(x)
     from <- cumsum(c(1, nnodes[-l]))
     to <- cumsum(nnodes)

@@ -44,7 +44,7 @@ optimPartBf <- function (object, bf = c(0.25, 0.25, 0.25, 0.25), ...)
     }
     res <- optim(par = lbf, fn = fn, gr = NULL, method = "Nelder-Mead", 
                 control = list(fnscale = -1, maxit = 500), object, ...)
-    print(res[[2]])
+#    print(res[[2]])
     bf <- exp(c(res[[1]], 0))
     bf <- bf/sum(bf)
 }
@@ -194,7 +194,7 @@ optimPartEdge <- function (object, ...)
         else scalep <- 1
         theta <- exp(thetaNew)
         ll0 <- ll1
-        k=k+1
+        k <- k+1
     }
     object
 }
@@ -226,7 +226,7 @@ makePart <- function(fit, rooted, weight=~index+genes){
 #' @rdname pmlPart
 #' @export
 multiphyDat2pmlPart <- function(x, rooted=FALSE,  ...){
-    shared_tree=TRUE
+    shared_tree <- TRUE
     if(shared_tree){
         concatenate_x <- do.call(cbind.phyDat, x@seq)
         dm <- dist.ml(concatenate_x)
@@ -683,7 +683,7 @@ pmlCluster.fit <- function (formula, fit, weight, p = 4, part = NULL, control=pm
 #' fit <- pml(tree,yeast)
 #' fit <- optim.pml(fit)
 #' 
-#' weight=xtabs(~ index+genes,attr(yeast, "index"))
+#' weight <- xtabs(~ index+genes,attr(yeast, "index"))
 #' set.seed(1)
 #' 
 #' sp <- pmlCluster(edge~rate, fit, weight, p=1:4)
@@ -705,7 +705,7 @@ pmlCluster <- function (formula, fit, weight, p = 1:5, part = NULL, nrep = 10,
                          tmp1[5], tmp1[6])
     }
     
-    p=p[p!=1]
+    p <- p[p!=1]
     if(length(p)==0)return(fit)
     n <- sum(weight)
     k <- 2
@@ -732,7 +732,7 @@ pmlCluster <- function (formula, fit, weight, p = 1:5, part = NULL, nrep = 10,
                 choice <- c(k,i) 
             }
         }
-        k=k+1
+        k <- k+1
     }      
     
     p <- c(1,p)
@@ -774,7 +774,7 @@ print.pmlPart <- function(x,...){
     nr <- attr(x$fits[[1]]$data, "nr")
     k <- x$fits[[1]]$k    
     
-    lbf=x$df["Bf",2]
+    lbf <- x$df["Bf",2]
     bf <- matrix(0, lbf, nc)
     if(lbf>1)dimnames(bf) <- list(1:r, levels)
     lQ <- x$df["Q",2]
@@ -890,8 +890,8 @@ optimPartNNI <- function (object, AllEdge=TRUE,...)
     for(i in 1:l){
         TMP[[i]] <- optNNI(object[[i]], INDEX)
     }
-    loglik=TMP[[1]][[1]] 
-    for(i in 2:l)loglik=loglik+TMP[[i]][[1]]
+    loglik <- TMP[[1]][[1]] 
+    for(i in 2:l)loglik <- loglik+TMP[[i]][[1]]
     
     swap <- 0
     candidates <- loglik > loglik0

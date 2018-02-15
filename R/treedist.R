@@ -88,7 +88,7 @@ SHORTwise <- function (x, nTips, delete=FALSE)
         }
     }
     if(any(l==nTips) && delete){
-        x=x[l!=nTips]
+        x <- x[l!=nTips]
     }
     x
 }
@@ -355,7 +355,7 @@ SPR1 <- function(trees){
         bp <- BP[[i]]
         for (j in (i + 1):l){
             SPR[k] <-  .Call("C_sprdist", bp, BP[[j]], nTips)[1]
-            k=k+1
+            k <- k+1
         }
     }
     attr(SPR, "Size") <- l
@@ -476,7 +476,7 @@ wRF2 <- function(tree, trees, normalize=FALSE, check.labels = TRUE, rooted=FALSE
     trees <- .uncompressTipLabel(trees)
     
     if (rooted & any(!is.rooted(trees))){
-        warning("Some trees are unrooted, unrooted all")
+        warning("some trees were rooted, unrooted all")
         rooted <- FALSE
     }
 
@@ -550,7 +550,7 @@ wRF1 <- function(trees, normalize=FALSE, check.labels = TRUE, rooted=FALSE){
     trees <- .uncompressTipLabel(trees)
     
     if (rooted & any(!is.rooted(trees))){
-        warning("Some trees are unrooted, unrooted all")
+        warning("some trees were rooted, unrooted all")
         rooted <- FALSE
     }
     if(!rooted){
@@ -597,7 +597,7 @@ wRF1 <- function(trees, normalize=FALSE, check.labels = TRUE, rooted=FALSE){
             s3 <- sum(w[-ind4])
             wRF[k] <- (s1 + s2 + s3)
             if(normalize) wRF[k] <- wRF[k] / (sc[i] + sc[j])
-            k=k+1
+            k <- k+1
         }
     }
     attr(wRF, "Size") <- l
@@ -635,7 +635,7 @@ mRF2 <- function(tree, trees, normalize=FALSE, check.labels = TRUE, rooted=FALSE
     
 #    trees <- unclass(trees)
     if(!rooted & any(is.rooted(trees))) {
-        message("Some trees are rooted. Unrooting all trees.\n")
+        warning("some trees were rooted, unrooted all")
         trees <- unroot(trees)
     }
     if(!rooted & is.rooted(tree))tree <- unroot(tree)
@@ -677,7 +677,7 @@ mRF<-function(trees, normalize=FALSE, rooted=FALSE){
     RF <- numeric((l * (l - 1))/2)
     
     if (rooted & any(!is.rooted(trees))){
-        warning("Some trees are unrooted, unrooted all")
+        warning("some trees were rooted, unrooted all")
         rooted <- FALSE
     }
     if(!rooted){
@@ -691,7 +691,7 @@ mRF<-function(trees, normalize=FALSE, rooted=FALSE){
     #    n <- length(attr(trees, "TipLabel"))
 
 #    if (any(sapply(trees, is.rooted))) {
-#        message("Some trees are rooted. Unrooting all trees.\n")
+#        warning("some trees were rooted, unrooted all")
 #        trees <- lapply(trees, unroot)
 #    }
     if (any(!is.binary(trees))) {
@@ -707,14 +707,14 @@ mRF<-function(trees, normalize=FALSE, rooted=FALSE){
     xx <- lapply(xx,function(x)sapply(x, paste, collapse="_")) 
     # returns list of character vectors
     Nnodes <- sapply(trees, Nnode)
-    k=1
+    k <- 1
     for (i in 1:(l - 1)){
         tmp <- xx[[i]]        
         for (j in (i + 1):l){
             RF[k] <- Nnodes[i] + Nnodes[j] - 2 * sum(fmatch(xx[[j]], tmp, nomatch=0L)>0L)
 #            RF[k] <- sum(match(xx[[j]], tmp, nomatch=0L)==0L) + sum(match(tmp, xx[[j]], nomatch=0L)==0L)
             if(normalize) RF[k] <- RF[k] / ( Nnodes[i] + Nnodes[j] - 2)
-            k=k+1
+            k <- k+1
         }   
     }
     attr(RF, "Size") <- l
@@ -852,7 +852,7 @@ kf1 <- function(tree, trees, check.labels = TRUE, rooted=FALSE){
     if(has.singles(tree)) tree <- collapse.singles(tree)
     
     if (rooted & any(!is.rooted(trees))){
-        warning("Some trees are unrooted, unrooted all")
+        warning("some trees were rooted, unrooted all")
         rooted <- FALSE
     }
     if(!rooted){
@@ -927,7 +927,7 @@ kf2 <- function(trees, check.labels = TRUE, rooted=FALSE){
 #        trees <- lapply(trees, unroot)
 #    }
     if (rooted & any(!is.rooted(trees))){
-        warning("Some trees are unrooted, unrooted all")
+        warning("some trees were rooted, unrooted all")
         rooted <- FALSE
     }
     if (!rooted & any(is.rooted(trees))) {
@@ -1072,7 +1072,7 @@ pd2 <- function(trees, check.labels=TRUE, path=TRUE){
     for (i in 1:(l - 1)){
         for (j in (i + 1):l){
             PD[k] <- sqrt(sum((CM[[i]] - CM[[j]])^2))    
-            k=k+1
+            k <- k+1
         }
     }
     attr(PD, "Size") <- l

@@ -22,27 +22,26 @@ parsimony(tree, primates)
 ###################################################
 ### code chunk number 3: Ancestral.Rnw:74-76
 ###################################################
-anc.acctran = ancestral.pars(tree, primates, "ACCTRAN")
-anc.mpr = ancestral.pars(tree, primates, "MPR")
+anc.acctran <- ancestral.pars(tree, primates, "ACCTRAN")
+anc.mpr <- ancestral.pars(tree, primates, "MPR")
 
 
 ###################################################
-### code chunk number 4: plotLOGO
+### code chunk number 4: Ancestral.Rnw:83-85 (eval = FALSE)
 ###################################################
-tmp <- require(seqLogo)
-if(tmp) seqLogo( t(subset(anc.mpr, getRoot(tree), 1:20)[[1]]), ic.scale=FALSE)
+## library(seqLogo)
+## seqLogo( t(subset(anc.mpr, getRoot(tree), 1:20)[[1]]), ic.scale=FALSE)
 
 
 ###################################################
-### code chunk number 5: figLOGO
+### code chunk number 5: Ancestral.Rnw:99-101 (eval = FALSE)
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
-tmp <- require(seqLogo)
-if(tmp) seqLogo( t(subset(anc.mpr, getRoot(tree), 1:20)[[1]]), ic.scale=FALSE)
+## source("https://bioconductor.org/biocLite.R")
+## biocLite("seqLogo")
 
 
 ###################################################
-### code chunk number 6: Ancestral.Rnw:95-97
+### code chunk number 6: Ancestral.Rnw:104-106
 ###################################################
 options(SweaveHooks=list(fig=function()
 par(mar=c(2.1, 4.1, 2.1, 2.1))))
@@ -70,14 +69,14 @@ title("ACCTRAN")
 
 
 ###################################################
-### code chunk number 9: Ancestral.Rnw:124-126
+### code chunk number 9: Ancestral.Rnw:133-135
 ###################################################
 fit = pml(tree, primates)
 fit = optim.pml(fit, model="F81", control = pml.control(trace=0))
 
 
 ###################################################
-### code chunk number 10: Ancestral.Rnw:138-140
+### code chunk number 10: Ancestral.Rnw:147-149
 ###################################################
 anc.ml = ancestral.pml(fit, "ml")
 anc.bayes = ancestral.pml(fit, "bayes")
@@ -105,7 +104,7 @@ title("Bayes")
 
 
 ###################################################
-### code chunk number 13: Ancestral.Rnw:164-165
+### code chunk number 13: Ancestral.Rnw:173-174
 ###################################################
 toLatex(sessionInfo())
 

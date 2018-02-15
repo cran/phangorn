@@ -3,6 +3,8 @@
 \name{phangorn-internal}
 \alias{phangorn-internal}
 \alias{threshStateC}
+\alias{coords}
+\alias{map_duplicates}
 \title{Internal phangorn Functions}
 \description{
 Internal \pkg{phangorn} functions.

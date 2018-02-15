@@ -65,7 +65,7 @@
 dist.hamming <- function (x, ratio = TRUE, exclude = "none") 
 {
     if (!inherits(x,"phyDat")) 
-        stop("x has to be element of class phyDat")
+        stop("x must be of class phyDat")
     l <- length(x)
 
     contrast <- attr(x, "contrast")
@@ -137,7 +137,7 @@ dist.ml <- function (x, model = "JC69", exclude = "none", bf = NULL, Q = NULL,
                      k=1L, shape=1, ...) 
 {
     if (!inherits(x,"phyDat")) 
-        stop("x has to be element of class phyDat")
+        stop("x must be of class phyDat")
     l <- length(x)
     d <- numeric((l * (l - 1))/2)
     v <- numeric((l * (l - 1))/2)
@@ -230,7 +230,7 @@ dist.ml <- function (x, model = "JC69", exclude = "none", bf = NULL, Q = NULL,
 dist.logDet <- function (x) 
 {
     if (!inherits(x,"phyDat")) 
-        stop("x has to be element of class phyDat")
+        stop("x must be of class phyDat")
     weight <- attr(x, "weight")
     contrast <- attr(x, 'contrast')
     r <- attr(x, "nc")
@@ -383,19 +383,19 @@ readDist <- function(file){ #, format="phylip"
 #' @param incomparables Not used so far.
 #' @export 
 unique.dist <-  function(x, incomparables, ...){
-        y <- as.matrix(x) 
-        l <- nrow(y)
-        z <- character(l)
-        for(i in seq_len(l)) z[i] <- paste( round(y[i, -i] ,8), "\r")
-        if(any(duplicated(z))){
-            ind <- !duplicated(z)
-            y <- y[ind, ind]
-            if(is.matrix(x))return(y)
-            if(inherits(x, "dist")){
-                #            attrib <- attributes(x)
-                res <- as.dist(y, diag=attr(x, "Diag"), upper=attr(x, "Upper"))  
-                return(res)
-            }
+    y <- as.matrix(x) 
+    l <- nrow(y)
+    z <- character(l)
+    for(i in seq_len(l)) z[i] <- paste( round(y[i, ] ,8), collapse="_")
+    if(any(duplicated(z))){
+        ind <- !duplicated(z)
+        y <- y[ind, ind]
+        if(is.matrix(x))return(y)
+        if(inherits(x, "dist")){
+            #            attrib <- attributes(x)
+            res <- as.dist(y, diag=attr(x, "Diag"), upper=attr(x, "Upper"))  
+            return(res)
         }
-        x
+    }
+    x
 }
