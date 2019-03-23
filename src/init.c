@@ -14,17 +14,15 @@
   Most likely possible values need to be added below.
 */
 
-/* FIXME: 
+/* FIXME:
    Check these declarations against the C/Fortran source code.
 */
 
 /* .C calls */
 extern void ACCTRAN2(void *, void *, void *, void *, void *, void *);
 extern void ACCTRAN3(void *, void *, void *, void *, void *, void *, void *, void *);
-extern void AllKids(void *, void *, void *, void *, void *, void *, void *, void *);
-extern void C_cophenetic(void *, void *, void *, void *, void *, void *, void *, void *);
 extern void C_fhm(void *, void *);
-extern void C_reorder(void *, void *, void *, void *, void *, void *);
+//extern void C_reorder(void *, void *, void *, void *, void *, void *);
 extern void countCycle(void *, void *, void *, void *);
 extern void countCycle2(void *, void *, void *, void *);
 extern void distHamming(void *, void *, void *, void *, void *);
@@ -35,10 +33,8 @@ extern void fitchTriplet(void *, void *, void *, void *, void *);
 extern void fitchTripletACC4(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void giveIndex(void *, void *, void *, void *, void *, void *);
 extern void ll_free();
-//extern void ll_free2();
 extern void ll_init(void *, void *, void *, void *);
-//extern void ll_init2(void *, void *, void *, void *, void *, void *);
-extern void nodeH(void *, void *, void *, void *, void *);
+//extern void nodeH(void *, void *, void *, void *, void *);
 extern void out(void *, void *, void *, void *, void *);
 
 /* .Call calls */
@@ -74,7 +70,7 @@ extern SEXP PML3(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEX
 extern SEXP PML4(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP pNodes(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP PWI(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP rawStream2phyDat(SEXP);
+// extern SEXP rawStream2phyDat(SEXP);
 extern SEXP rowMax(SEXP, SEXP, SEXP);
 extern SEXP sankoff3(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP sankoff3B(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -82,17 +78,17 @@ extern SEXP sankoffMPR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP sankoffQuartet(SEXP, SEXP, SEXP, SEXP);
 extern SEXP _phangorn_allDescCPP(SEXP, SEXP);
 extern SEXP _phangorn_allChildrenCPP(SEXP);
+//extern SEXP _phangorn_allSiblingsCPP(SEXP);
+//extern SEXP _phangorn_preorder(SEXP);
 extern SEXP _phangorn_p2dna(SEXP, SEXP);
 extern SEXP _phangorn_threshStateC(SEXP, SEXP);
-
+extern SEXP _phangorn_node_height_cpp(SEXP, SEXP, SEXP);
+extern SEXP _phangorn_cophenetic_cpp(SEXP, SEXP, SEXP, SEXP);
 
 static const R_CMethodDef CEntries[] = {
     {"ACCTRAN2",         (DL_FUNC) &ACCTRAN2,          6},
     {"ACCTRAN3",         (DL_FUNC) &ACCTRAN3,          8},
-    {"AllKids",          (DL_FUNC) &AllKids,           8},
-    {"C_cophenetic",     (DL_FUNC) &C_cophenetic,      8},
     {"C_fhm",            (DL_FUNC) &C_fhm,             2},
-    {"C_reorder",        (DL_FUNC) &C_reorder,         6},
     {"countCycle",       (DL_FUNC) &countCycle,        4},
     {"countCycle2",      (DL_FUNC) &countCycle2,       4},
     {"distHamming",      (DL_FUNC) &distHamming,       5},
@@ -103,13 +99,11 @@ static const R_CMethodDef CEntries[] = {
     {"fitchTripletACC4", (DL_FUNC) &fitchTripletACC4, 11},
     {"giveIndex",        (DL_FUNC) &giveIndex,         6},
     {"ll_free",          (DL_FUNC) &ll_free,           0},
-//    {"ll_free2",         (DL_FUNC) &ll_free2,          0},
     {"ll_init",          (DL_FUNC) &ll_init,           4},
-//    {"ll_init2",         (DL_FUNC) &ll_init2,          6},
-    {"nodeH",            (DL_FUNC) &nodeH,             5},
     {"out",              (DL_FUNC) &out,               5},
     {NULL, NULL, 0}
 };
+//    {"nodeH",            (DL_FUNC) &nodeH,             5},
 
 static const R_CallMethodDef CallEntries[] = {
     {"AddOnes",            (DL_FUNC) &AddOnes,             5},
@@ -144,7 +138,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"PML4",               (DL_FUNC) &PML4,               15},
     {"pNodes",             (DL_FUNC) &pNodes,              6},
     {"PWI",                (DL_FUNC) &PWI,                 6},
-    {"rawStream2phyDat",   (DL_FUNC) &rawStream2phyDat,    1},
+//    {"rawStream2phyDat",   (DL_FUNC) &rawStream2phyDat,    1},
     {"rowMax",             (DL_FUNC) &rowMax,              3},
     {"sankoff3",           (DL_FUNC) &sankoff3,            8},
     {"sankoff3B",          (DL_FUNC) &sankoff3B,          10},
@@ -152,8 +146,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"sankoffQuartet",     (DL_FUNC) &sankoffQuartet,      4},
     {"_phangorn_allDescCPP",       (DL_FUNC) &_phangorn_allDescCPP,        2},
     {"_phangorn_allChildrenCPP",   (DL_FUNC) &_phangorn_allChildrenCPP,    1},
+//    {"_phangorn_allSiblingsCPP",   (DL_FUNC) &_phangorn_allSiblingsCPP,    1},
+//    {"_phangorn_preorder",         (DL_FUNC) &_phangorn_preorder,          1},
     {"_phangorn_p2dna",     (DL_FUNC) &_phangorn_p2dna,   2},
     {"_phangorn_threshStateC",     (DL_FUNC) &_phangorn_threshStateC, 2},
+    {"_phangorn_node_height_cpp",     (DL_FUNC) &_phangorn_node_height_cpp, 3},
+    {"_phangorn_cophenetic_cpp",     (DL_FUNC) &_phangorn_cophenetic_cpp, 4},
     {NULL, NULL, 0}
 };
 

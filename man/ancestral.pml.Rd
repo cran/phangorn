@@ -12,7 +12,8 @@ ancestral.pml(object, type = "marginal", return = "prob")
 ancestral.pars(tree, data, type = c("MPR", "ACCTRAN"), cost = NULL,
   return = "prob")
 
-pace(tree, data, type = c("MPR", "ACCTRAN"), cost = NULL, return = "prob")
+pace(tree, data, type = c("MPR", "ACCTRAN"), cost = NULL,
+  return = "prob")
 
 plotAnc(tree, data, i = 1, site.pattern = TRUE, col = NULL,
   cex.pie = par("cex"), pos = "bottomright", ...)
@@ -72,7 +73,7 @@ seqLogo( t(subset(anc.p, 48, 1:20)[[1]]), ic.scale=FALSE)
 }
 # plot the first site pattern
 plotAnc(tree, anc.ml, 1)
-# plot the third character 
+# plot the third character
 plotAnc(tree, anc.ml, attr(anc.ml, "index")[3])
 
 }
@@ -93,5 +94,4 @@ Press, Oxford.
 \author{
 Klaus Schliep \email{klaus.schliep@gmail.com}
 }
-\keyword{~kwd1}
-\keyword{~kwd2}
+\keyword{cluster}

@@ -11,9 +11,10 @@
 \usage{
 designTree(tree, method = "unrooted", sparse = FALSE, ...)
 
-nnls.tree(dm, tree, rooted = FALSE, trace = 1)
+nnls.tree(dm, tree, rooted = FALSE, trace = 1, weight = NULL,
+  balanced = FALSE)
 
-nnls.phylo(x, dm, rooted = FALSE, trace = 0)
+nnls.phylo(x, dm, rooted = FALSE, trace = 0, ...)
 
 nnls.splits(x, dm, trace = 0)
 
@@ -35,6 +36,12 @@ designSplits(x, splits = "all", ...)
 \item{rooted}{compute a "rooted" or "unrooted" tree.}
 
 \item{trace}{defines how much information is printed during optimisation.}
+
+\item{weight}{vector of weights to be used in the fitting process.
+Weighted least squares is used with weights w, i.e., sum(w * e^2) is
+minimized.}
+
+\item{balanced}{use weights as in balanced fastME}
 
 \item{x}{number of taxa.}
 
@@ -60,8 +67,8 @@ dm <-  as.matrix(dm)
 y <- dm[lower.tri(dm)]
 X <- designTree(tree)
 lm(y~X-1)
-# avoids negative edge weights 
-tree2 = nnls.tree(dm, tree)
+# avoids negative edge weights
+tree2 <- nnls.tree(dm, tree)
 
 }
 \seealso{

@@ -12,11 +12,11 @@ pml(tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1,
   rate = 1, model = NULL, ...)
 
 optim.pml(object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
-  optInv = FALSE, optGamma = FALSE, optEdge = TRUE, optRate = FALSE,
-  optRooted = FALSE, control = pml.control(epsilon = 1e-08, maxit = 10,
-  trace = 1L), model = NULL, rearrangement = ifelse(optNni, "NNI", "none"),
-  subs = NULL, ratchet.par = list(iter = 20L, maxit = 100L, prop = 1/3),
-  ...)
+  optInv = FALSE, optGamma = FALSE, optEdge = TRUE,
+  optRate = FALSE, optRooted = FALSE, control = pml.control(epsilon =
+  1e-08, maxit = 10, trace = 1L), model = NULL,
+  rearrangement = ifelse(optNni, "NNI", "none"), subs = NULL,
+  ratchet.par = list(iter = 20L, maxit = 100L, prop = 1/2), ...)
 }
 \arguments{
 \item{epsilon}{Stop criterion for optimisation (see details).}
@@ -29,7 +29,7 @@ optim.pml(object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
 
 \item{data}{An alignment, object of class \code{phyDat}.}
 
-\item{bf}{Base frequencies.}
+\item{bf}{Base frequencies (see details).}
 
 \item{Q}{A vector containing the lower triangular part of the rate matrix.}
 
@@ -91,6 +91,13 @@ alignment and a model. \code{optim.pml} optimizes the different model
 parameters.
 }
 \details{
+Base frequencies in \code{pml} can be supplied in different ways.
+For amino acid they are usually defined through specifying a model, so the
+argument bf does not need to be specified. Otherwise if \code{bf=NULL},
+each state is given equal probabilty. It can be a numeric vector given the
+frequencies. Last but not least \code{bf} can be string "equal", "empirical"
+and for codon models additionally "F3x4".
+
 The topology search uses a nearest neighbor interchange (NNI) and the
 implementation is similar to phyML.  The option model in pml is only used
 for amino acid models.  The option model defines the nucleotide model which
@@ -133,35 +140,35 @@ tree topologies, especially for larger trees.
 \examples{
 
   example(NJ)
-# Jukes-Cantor (starting tree from NJ)  
-  fitJC <- pml(tree, Laurasiatherian)  
-# optimize edge length parameter     
+# Jukes-Cantor (starting tree from NJ)
+  fitJC <- pml(tree, Laurasiatherian)
+# optimize edge length parameter
   fitJC <- optim.pml(fitJC)
-  fitJC 
-  
-\dontrun{    
-# search for a better tree using NNI rearrangements     
+  fitJC
+
+\dontrun{
+# search for a better tree using NNI rearrangements
   fitJC <- optim.pml(fitJC, optNni=TRUE)
-  fitJC   
+  fitJC
   plot(fitJC$tree)
 
 # JC + Gamma + I - model
   fitJC_GI <- update(fitJC, k=4, inv=.2)
-# optimize shape parameter + proportion of invariant sites     
+# optimize shape parameter + proportion of invariant sites
   fitJC_GI <- optim.pml(fitJC_GI, optGamma=TRUE, optInv=TRUE)
 # GTR + Gamma + I - model
-  fitGTR <- optim.pml(fitJC_GI, rearrangement = "stochastic", 
-      optGamma=TRUE, optInv=TRUE, model="GTR") 
+  fitGTR <- optim.pml(fitJC_GI, rearrangement = "stochastic",
+      optGamma=TRUE, optInv=TRUE, model="GTR")
 }
 
 
-# 2-state data (RY-coded)  
-  dat <- acgt2ry(Laurasiatherian) 
-  fit2ST <- pml(tree, dat) 
-  fit2ST <- optim.pml(fit2ST,optNni=TRUE) 
+# 2-state data (RY-coded)
+  dat <- acgt2ry(Laurasiatherian)
+  fit2ST <- pml(tree, dat)
+  fit2ST <- optim.pml(fit2ST,optNni=TRUE)
   fit2ST
 # show some of the methods available for class pml
-  methods(class="pml")  
+  methods(class="pml")
 
 }
 \references{

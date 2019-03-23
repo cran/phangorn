@@ -45,7 +45,7 @@ so far does not transform node.labels properly.
 }
 \examples{
 
-tree <- unroot(rtree(10))
+tree <- rtree(10, rooted = FALSE)
 tree$node.label <- c("", round(runif(tree$Nnode-1), 3))
 
 tree2 <- midpoint(tree)
@@ -59,7 +59,7 @@ plot(tree3, show.node.label=TRUE)
 }
 \seealso{
 \code{\link[ape]{consensus}}, \code{\link[ape]{root}},
-\code{\link[ape]{di2multi}}
+\code{\link[ape]{multi2di}}
 }
 \author{
 Klaus Schliep \email{klaus.schliep@gmail.com}

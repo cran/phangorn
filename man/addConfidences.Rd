@@ -3,12 +3,15 @@
 \name{createLabel}
 \alias{createLabel}
 \alias{addConfidences}
+\alias{addConfidences.phylo}
 \alias{presenceAbsence}
 \title{Compare splits and add support values to an object}
 \usage{
 createLabel(x, y, label_y, type = "edge", nomatch = NA)
 
 addConfidences(x, y, ...)
+
+\method{addConfidences}{phylo}(x, y, ...)
 
 presenceAbsence(x, y)
 }
@@ -53,8 +56,8 @@ plot(nnet, "2D", show.edge.label=TRUE)
 
 }
 \references{
-Schliep, K., Potts, A. J., Morrison, D. A. and Grimm, G. W. (2017), 
-Intertwining phylogenetic trees and networks. \emph{Methods Ecol Evol}. 
+Schliep, K., Potts, A. J., Morrison, D. A. and Grimm, G. W. (2017),
+Intertwining phylogenetic trees and networks. \emph{Methods Ecol Evol}.
 \bold{8}, 1212--1220. doi:10.1111/2041-210X.12760
 }
 \seealso{

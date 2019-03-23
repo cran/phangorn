@@ -30,7 +30,7 @@ mrca.phylo(x, node = NULL, full = FALSE)
 
 \item{include.self}{whether to include self in list of siblings}
 
-\item{full}{a logical indicating whether to return the MRCAs among all tips 
+\item{full}{a logical indicating whether to return the MRCAs among all tips
 and nodes (if TRUE); the default is to return only the MRCAs among tips.}
 }
 \value{
@@ -73,7 +73,7 @@ mrca.phylo(tree)
 
 }
 \seealso{
-\code{treewalk}, \code{\link[ape]{phylo}},
+\code{treewalk}, \code{\link[ape]{as.phylo}},
 \code{\link[ape]{nodelabels}}
 }
 \keyword{internal}

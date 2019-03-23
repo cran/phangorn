@@ -21,9 +21,9 @@ sankoff(tree, data, cost = NULL, site = "pscore")
 optim.parsimony(tree, data, method = "fitch", cost = NULL, trace = 1,
   rearrangements = "SPR", ...)
 
-pratchet(data, start = NULL, method = "fitch", maxit = 1000, k = 10,
-  trace = 1, all = FALSE, rearrangements = "SPR",
-  perturbation = "ratchet", ...)
+pratchet(data, start = NULL, method = "fitch", maxit = 1000,
+  minit = 10, k = 10, trace = 1, all = FALSE,
+  rearrangements = "SPR", perturbation = "ratchet", ...)
 
 acctran(tree, data)
 }
@@ -49,12 +49,14 @@ model="sankoff" and cost matrix).}
 
 \item{maxit}{maximum number of iterations in the ratchet.}
 
+\item{minit}{minimum number of iterations in the ratchet.}
+
 \item{k}{number of rounds ratchet is stopped, when there is no improvement.}
 
 \item{all}{return all equally good trees or just one of them.}
 
-\item{perturbation}{whether using a ratchet or stochastic (nni) for
-shuffling the tree.}
+\item{perturbation}{whether to use "ratchet", "random_addition" or
+"stochastic" (nni) for shuffling the tree.}
 }
 \value{
 \code{parsimony} returns the maximum parsimony score (pscore).
@@ -86,7 +88,8 @@ tree <- NJ(dm)
 parsimony(tree, Laurasiatherian)
 treeRA <- random.addition(Laurasiatherian)
 treeNNI <- optim.parsimony(tree, Laurasiatherian)
-treeRatchet <- pratchet(Laurasiatherian, start=tree, maxit=100, k=5)
+treeRatchet <- pratchet(Laurasiatherian, start=tree, maxit=100,
+                        minit=5, k=5, trace=0)
 # assign edge length
 treeRatchet <- acctran(treeRatchet, Laurasiatherian)
 
@@ -104,7 +107,7 @@ Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Parsimony
 Analysis. \emph{Cladistics} \bold{15}, 407-414
 }
 \seealso{
-\code{\link{bab}}, \code{\link{CI}}, \code{\link{RI}}, \code{\link{ancestral.pml}}, 
+\code{\link{bab}}, \code{\link{CI}}, \code{\link{RI}}, \code{\link{ancestral.pml}},
 \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}}
 ,\code{\link{ancestral.pars}}, \code{\link{bootstrap.pml}}
 }

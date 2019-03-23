@@ -4,9 +4,9 @@
 \alias{lento}
 \title{Lento plot}
 \usage{
-lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot", sub = NULL,
-  xlab = NULL, ylab = NULL, bipart = TRUE, trivial = FALSE,
-  col = rgb(0, 0, 0, 0.5), ...)
+lento(obj, xlim = NULL, ylim = NULL, main = "Lento plot",
+  sub = NULL, xlab = NULL, ylab = NULL, bipart = TRUE,
+  trivial = FALSE, col = rgb(0, 0, 0, 0.5), ...)
 }
 \arguments{
 \item{obj}{an object of class phylo, multiPhylo or splits}
@@ -43,7 +43,7 @@ The lento plot represents support and conflict of splits/bipartitions.
 data(yeast)
 yeast.ry <- acgt2ry(yeast)
 splits.h <- h2st(yeast.ry)
-lento(splits.h, trivial=TRUE) 
+lento(splits.h, trivial=TRUE)
 
 }
 \references{

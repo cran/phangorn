@@ -15,7 +15,7 @@ attr(Y, "weight") <- 1000*exp(fit2$site)
 fit1 <- update(fit1, data=X)
 fit2 <- update(fit2, data=Y)
 
-sp <- pmlPart(~ edge, list(fit1, fit2))
+sp <- pmlPart(~ edge, list(fit1, fit2), pml.control(trace = 0))
 pp0 <- pmlPen(sp, lambda = 0, pml.control(trace = 0))
 ppInf <- pmlPen(sp, lambda = 1e6, pml.control(trace = 0))
 
@@ -24,6 +24,6 @@ fit3 <- update(fit1, data=Z)
 fit3 <- optim.pml(fit3, control = pml.control(trace = 0))
 
 test_that("penalized partition models work as expected", {
-    expect_equal(pp0$logLik[1], fit1$logLik + fit2$logLik) #, tolerance = 0.002) 
+    expect_equal(pp0$logLik[1], fit1$logLik + fit2$logLik) #, tolerance = 0.002)
     expect_equal(ppInf$logLik[1], fit3$logLik, tolerance = 1e-5)
 })

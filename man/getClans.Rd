@@ -5,6 +5,7 @@
 \alias{getSlices}
 \alias{getClips}
 \alias{getDiversity}
+\alias{summary.clanistics}
 \alias{diversity}
 \title{Clans, slices and clips}
 \usage{
@@ -15,6 +16,8 @@ getSlices(tree)
 getClips(tree, all = TRUE)
 
 getDiversity(tree, x, norm = TRUE, var.names = NULL, labels = "new")
+
+\method{summary}{clanistics}(object, ...)
 
 diversity(tree, X)
 }
@@ -31,6 +34,10 @@ Diversity.}
 \item{var.names}{A vector of variable names.}
 
 \item{labels}{see details.}
+
+\item{object}{an object for which a summary is desired.}
+
+\item{...}{Further arguments passed to or from other methods.}
 
 \item{X}{a data.frame}
 }
@@ -120,10 +127,10 @@ getSlices(tree)
 
 set.seed(123)
 trees <- rmtree(10, 20)
-X <- matrix(sample(c("red", "blue", "violet"), 100, TRUE, c(.5,.4, .1)), 
+X <- matrix(sample(c("red", "blue", "violet"), 100, TRUE, c(.5,.4, .1)),
    ncol=5, dimnames=list(paste('t',1:20, sep=""), paste('Var',1:5, sep="_")))
 x <- phyDat(X, type = "USER", levels = c("red", "blue"), ambiguity="violet")
-plot(trees[[1]], "u", tip.color = X[trees[[1]]$tip,1])  # intruders are blue 
+plot(trees[[1]], "u", tip.color = X[trees[[1]]$tip,1])  # intruders are blue
 
 (divTab <- getDiversity(trees, x, var.names=colnames(X)))
 summary(divTab)

@@ -9,11 +9,11 @@
 bootstrap.pml(x, bs = 100, trees = TRUE, multicore = FALSE,
   mc.cores = NULL, ...)
 
-bootstrap.phyDat(x, FUN, bs = 100, multicore = FALSE, mc.cores = NULL,
-  jumble = TRUE, ...)
+bootstrap.phyDat(x, FUN, bs = 100, multicore = FALSE,
+  mc.cores = NULL, jumble = TRUE, ...)
 
-plotBS(tree, BStrees, type = "unrooted", bs.col = "black", bs.adj = NULL,
-  p = 50, frame = "none", ...)
+plotBS(tree, BStrees, type = "unrooted", bs.col = "black",
+  bs.adj = NULL, p = 50, frame = "none", ...)
 }
 \arguments{
 \item{x}{an object of class \code{pml} or \code{phyDat}.}
@@ -80,13 +80,13 @@ dm <- dist.logDet(Laurasiatherian)
 tree <- NJ(dm)
 # NJ
 set.seed(123)
-NJtrees <- bootstrap.phyDat(Laurasiatherian, 
+NJtrees <- bootstrap.phyDat(Laurasiatherian,
      FUN=function(x)NJ(dist.logDet(x)), bs=100)
 treeNJ <- plotBS(tree, NJtrees, "phylogram")
 
 # Maximum likelihood
 fit <- pml(tree, Laurasiatherian)
-fit <- optim.pml(fit, rearrangements="NNI")
+fit <- optim.pml(fit, rearrangement="NNI")
 set.seed(123)
 bs <- bootstrap.pml(fit, bs=100, optNni=TRUE)
 treeBS <- plotBS(fit$tree,bs)

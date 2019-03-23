@@ -4,8 +4,8 @@
 \alias{superTree}
 \title{Super Tree methods}
 \usage{
-superTree(tree, method = "MRP", rooted = FALSE, trace = 0, start = NULL,
-  multicore = FALSE, mc.cores = NULL, ...)
+superTree(tree, method = "MRP", rooted = FALSE, trace = 0,
+  start = NULL, multicore = FALSE, mc.cores = NULL, ...)
 }
 \arguments{
 \item{tree}{an object of class \code{multiPhylo}}
@@ -21,7 +21,8 @@ tree.  Possible are "MRP", "NNI", and "SPR".}
 
 \item{multicore}{logical, whether models should estimated in parallel.}
 
-\item{mc.cores}{The number of cores to use, i.e. at most how many child processes will be run simultaneously.}
+\item{mc.cores}{The number of cores to use, i.e. at most how many child
+processes will be run simultaneously.}
 
 \item{\dots}{further arguments passed to or from other methods.}
 }
@@ -46,8 +47,8 @@ data(Laurasiatherian)
 set.seed(1)
 bs <- bootstrap.phyDat(Laurasiatherian, FUN = function(x)upgma(dist.hamming(x)), bs=50)
 
-mrp_st <- superTree(bs, rooted=TRUE)
-plot(superTree(mrp_st))
+mrp_st <- superTree(bs)
+plot(mrp_st)
 \dontrun{
 rf_st <- superTree(bs, method = "RF")
 spr_st <- superTree(bs, method = "SPR")

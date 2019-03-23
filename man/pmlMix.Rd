@@ -2,7 +2,6 @@
 % Please edit documentation in R/pmlMix.R
 \name{pmlMix}
 \alias{pmlMix}
-\alias{pmlPen}
 \title{Phylogenetic mixture model}
 \usage{
 pmlMix(formula, fit, m = 2, omega = rep(1/m, m),
@@ -47,7 +46,7 @@ very slow and is likely that the algorithm can get stuck in local optima.
 X <- allSitePattern(5)
 tree <- read.tree(text = "((t1:0.3,t2:0.3):0.1,(t3:0.3,t4:0.3):0.1,t5:0.5);")
 fit <- pml(tree,X, k=4)
-weights <- 1000*exp(fit$site) 
+weights <- 1000*exp(fit$site)
 attr(X, "weight") <- weights
 fit1 <- update(fit, data=X, k=1)
 fit2 <- update(fit, data=X)
@@ -70,7 +69,7 @@ fitMix
 
 
 #
-# simulation of mixture models 
+# simulation of mixture models
 #
 \dontrun{
 X <- allSitePattern(5)

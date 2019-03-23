@@ -39,7 +39,7 @@ to binary or nucleotide data.
 data(yeast)
 dfactorial(11)
 # choose only the first two genes
-gene12 <- subset(yeast, , 1:3158, site.pattern=FALSE) 
+gene12 <- subset(yeast, , 1:3158, site.pattern=FALSE)
 trees <- bab(gene12)
 
 }
@@ -63,4 +63,3 @@ Klaus Schliep \email{klaus.schliep@gmail.com} based on work on Liam
 Revell
 }
 \keyword{cluster}
-\keyword{~kwd2}
