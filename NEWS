@@ -1,3 +1,22 @@
+     CHANGES in PHANGORN VERSION 2.5.4
+
+NEW FEATURES
+
+     o dist.ml, dist.hamming, dist.logDet and dist.p also take DNAbin or
+
+       AAbin objects as input
+
+BUG FIXES
+
+    o bootstrap.pml returned an error with argument optNni=T
+
+      Best practise is to always use TRUE and not T as shortcut
+
+OTHER CHANGES
+
+    o  several more unit tests
+
+
      CHANGES in PHANGORN VERSION 2.5.2
 
 NEW FEATURES

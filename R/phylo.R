@@ -1,17 +1,3 @@
-#' @rdname pml.fit
-#' @export
-discrete.gamma <- function(alpha, k) {
-  if (k == 1) return(1)
-  quants <- qgamma( (1:(k - 1)) / k, shape = alpha, rate = alpha)
-  diff(c(0, pgamma(quants * alpha, alpha + 1), 1)) * k
-}
-
-
-discrete.beta <- function(shape1, shape2, k) {
-  qbeta( ( (0:(k - 1)) + .5) / k, shape1, shape2)
-}
-
-
 # allow transition probs of zero (added o)
 optimQ <- function(tree, data, Q = rep(1, 6), subs = rep(1, length(Q)),
                    trace = 0, ...) {
@@ -1369,7 +1355,6 @@ pml.fit4 <- function(tree, data, bf = rep(1 / length(levels), length(levels)),
 #' @param data An alignment, object of class \code{phyDat}.
 #' @param bf Base frequencies.
 #' @param shape Shape parameter of the gamma distribution.
-#' @param alpha Shape parameter of the gamma distribution.
 #' @param k Number of intervals of the discrete gamma distribution.
 #' @param Q A vector containing the lower triangular part of the rate matrix.
 #' @param levels The alphabet used e.g. c("a", "c", "g", "t") for DNA
@@ -2438,8 +2423,9 @@ optim.pml <- function(object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
   data <- subset(data, tree$tip.label)
 
   type <- attr(data, "type")
-  if (type == "AA" & !is.null(model)) {
-    object <- update(object, model = model)
+  if (type == "AA") {
+    if(!is.null(model)) object <- update(object, model = model)
+    model <- object$model
   }
   if (type == "CODON") {
     if (is.null(model)) model <- "codon1"

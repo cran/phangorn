@@ -412,8 +412,6 @@ as.networx.splits <- function(x, planar = FALSE, coord = c("none", "2D", "3D"),
   }
   else c.ord <- getOrdering(x)
   attr(x, "cycle") <- c.ord
-
-  dm <- as.matrix(compatible2(x))
   # which splits are in circular ordering
   circSplits <- which(countCycles(x, ord = c.ord) == 2)
   if (length(circSplits) == length(x)) planar <- TRUE
@@ -423,6 +421,7 @@ as.networx.splits <- function(x, planar = FALSE, coord = c("none", "2D", "3D"),
     return(reorder(tmp))
   }
 
+  dm <- as.matrix(compatible2(x))
   ll <- lengths(x)
   ind <- tmp$splitIndex     # match(sp, x)
   ind2 <- union(ind, which(ll == 0)) # which(duplicated(x))
@@ -678,7 +677,10 @@ addConfidences.splits <- function(x, y, scaler = 1, ...) {
   #    pos <-  which(ind > nTips)
   pos <-  which(!is.na(ind))
   confidences <- rep(NA_real_, length(x)) # numeric(length(x))  #character
-  confidences[pos] <- attr(spl, "confidences")[ind[pos]] * scaler
+
+  if(is.numeric(attr(spl, "confidences")))
+     confidences[pos] <- attr(spl, "confidences")[ind[pos]] * scaler
+  else confidences[pos] <- attr(spl, "confidences")[ind[pos]]
   if (add == TRUE) confidences <- paste(prettyNum(attr(x, "confidences")),
       prettyNum(confidences * scaler), sep = "/")
   #        y$node.label[ind[pos] - nTips]
@@ -706,38 +708,14 @@ addConfidences.phylo <- function(x, y, ...) {
   spl <- as.splits(x) %>% oneWise(nTips = nTips)
   conf <- attr(addConfidences(spl, y), "confidences")
   l <- lengths(spl)
-  if (is.character(conf)) conf <- as.numeric(conf)
+  if (is.character(conf)) as.is <- TRUE
+    # conf <- as.numeric(conf)
   ind <- (l == 1L) | (l == (nTips - 1L)) | (l == nTips)
   conf[ind == TRUE] <- NA_real_
   nTips <- length(x$tip.label)
   if (!as.is) conf <- conf * 100
   x$node.label <- conf[-c(1:nTips)]
   x
-}
-
-
-# returns order of x$edge
-presenceAbsenceOld <- function(x, y) {
-  X <- as.splits(x)
-  Y <- as.splits(y)
-  labels <- attr(X, "labels")
-  #    if(inherits(x,"phylo")) X <- X[x$edge[,2]]
-  #    if(inherits(y,"phylo")) Y <- Y[y$edge[,2]]
-  Y <- changeOrder(Y, labels) # orderSplitLabel
-  nTips <- length(labels)
-  X <- oneWise(X, nTips)
-  Y <- oneWise(Y, nTips)
-  res <- match(X, Y)
-  res <- !is.na(res)
-  if (inherits(x, "networx")) {
-    res <- res[x$splitIndex]
-  }
-  if (class(x)[1] == "phylo") {
-    # res <- res[x$edge[,2]]
-    x$node.label <- res[-c(seq_along(labels))]
-    return(x)
-  }
-  res
 }
 
 

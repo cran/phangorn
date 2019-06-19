@@ -32,9 +32,9 @@ test_that("ancestor, mrca, descendants", {
 })
 
 test_that("allTrees", {
-    ## allTrees
-    expect_is(allTrees(6), "multiPhylo")
-    expect_true(all(RF.dist(allTrees(6))>0))
+  ## allTrees
+  expect_s3_class(allTrees(6), "multiPhylo")
+  expect_true(all(RF.dist(allTrees(6))>0))
 })
 
 
@@ -54,6 +54,9 @@ test_that("maxCladeCred", {
   tree <- rcoal(100)
   trees <- nni(tree)
   expect_equal(maxCladeCred(c(tree, trees)), tree)
+  tree <- rtree(100, rooted = FALSE)
+  trees <- nni(tree)
+  expect_equal(tree, allCompat(trees), use.edge.length = FALSE)
 })
 
 
