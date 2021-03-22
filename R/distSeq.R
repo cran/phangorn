@@ -70,6 +70,7 @@ dist.hamming <- function(x, ratio = TRUE, exclude = "none"){
     index <- con[x[[1]]]
     for (i in 2:l) index <- index & con[x[[i]]]
     index <- which(index)
+    if(length(index)==0) warning('each site contains at least one ambiguous state, try exclude = "pairwise"')
     x <- subset(x, select = index)
   }
   weight <- attr(x, "weight")
@@ -84,30 +85,15 @@ dist.hamming <- function(x, ratio = TRUE, exclude = "none"){
         k <- k + 1
       }
     }
-
   }
-
-  if (nc > 31) {
-    k <- 1
-    for (i in 1:(l - 1)) {
-      X <- contrast[x[[i]], , drop = FALSE]
-      for (j in (i + 1):l) {
-        d[k] <- sum(weight *
-                      (rowSums(X * contrast[x[[j]], , drop = FALSE]) == 0))
-        k <- k + 1
-      }
-    }
-  } # end if
-  else {
-    nr <- attr(x, "nr")
-    if (exclude == "pairwise") ind <- which(con[unlist(x)] == FALSE)
-    x <- prepareDataFitch(x)
-    if (exclude == "pairwise") x[ind] <- as.integer(2L^nc - 1L)
-    res <- .C("distHamming", as.integer(x), as.double(weight),
-      as.integer(nr), as.integer(l), as.double(d), PACKAGE = "phangorn")
-    d <- res[[5]]
+  if (exclude == "pairwise"){
+    contrast[!con, ] <- 1L
+    attr(x, "contrast") <- contrast
   }
-
+#  ub <- upperBound(x)
+#  x <- subset(x, select=ub>0)
+  f <- init_fitch(x, FALSE, TRUE, m=1L)
+  d <- f$hamming_dist()
   if (ratio) {
     if (exclude == "pairwise") d <- d / W
     else d <- d / sum(weight)
@@ -136,12 +122,21 @@ dist.ml <- function(x, model = "JC69", exclude = "none", bf = NULL, Q = NULL,
   d <- numeric((l * (l - 1)) / 2)
   v <- numeric((l * (l - 1)) / 2)
   contrast <- attr(x, "contrast")
-  con <- rowSums(contrast > 0) < 2
+  con <- rowSums(contrast > 0) == 1
   if (exclude == "all") {
     index <- con[x[[1]]]
     for (i in 2:l) index <- index & con[x[[i]]]
     index <- which(index)
+    if(length(index)==0) warning('each site contains at least one ambiguous state, try exclude = "pairwise"')
     x <- subset(x, select = index)
+  }
+  unique_contrast <- grp_duplicated(contrast)
+  if(exclude != "none"){
+    pos_contrast <- rep(NA_integer_, length(unique_contrast))
+    lu <- length(unique( unique_contrast[con]) )
+    pos_contrast[unique( unique_contrast[con])] <- seq_len(lu)
+    unique_contrast <- pos_contrast[unique_contrast]
+    attr(unique_contrast, "nlevels") <- lu
   }
   nc <- as.integer(attr(x, "nc"))
   nr <- as.integer(attr(x, "nr"))
@@ -162,7 +157,7 @@ dist.ml <- function(x, model = "JC69", exclude = "none", bf = NULL, Q = NULL,
   g <- as.double(discrete.gamma(shape, k))
   fun <- function(s) -(nc - 1) / nc * log(1 - nc / (nc - 1) * s)
   eps <- (nc - 1) / nc
-  n <- as.integer(dim(contrast)[1])
+  n <- as.integer(dim(contrast)[1]) # attr(unique_contrast, "nlevels")
   ind1 <- rep(1:n, n:1)
   ind2 <- unlist(lapply(n:1, function(x) seq_len(x) + n - x))
   li <- as.integer(length(ind1))
@@ -186,19 +181,135 @@ dist.ml <- function(x, model = "JC69", exclude = "none", bf = NULL, Q = NULL,
       if (exclude == "pairwise")
         w0[index] <- 0.0
       ind <- w0 > 0
-
-      old.el <- 1 - (sum(w0[wshared]) / sum(w0))
+# more error checking
+      sum_shared <- sum(w0[wshared])
+      sum_w <- sum(w0)
+      if(sum_w == 0){
+        d[pos] <- NA_real_
+        v[pos] <- NA_real_
+      } else if(sum_shared == sum_w){
+        d[pos] <- 0
+        v[pos] <- NA_real_
+      } else {
+      #1 - (sum(w0[wshared]) / sum(w0))
+      old.el <- 1 - sum_shared / sum_w
       if (old.el > eps)
         old.el <- 10
       else old.el <- fun(old.el)
-
       for (lk in 1:k) tmp2[[lk]] <- tmp[ind, , drop = FALSE]
-      # FS0 verwenden!!!
       res <- .Call("FS5", eig, nc, as.double(old.el), w, g, tmp2,
         as.integer(k), as.integer(sum(ind)),
         w0[ind], ll.0, PACKAGE = "phangorn")
       d[pos] <- res[1] # res[[1]]
       v[pos] <- res[2] # res[[2]]
+      }
+      pos <- pos + 1
+    }
+  }
+  attr(d, "Size") <- l
+  if (is.list(x))
+    attr(d, "Labels") <- names(x)
+  else attr(d, "Labels") <- colnames(x)
+  attr(d, "Diag") <- FALSE
+  attr(d, "Upper") <- FALSE
+  attr(d, "call") <- match.call()
+  attr(d, "variance") <- v
+  class(d) <- "dist"
+  return(d)
+}
+
+
+#' @rdname dist.hamming
+#' @export
+dist.ml2 <- function(x, model = "JC69", exclude = "none", bf = NULL, Q = NULL,
+                    k = 1L, shape = 1, ...){
+  if(inherits(x, "DNAbin") | inherits(x, "AAbin")) x <- as.phyDat(x)
+  if (!inherits(x, "phyDat"))
+    stop("x must be of class phyDat")
+  l <- length(x)
+  d <- numeric((l * (l - 1)) / 2)
+  v <- numeric((l * (l - 1)) / 2)
+  contrast <- attr(x, "contrast")
+  con <- rowSums(contrast > 0) == 1
+  if (exclude == "all") {
+    index <- con[x[[1]]]
+    for (i in 2:l) index <- index & con[x[[i]]]
+    index <- which(index)
+    if(length(index)==0) warning('each site contains at least one ambiguous state, try exclude = "pairwise"')
+    x <- subset(x, select = index)
+  }
+  unique_contrast <- grp_duplicated(contrast)
+  if(exclude != "none"){
+    pos_contrast <- rep(0L, length(unique_contrast)) # NA_integer_
+    lu <- length(unique( unique_contrast[con]) )
+    pos_contrast[unique( unique_contrast[con])] <- seq_len(lu)
+    unique_contrast <- pos_contrast[unique_contrast]
+    attr(unique_contrast, "nlevels") <- lu
+  }
+  nc <- as.integer(attr(x, "nc"))
+  nr <- as.integer(attr(x, "nr"))
+  model <- match.arg(model, c("JC69", "F81", .aamodels))
+  if (!is.na(match(model, .aamodels)))
+    getModelAA(model, bf = is.null(bf), Q = is.null(Q))
+  if (is.null(bf) && model == "F81") bf <- baseFreq(x)
+  if (is.null(bf))
+    bf <- rep(1 / nc, nc)
+  if (is.null(Q))
+    Q <- rep(1, (nc - 1) * nc / 2L)
+
+  bf <- as.double(bf)
+  eig <- edQt(Q = Q, bf = bf)
+  pos <- 1
+  k <- as.integer(k)
+  w <- as.double(w <- rep(1 / k, k))
+  g <- as.double(discrete.gamma(shape, k))
+  fun <- function(s) -(nc - 1) / nc * log(1 - nc / (nc - 1) * s)
+  eps <- (nc - 1) / nc
+  n <- attr(unique_contrast, "nlevels")
+  contrast <- contrast[!duplicated( unique_contrast ) & (unique_contrast > 0),
+                       , drop=FALSE]
+
+  ind1 <- rep(1:n, n:1)
+  ind2 <- unlist(lapply(n:1, function(x) seq_len(x) + n - x))
+  li <- as.integer(length(ind1))
+  weight <- as.double(attr(x, "weight"))
+  ll.0 <- as.double(weight * 0)
+
+  tmp <- (contrast %*% eig[[2]])[ind1, ] *
+    (contrast %*% (t(eig[[3]]) * bf))[ind2, ]
+  tmp2 <- vector("list", k)
+
+  wshared <- which(rowSums(contrast[ind1, ] * contrast[ind2, ]) > 0)
+
+  tmp2 <- vector("list", k)
+  for (i in 1:(l - 1)) {
+    for (j in (i + 1):l) {
+      w0 <- .Call("PWI2", as.integer(x[[i]]), as.integer(x[[j]]),
+                  as.integer(unique_contrast),
+                  nr, n, weight, li, PACKAGE = "phangorn")
+      ind <- w0 > 0
+      # more error checking
+      sum_shared <- sum(w0[wshared])
+      sum_w <- sum(w0)
+      if(sum_w == 0){
+        d[pos] <- NA_real_
+        v[pos] <- NA_real_
+      } else if(sum_shared == sum_w){
+        d[pos] <- 0
+        v[pos] <- NA_real_
+      } else {
+        #1 - (sum(w0[wshared]) / sum(w0))
+        old.el <- 1 - sum_shared / sum_w
+        if (old.el > eps)
+          old.el <- 10
+        else old.el <- fun(old.el)
+        for (lk in 1:k) tmp2[[lk]] <- tmp[ind, , drop = FALSE]
+        res <- .Call("FS5", eig, nc, as.double(old.el), w, g, tmp2,
+                     as.integer(k), as.integer(sum(ind)),
+                     w0[ind], ll.0, PACKAGE = "phangorn")
+        d[pos] <- res[1] # res[[1]]
+        v[pos] <- res[2] # res[[2]]
+      }
       pos <- pos + 1
     }
   }

@@ -13,14 +13,14 @@
 #' @importFrom graphics hist identify locator barplot
 #' @importFrom utils read.table download.file stack
 #' @importFrom utils installed.packages write.table combn packageDescription
-#' @importFrom grDevices rgb rainbow adjustcolor col2rgb
+#' @importFrom grDevices rgb adjustcolor col2rgb
 #' @useDynLib phangorn, .registration = TRUE
 
 .packageName <- "phangorn"
 
 .aamodels <- c("WAG", "JTT", "LG", "Dayhoff", "cpREV", "mtmam", "mtArt",
-               "MtZoa", "mtREV24", "VT","RtREV", "HIVw", "HIVb", "FLU",
-               "Blosum62","Dayhoff_DCMut","JTT_DCMut")
+               "MtZoa", "mtREV24", "VT", "RtREV", "HIVw", "HIVb", "FLU",
+               "Blosum62", "Dayhoff_DCMut", "JTT_DCMut")
 
 .dnamodels <- c("JC", "F81", "K80", "HKY", "TrNe", "TrN",
   "TPM1", "K81", "TPM1u", "TPM2", "TPM2u", "TPM3", "TPM3u",
@@ -47,7 +47,7 @@
 .PlotNetworxEnv <- new.env()
 
 
-# loadModule("Fitch_mod", TRUE)
+loadModule("Fitch_mod", TRUE)
 
 # .onLoad  <- function(libname, pkgname) {
 #    library.dynam("phangorn", pkgname, libname)

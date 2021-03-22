@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/KlausVigo/phangorn.svg?branch=master)](https://travis-ci.org/KlausVigo/phangorn)
+[![R-CMD-check](https://github.com/KlausVigo/phangorn/workflows/R-CMD-check/badge.svg)](https://github.com/KlausVigo/phangorn/actions)
 [![CRAN Status Badge](http://www.r-pkg.org/badges/version/phangorn)](https://cran.r-project.org/package=phangorn)
 [![CRAN Downloads](http://cranlogs.r-pkg.org/badges/phangorn)](https://cran.r-project.org/package=phangorn)
 [![Research software impact](http://depsy.org/api/package/cran/phangorn/badge.svg)](http://depsy.org/package/r/phangorn)
@@ -20,7 +20,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(c("Biostrings", "seqLogo"))
 ```
-Also the development version usually depends on tha latest ape development 
+Also the development version usually depends on the latest ape development 
 version and information to download can be found  [here](http://ape-package.ird.fr/ape_installation.html). 
 Additionally you may need to install on windows [Rtools](https://cran.r-project.org/bin/windows/Rtools/) and on mac [XCode](https://developer.apple.com/xcode/)
 and [GFortran](https://gcc.gnu.org/wiki/GFortranBinaries).

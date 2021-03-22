@@ -9,14 +9,14 @@
 pml.control(epsilon = 1e-08, maxit = 10, trace = 1)
 
 pml(tree, data, bf = NULL, Q = NULL, inv = 0, k = 1, shape = 1,
-  rate = 1, model = NULL, ...)
+  rate = 1, model = NULL, site.rate = "gamma", ...)
 
 optim.pml(object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
-  optInv = FALSE, optGamma = FALSE, optEdge = TRUE,
-  optRate = FALSE, optRooted = FALSE, control = pml.control(epsilon =
-  1e-08, maxit = 10, trace = 1L), model = NULL,
-  rearrangement = ifelse(optNni, "NNI", "none"), subs = NULL,
-  ratchet.par = list(iter = 20L, maxit = 100L, prop = 1/2), ...)
+  optInv = FALSE, optGamma = FALSE, optEdge = TRUE, optRate = FALSE,
+  optRooted = FALSE, control = pml.control(epsilon = 1e-08, maxit = 10,
+  trace = 1L), model = NULL, rearrangement = ifelse(optNni, "NNI", "none"),
+  subs = NULL, ratchet.par = list(iter = 20L, maxit = 100L, prop = 1/2),
+  ...)
 }
 \arguments{
 \item{epsilon}{Stop criterion for optimisation (see details).}
@@ -43,6 +43,10 @@ optim.pml(object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
 
 \item{model}{allows to choose an amino acid models or nucleotide model, see
 details.}
+
+\item{site.rate}{Indicates what type of gamma distribution to use. Options
+are "gamma" approach of Yang 1994 (default), "quadrature" after the Laguerre
+quadrature approach of Felsenstein 2001.}
 
 \item{\dots}{Further arguments passed to or from other methods.}
 

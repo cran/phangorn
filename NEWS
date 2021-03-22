@@ -1,3 +1,34 @@
+     CHANGES in PHANGORN VERSION 2.6.2
+
+NEW FEATURES
+
+    o rewritten fitch algorithm to be more memory efficient, hopefully faster
+
+      and without limitation on the number of states
+
+    o dist.hamming may handle larger datasets and can be faster
+
+    o add Laguerre quadrature as option for discrete rate classes (experimental)
+
+    o additional genetic codes for codon models.
+
+OTHER CHANGES
+
+    o conversion between alignment formats is faster and more memory efficient,
+
+      allowing the handling of larger datasets
+
+    o changed R dependencies to 3.6.0 mainly to supply nicer palettes via
+
+      hcl.colors()
+
+    o lots of small improvements to especially for codon models
+
+    o tests are now done by tinytest, dropped dependencies on testthat, vdiffr
+
+    o all vignettes are now based on Rmarkdown
+
+
      CHANGES in PHANGORN VERSION 2.5.4
 
 NEW FEATURES
@@ -35,7 +66,9 @@ NEW FEATURES
 
      o broom type tidy function for several objects to easier compare models
 
-     o new "equal_angle" layout for 2D-networks (now the default)
+     o new "equal_angle" layout for 2D-networks (now the default), gives usually
+
+       nicer layout of phylogenetic networks
 
      o tiplabels, nodelabels, edgelabels from ape work for plot.networx if
 

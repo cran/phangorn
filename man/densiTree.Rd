@@ -4,12 +4,11 @@
 \alias{densiTree}
 \title{Plots a densiTree.}
 \usage{
-densiTree(x, type = "cladogram", alpha = 1/length(x),
-  consensus = NULL, direction = "rightwards", optim = FALSE,
-  scaleX = FALSE, col = 1, width = 1, lty = 1, cex = 0.8,
-  font = 3, tip.color = 1, adj = 0, srt = 0, underscore = FALSE,
-  label.offset = 0, scale.bar = TRUE, jitter = list(amount = 0,
-  random = TRUE), ...)
+densiTree(x, type = "cladogram", alpha = 1/length(x), consensus = NULL,
+  direction = "rightwards", optim = FALSE, scaleX = FALSE, col = 1,
+  width = 1, lty = 1, cex = 0.8, font = 3, tip.color = 1, adj = 0,
+  srt = 0, underscore = FALSE, label.offset = 0, scale.bar = TRUE,
+  jitter = list(amount = 0, random = TRUE), ...)
 }
 \arguments{
 \item{x}{an object of class \code{multiPhylo}.}
@@ -99,7 +98,7 @@ densiTree(BinindaEmondsEtAl2007, type="phylogram", col="red")
 }
 \references{
 densiTree is inspired from the great
-\href{https://www.cs.auckland.ac.nz/~remco/DensiTree}{DensiTree} program of Remco
+\href{https://www.cs.auckland.ac.nz/~remco/DensiTree/}{DensiTree} program of Remco
 Bouckaert.
 
 Remco R. Bouckaert (2010) DensiTree: making sense of sets of phylogenetic

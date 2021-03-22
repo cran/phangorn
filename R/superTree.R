@@ -12,7 +12,6 @@ tree2phyDat <- function(trees) {
   weights <- NULL
   species <- trees[[1]]$tip.label
 
-
   characters <- 0 # number of characters
   weights <- NULL
 
@@ -42,7 +41,6 @@ tree2phyDat <- function(trees) {
     j <- j + nrow(X[[i]])
   }
   data <- as.data.frame(data)
-
   # compute contrast matrix
   contrast <- matrix(data = c(1, 0, 0, 1, 1, 1), 3, 2,
     dimnames = list(NULL, c("0", "1")), byrow = TRUE)
@@ -124,7 +122,7 @@ dist.superTree <- function(tree, trace = 0, fun, start = NULL,
 #'
 #' @param tree an object of class \code{multiPhylo}
 #' @param method An argument defining which algorithm is used to optimize the
-#' tree.  Possible are "MRP", "NNI", and "SPR".
+#' tree.  Possible are "MRP", "RF", and "SPR".
 #' @param rooted should the resulting supertrees be rooted.
 #' @param trace defines how much information is printed during optimization.
 #' @param start a starting tree can be supplied.
@@ -147,7 +145,8 @@ dist.superTree <- function(tree, trace = 0, fun, start = NULL,
 #'
 #' data(Laurasiatherian)
 #' set.seed(1)
-#' bs <- bootstrap.phyDat(Laurasiatherian, FUN = function(x)upgma(dist.hamming(x)), bs=50)
+#' bs <- bootstrap.phyDat(Laurasiatherian,
+#'                        FUN = function(x) upgma(dist.hamming(x)), bs=50)
 #'
 #' mrp_st <- superTree(bs)
 #' plot(mrp_st)

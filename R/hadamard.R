@@ -121,11 +121,12 @@ ldfactorial <- function(x) {
 #' dat <- as.character(yeast)
 #' dat4 <- phyDat(dat, type="USER", levels=c("a","c", "g", "t"), ambiguity=NULL)
 #' fit4 <- h4st(dat4)
-#'
+#' old.par <- par(no.readonly = TRUE)
 #' par(mfrow=c(3,1))
 #' lento(fit4[[1]], main="Transversion")
 #' lento(fit4[[2]], main="Transition 1")
 #' lento(fit4[[3]], main="Transition 2")
+#' par(old.par)
 #' }
 #'
 #' @rdname hadamard
@@ -145,7 +146,7 @@ hadamard <- function(x) {
 fhm <- function(v) {
   n <- length(v)
   n <- log2(n)
-  res <- .C("C_fhm", v = as.double(v), n = as.integer(n))$v #
+  res <- .Call("_phangorn_fhm_new", v = as.double(v), n = as.integer(n))
   res
 }
 

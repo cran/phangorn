@@ -3,13 +3,17 @@
 \name{discrete.gamma}
 \alias{discrete.gamma}
 \alias{plot_gamma_plus_inv}
+\alias{plotRates}
 \title{Discrete Gamma function}
 \usage{
 discrete.gamma(alpha, k)
 
 plot_gamma_plus_inv(shape = 1, inv = 0, k = 4, discrete = TRUE,
-  cdf = TRUE, append = FALSE, xlab = "x", ylab = ifelse(cdf,
-  "F(x)", "f(x)"), xlim = NULL, verticals = FALSE, ...)
+  cdf = TRUE, append = FALSE, xlab = "x", ylab = ifelse(cdf, "F(x)",
+  "f(x)"), xlim = NULL, verticals = FALSE, edge.length = NULL,
+  site.rate = "gamma", ...)
+
+plotRates(obj, cdf.color = "blue", main = "cdf", ...)
 }
 \arguments{
 \item{alpha}{Shape parameter of the gamma distribution.}
@@ -36,7 +40,19 @@ or density / probability function.}
 
 \item{verticals}{ogical; if TRUE, draw vertical lines at steps.}
 
+\item{edge.length}{Total edge length (sum of all edges in a tree).}
+
+\item{site.rate}{Indicates what type of gamma distribution to use. Options
+are "gamma" (Yang 1994) and "gamma_quadrature" using Laguerre quadrature
+approach of Felsenstein (2001)}
+
 \item{\dots}{Further arguments passed to or from other methods.}
+
+\item{obj}{an object of class pml}
+
+\item{cdf.color}{color of the cdf.}
+
+\item{main}{a main title for the plot.}
 }
 \value{
 \code{discrete.gamma} returns a matrix.
@@ -55,15 +71,14 @@ they expect than \code{pml}.
 \examples{
 discrete.gamma(1, 4)
 
+old.par <- par(no.readonly = TRUE)
 par(mfrow = c(2,1))
-
 plot_gamma_plus_inv(shape=2, discrete = FALSE, cdf=FALSE)
 plot_gamma_plus_inv(shape=2, append = TRUE, cdf=FALSE)
 
 plot_gamma_plus_inv(shape=2, discrete = FALSE)
 plot_gamma_plus_inv(shape=2, append = TRUE)
-
-par(mfrow = c(1,1))
+par(old.par)
 
 }
 \seealso{

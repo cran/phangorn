@@ -1,7 +1,7 @@
 /*
  * phangorn.c
  *
- * (c) 2008-2019  Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2008-2020  Klaus Schliep (klaus.schliep@gmail.com)
  *
  *
  * This code may be distributed under the GNU GPL
@@ -16,31 +16,43 @@
 
 
 
-void countCycle(int *M, int *l, int *m, int *res){
-    int j, i, tmp;
-    res[0]=0L;
-    for (i=0; i<*l; i++) {
-        tmp = 0;
-        if(M[i] != M[i + (*m -1) * *l])tmp++;
-        for (j=1; j<*m; j++) {
-            if(M[i + (j-1)* *l] != M[i + j * *l])tmp++;
+void addOne(int *edge, int *tip, int *ind, int *l, int *m, int *result){
+    int add = 1L, j=0L, p, k, i, l2=*l+2L, ei;
+    p = edge[*ind-1L];
+    k = edge[*ind-1L + *l];
+    for(i=0; i<*l; i++){
+        ei = edge[i];
+        if( (add==1L) && (ei==p) ){
+            result[j] = *m;
+            result[j+l2] = k;
+            j++;
+            result[j] = *m;
+            result[j+l2] = *tip;
+            j++;
+            add=0L;
         }
-        if(tmp>2L)res[0]+=tmp;
+        if(i== (*ind-1L)) result[j+l2] = *m;
+        else result[j+l2] = edge[i+ *l];
+        result[j] = edge[i];
+        j++;
     }
 }
 
 
-void countCycle2(int *M, int *l, int *m, int *res){
-    int j, i, tmp;
-    for (i=0; i<*l; i++) {
-        tmp = 0L;
-        if(M[i] != M[i + (*m -1) * *l])tmp=1L;
-        for (j=1; j<*m; j++) {
-            if(M[i + (j-1L)* *l] != M[i + j * *l])tmp++;
-        }
-        res[i]=tmp;
+SEXP AddOnes(SEXP edge, SEXP tip, SEXP ind, SEXP l, SEXP m){
+    R_len_t n = length(ind);
+    SEXP result, res;
+    PROTECT(res = allocVector(VECSXP, n));
+    for(int i=0; i<n; i++){
+        PROTECT(result = allocMatrix(INTSXP, INTEGER(l)[0]+2L, 2L));
+        addOne(INTEGER(edge), INTEGER(tip), &INTEGER(ind)[i], INTEGER(l), INTEGER(m), INTEGER(result));
+        SET_VECTOR_ELT(res, i, result);
+        UNPROTECT(1);
     }
+    UNPROTECT(1);
+    return(res);
 }
+
 
 
 // C++
@@ -251,12 +263,6 @@ SEXP getd2PM2(SEXP eig, SEXP nc, SEXP el, SEXP w){
 
 
 /*
-static R_INLINE void emult(double *x, double *y, int n){
-    for(int i=0; i<n; i++) x[i]*=y[i];
-}
-
-
-
 void tabulate(int *x, int *n, int *nbin, int *ans){
     int i, tmp;
     for (i=0; i < *nbin; i++) ans[i]=0L;
@@ -266,50 +272,6 @@ void tabulate(int *x, int *n, int *nbin, int *ans){
         ans[tmp-1L] ++;
     }
 }
-
-
-void C_reorder(int *from, int *to, int *n, int *sumNode,  int *neworder, int *root){
-    int i, j, sum=0, k, Nnode, ind, *ord, *csum, *tips, *stack, z=0;  // l,
-    double *parent;
-    int m=sumNode[0];
-    parent = (double *) R_alloc((*n), sizeof(double));
-    tips = (int *) R_alloc(m, sizeof(int));
-    ord = (int *) R_alloc((*n), sizeof(int));
-    csum = (int *) R_alloc( (m+1), sizeof(int));
-    stack = (int *) R_alloc(m, sizeof(int));
-    for(j=0;j<(*n);j++) parent[j] = (double)from[j];
-
-    for(j=0;j<(*n);j++) ord[j] = j;
-    for(j=0;j<m;j++) tips[j] = 0;
-
-    rsort_with_index(parent, ord, *n);
-    tabulate(from, n, sumNode, tips);
-    csum[0]=0;
-    for(i=0;i<(*sumNode);i++){
-        sum+=tips[i];
-        csum[i+1] = sum;
-    }
-    k = (*n)-1;
-    Nnode = 0;
-    stack[0] = *root;
-
-    while(z > -1){
-        j=stack[z];
-        if(tips[j]>0){
-            for(i=csum[j];i<csum[j+1];i++){
-                ind = ord[i];
-                neworder[k] = ind + 1;
-                stack[z] = to[ind]-1;
-                k -=1;
-                z++;
-            }
-            Nnode += 1;
-            }
-        z--;
-    }
-    root[0]=Nnode;
-}
-
 */
 
 

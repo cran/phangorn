@@ -207,12 +207,13 @@ UNJ <- function(x){
   w <- rep(1, l)
   while (l > 2) {
     r <- rowSums(d) / (l - 2)
-    i <- 0
-    j <- 0
-    tmp <- .C("out", as.double(d), as.double(r), as.integer(l), as.integer(i),
-              as.integer(j))
-    e2 <- tmp[[5]]
-    e1 <- tmp[[4]]
+#    i <- 0
+#    j <- 0
+    tmp <- out_cpp(d, r, l)
+#    tmp <- .C("out", as.double(d), as.double(r), as.integer(l), as.integer(i),
+#              as.integer(j))
+    e2 <- tmp[2]
+    e1 <- tmp[1]
     l1 <- d[e1, e2] / 2 + sum( (d[e1, -c(e1, e2)] - d[e2, -c(e1, e2)]) *
                                 w[-c(e1, e2)]) / (2 * (n - w[e1] - w[e2]))
     l2 <- d[e1, e2] / 2 + sum( (d[e2, -c(e1, e2)] - d[e1, -c(e1, e2)]) *
@@ -237,77 +238,6 @@ UNJ <- function(x){
     edge.length = edge.length, tip.label = labels, Nnode = m)
   class(result) <- "phylo"
   reorder(result, "postorder")
-}
-
-
-PNJ <- function(data)
-{
-  q <- l <- r <- length(data)
-  weight <- attr(data, "weight")
-
-  height <- NULL
-  parentNodes <- NULL
-  childNodes <- NULL
-  nam <- names(data)
-  tip.label <- nam
-  edge <- 1:q
-
-  z <- 0
-  D <- matrix(0, q, q)
-
-  for (i in 1:(l - 1)) {
-    for (j in (i + 1):l) {
-      w <- (data[[i]] * data[[j]]) %*% c(1, 1, 1, 1)
-      D[i, j] <- sum(weight[w == 0])
-    }
-  }
-
-  while (l > 1) {
-    l <- l - 1
-    z <- z + 1
-    d <- D + t(D)
-    if (l > 1) r <- rowSums(d) / (l - 1)
-    if (l == 1) r <- rowSums(d)
-    M <- d - outer(r, r, "+")
-    diag(M) <- Inf
-
-    e <- which.min(M)
-    e0 <- e %% length(r)
-    e1 <- ifelse(e0 == 0, length(r), e0)
-    e2 <- ifelse(e0 == 0, e %/% length(r), e %/% length(r) + 1)
-
-    ind <- c(e1, e2)
-    len <- d[e] / 2
-    nam <- c(nam[-ind], as.character(-l))
-
-    parentNodes <- c(parentNodes, -l, -l)
-    childNodes <- c(childNodes, edge[e1], edge[e2])
-
-    height <- c(height, len, len)
-    edge <- c(edge[-ind], -l)
-    w <- (data[[e1]] * data[[e2]]) %*% c(1, 1, 1, 1)
-    w <- which(w == 0)
-    newDat <- data[[e1]] * data[[e2]]
-    newDat[w, ] <- data[[e1]][w, ] + data[[e2]][w, ]
-    data <- data[-c(e1, e2)]
-    data[[l]] <- newDat
-    if (l > 1) {
-      D <- as.matrix(D[, -ind])
-      D <- D[-ind, ]
-      dv <- numeric(l - 1)
-      for (i in 1:(l - 1)) {
-        w <- (data[[i]] * data[[l]]) %*% c(1, 1, 1, 1)
-        dv[i] <- sum(weight[w == 0])
-      }
-      D <- cbind(D, dv)
-      D <- rbind(D, 0)
-    }
-  }
-  tree <- list(edge = cbind(as.character(parentNodes),
-                            as.character(childNodes)), tip.label = tip.label)
-  class(tree) <- "phylo"
-  tree <- old2new.phylo(tree)
-  reorder(tree)
 }
 
 

@@ -3,9 +3,12 @@ title: 'Intertwining phylogenetic trees and networks: R Example Script'
 author: "Klaus Schliep, Alastair Potts, David Morrison and Guido Grimm"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 bibliography: phangorn.bib
-output: rmarkdown::html_vignette
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
 vignette: >
-   %\VignetteIndexEntry{IntertwiningTreesAndNetworks}
+   %\VignetteIndexEntry{Intertwining phylogenetic trees and networks: R Example Script}
    %\VignetteEngine{knitr::rmarkdown}
    %\usepackage[utf8]{inputenc}
 ---
@@ -266,7 +269,7 @@ all_data_boot <- read.tree(file.path(fdir, "RAxML_bootstrap.3moles"))
 There are several option plotting a co-phylogeny. In the following we use the 
 `cophylo` function of the `phytools` package. 
 
-[comment]: # ({r cophylo, fig.width=7, fig.height=7})
+
 ```
 library(phytools)
 par(mfrow=c(2,1))

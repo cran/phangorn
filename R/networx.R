@@ -42,14 +42,14 @@ allCircularSplits <- function(k, labels = NULL) {
 }
 
 
-getIndex <- function(left, right, n) {
-  if (n < max(left) | n < max(right)) stop("Error")
-  left <- as.integer(left)
-  right <- as.integer(right)
-  ll <- length(left)
-  lr <- length(right)
-  .C("giveIndex", left, right, ll, lr, as.integer(n), integer(ll * lr))[[6]] + 1
-}
+#getIndex <- function(left, right, n) {
+#  if (n < max(left) | n < max(right)) stop("Error")
+#  left <- as.integer(left)
+#  right <- as.integer(right)
+#  ll <- length(left)
+#  lr <- length(right)
+#  .C("giveIndex", left, right, ll, lr, as.integer(n), integer(ll * lr))[[6]] + 1
+#}
 
 
 splits2design <- function(obj, weight = NULL) {
@@ -69,26 +69,6 @@ splits2design <- function(obj, weight = NULL) {
   sparseMatrix(i = i, p = p, x = 1.0, dims = dims)
 }
 
-
-hC <- function(g, set) {
-  intersec <- NULL
-  allEdges <- NULL
-  fromTo <- set
-  l <- length(set)
-  sptmp <- shortest_paths(g, fromTo[l], fromTo[1],
-                          output = c("epath"))$epath[[1]]
-  sptmp <- as.vector(sptmp)
-  allEdges <- sptmp
-  for (i in 2:length(set)) {
-    sptmp <- shortest_paths(g, fromTo[i - 1], fromTo[i],
-                            output = c("epath"))$epath[[1]]
-    sptmp <- as.vector(sptmp)
-    intersec <- c(intersec, intersect(allEdges, sptmp))
-    allEdges <- c(allEdges, sptmp)
-  }
-  #    allEdges = unique(allEdges)
-  list(allEdges, unique(allEdges), intersec)
-}
 
 
 addEdge <- function(network, desc, spl) {
@@ -329,7 +309,7 @@ circNetwork <- function(x, ord = NULL) {
 #' tree1 <- rtree(20, rooted=FALSE)
 #' sp <- as.splits(rNNI(tree1, n=10))
 #' net <- as.networx(sp)
-#' plot(net, "2D")
+#' plot(net)
 #' \dontrun{
 #' # also see example in consensusNet
 #' example(consensusNet)
@@ -348,7 +328,6 @@ getOrdering <- function(x, opt=TRUE) {
   tree <- as.phylo(x, TRUE)
   tree <- reorder(tree)
   if(opt) tree <- optCycle(x, tree)
-#  tree <- as.phylo(x)
   nTips <- length(tree$tip.label)
   ord <- reorder(tree)$edge[, 2]
   ord <- ord[ord <= nTips]
@@ -412,6 +391,8 @@ as.networx.splits <- function(x, planar = FALSE, coord = c("none", "2D", "3D"),
   }
   else c.ord <- getOrdering(x)
   attr(x, "cycle") <- c.ord
+  # check for star tree
+  if(length(x)==nTips) return(as.phylo(x))
   # which splits are in circular ordering
   circSplits <- which(countCycles(x, ord = c.ord) == 2)
   if (length(circSplits) == length(x)) planar <- TRUE
@@ -473,7 +454,6 @@ as.networx.phylo <- function(x, ...) {
 
 
 
-
 #' Computes a consensusNetwork from a list of trees Computes a \code{networx}
 #' object from a collection of splits.
 #'
@@ -503,17 +483,17 @@ as.networx.phylo <- function(x, ...) {
 #' bs <- bootstrap.phyDat(Laurasiatherian, FUN = function(x)nj(dist.hamming(x)),
 #'     bs=50)
 #' cnet <- consensusNet(bs, .3)
-#' plot(cnet, "2D")
+#' plot(cnet)
 #' \dontrun{
 #' library(rgl)
 #' open3d()
-#' plot(cnet, show.tip.label=FALSE, show.nodes=TRUE)
-#' plot(cnet, type = "2D", show.edge.label=TRUE)
+#' plot(cnet, type = "3D", show.tip.label=FALSE, show.nodes=TRUE)
+#' plot(cnet, type = "equal angle", show.edge.label=TRUE)
 #'
 #' tmpfile <- normalizePath(system.file("extdata/trees/RAxML_bootstrap.woodmouse", package="phangorn"))
 #' trees <- read.tree(tmpfile)
 #' cnet_woodmouse <- consensusNet(trees, .3)
-#' plot(cnet_woodmouse, type = "2D", show.edge.label=TRUE)
+#' plot(cnet_woodmouse, type = "equal angle", show.edge.label=TRUE)
 #' }
 #'
 #' @export consensusNet
@@ -719,6 +699,15 @@ addConfidences.phylo <- function(x, y, ...) {
 }
 
 
+#' @export
+addConfidences.multiPhylo <- function(x, y, ...) {
+  x <- .uncompressTipLabel(x)
+  x <- unclass(x)
+  x <- lapply(x, addConfidences, y)
+  class(x) <- "multiPhylo"
+  x
+}
+
 #' @rdname addConfidences
 #' @export
 presenceAbsence <- function(x, y) {
@@ -785,8 +774,8 @@ spl2angle <- function(x) {
 coords.equal.angle <- function(obj) {
   if (is.null(attr(obj, "order")) || (attr(obj, "order") == "postorder"))
     obj <- reorder.networx(obj)
-
   spl <- obj$splits
+  spl <- SHORTwise(spl, length(obj$tip.label))
   l <- length(obj$edge.length)
 #  ind1 <- which(!duplicated(obj$splitIndex))
   n <- max(obj$edge)
@@ -969,7 +958,7 @@ edgeLabels <- function(xx, yy, zz = NULL, edge) {
 #' tree1 <- rtree(20, rooted=FALSE)
 #' sp <- as.splits(rNNI(tree1, n=10))
 #' net <- as.networx(sp)
-#' plot(net, "2D")
+#' plot(net)
 #' \dontrun{
 #' # also see example in consensusNet
 #' example(consensusNet)
@@ -977,7 +966,7 @@ edgeLabels <- function(xx, yy, zz = NULL, edge) {
 #' @importFrom igraph graph_from_adjacency_matrix vcount topo_sort layout_nicely
 #' @method plot networx
 #' @export
-plot.networx <- function(x, type = "3D", use.edge.length = TRUE,
+plot.networx <- function(x, type = "equal angle", use.edge.length = TRUE,
                          show.tip.label = TRUE, show.edge.label = FALSE,
                          edge.label = NULL, show.node.label = FALSE,
                          node.label = NULL, show.nodes = FALSE,
@@ -988,7 +977,7 @@ plot.networx <- function(x, type = "3D", use.edge.length = TRUE,
                          cex.edge.label = cex, col.node.label = tip.color,
                          col.edge.label = tip.color, font.node.label = font,
                          font.edge.label = font, ...) {
-  type <- match.arg(type, c("3D", "2D", "equal angle"))
+  type <- match.arg(type, c("equal angle", "3D", "2D"))
   if (use.edge.length == FALSE) x$edge.length[] <- 1
   nTips <- length(x$tip.label)
   conf <- attr(x$splits, "confidences")

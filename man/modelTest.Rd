@@ -5,8 +5,8 @@
 \alias{AICc}
 \title{ModelTest}
 \usage{
-modelTest(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
-  "SYM", "GTR"), G = TRUE, I = TRUE, FREQ = FALSE, k = 4,
+modelTest(object, tree = NULL, model = c("JC", "F81", "K80", "HKY", "SYM",
+  "GTR"), G = TRUE, I = TRUE, FREQ = FALSE, k = 4,
   control = pml.control(epsilon = 1e-08, maxit = 10, trace = 1),
   multicore = FALSE, mc.cores = NULL)
 }
@@ -87,7 +87,8 @@ selection of best-fit models of protein evolution. . \emph{Bioinformatics}
 \bold{27}: 1164-1165
 }
 \seealso{
-\code{\link{pml}}, \code{\link{anova}}, \code{\link[stats]{AIC}}
+\code{\link{pml}}, \code{\link{anova}}, \code{\link[stats]{AIC}},
+\code{\link{codonTest}}
 }
 \author{
 Klaus Schliep \email{klaus.schliep@gmail.com}

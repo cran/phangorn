@@ -91,21 +91,7 @@ oneWise <- function(x, nTips = NULL) {
 }
 
 
-zeroWise <- function(x, nTips = NULL) {
-  if (is.null(nTips)) nTips <- length(x[[1L]])
-  v <- 1:nTips
-  for (i in seq_along(x)) {
-    y <- x[[i]]
-    if (y[1] == 1)
-      y <- v[-y]
-    x[[i]] <- y
-  }
-  x
-}
-
-
 ## @aliases treedist RF.dist wRF.dist KF.dist path.dist sprdist SPR.dist
-
 #' Distances between trees
 #'
 #' \code{treedist} computes different tree distance methods and \code{RF.dist}
@@ -306,6 +292,8 @@ sprdist <- function(tree1, tree2) {
   # OBS: SPR distance works w/ incompatible splits only, but it needs common
   # cherries (to replace by single leaf)
   spr <- .Call("C_sprdist", bp1, bp2, lt1)
+  tmp <- .Call("C_sprdist", bp2, bp1, lt1)[1]
+  spr[1] <- min(spr[1], tmp)
   names(spr) <- c("spr", "spr_extra", "rf", "hdist")
   spr
 }
@@ -334,7 +322,8 @@ SPR1 <- function(trees) {
   for (i in 1:(l - 1)) {
     bp <- BP[[i]]
     for (j in (i + 1):l) {
-      SPR[k] <-  .Call("C_sprdist", bp, BP[[j]], nTips)[1]
+      SPR[k] <-  min( .Call("C_sprdist", bp, BP[[j]], nTips)[1],
+                      .Call("C_sprdist", BP[[j]], bp, nTips)[1])
       k <- k + 1
     }
   }
@@ -371,7 +360,9 @@ SPR2 <- function(tree, trees) {
   l <- length(trees)
   SPR <- numeric(l)
   for (i in 1:l) {
-    SPR[i] <- .Call("C_sprdist", bp, fun(trees[[i]], nTips), nTips)[1]
+    bpi <- fun(trees[[i]], nTips)
+    SPR[i] <- min(.Call("C_sprdist", bp, bpi, nTips)[1],
+                  .Call("C_sprdist", bpi, bp, nTips)[1])
   }
   if (!is.null(names(trees))) names(SPR) <- names(trees)
   return(SPR)
@@ -414,14 +405,6 @@ wRF0 <- function(tree1, tree2, normalize = FALSE, check.labels = TRUE,
   if (!is.binary(tree1) | !is.binary(tree2))
     message("Trees are not binary!")
   if (check.labels) tree2 <- checkLabels(tree2, tree1$tip.label)
-#  if (check.labels) {
-#    ind <- match(tree1$tip.label, tree2$tip.label)
-#    if (any(is.na(ind)) | length(tree1$tip.label) != length(tree2$tip.label))
-#      stop("trees have different labels")
-#    tree2$tip.label <- tree2$tip.label[ind]
-#    ind2 <- match(seq_along(ind), tree2$edge[, 2])
-#    tree2$edge[ind2, 2] <- order(ind)
-#  }
   if (has.singles(tree1)) tree1 <- collapse.singles(tree1)
   if (has.singles(tree2)) tree2 <- collapse.singles(tree2)
   bp1 <- bip(tree1)
@@ -598,9 +581,9 @@ wRF1 <- function(trees, normalize = FALSE, check.labels = TRUE,
 mRF2 <- function(tree, trees, normalize = FALSE, check.labels = TRUE,
                  rooted = FALSE) {
   if (!inherits(trees, "multiPhylo"))
-    stop("trees should be an object of class \"multiPhylo\"")
+    stop("Argument trees should be an object of class \"multiPhylo\"")
   if (!inherits(tree, "phylo"))
-    stop("trees should be an object of class \"phylo\"")
+    stop("Argument tree should be an object of class \"phylo\"")
   trees <- .compressTipLabel(trees)
   tipLabel <- attr(trees, "TipLabel")
   if (check.labels) tree <- checkLabels(tree, tipLabel)
@@ -656,7 +639,7 @@ mRF2 <- function(tree, trees, normalize = FALSE, check.labels = TRUE,
 
 mRF <- function(trees, normalize = FALSE, rooted = FALSE) {
   if (!inherits(trees, "multiPhylo"))
-    stop("trees should be an object of class \"multiPhylo\"")
+    stop("Argument trees should be an object of class \"multiPhylo\"")
   trees <- .compressTipLabel(trees)
   tipLabel <- attr(trees, "TipLabel")
   nTips <- length(tipLabel)
@@ -664,7 +647,7 @@ mRF <- function(trees, normalize = FALSE, rooted = FALSE) {
   RF <- numeric( (l * (l - 1)) / 2)
 
   if (rooted & any(!is.rooted(trees))) {
-    warning("some trees were rooted, unrooted all")
+    warning("Some trees were rooted, unrooted all")
     rooted <- FALSE
   }
   if (!rooted) {
@@ -741,15 +724,6 @@ RF0 <- function(tree1, tree2 = NULL, normalize = FALSE, check.labels = TRUE,
     }
   }
   if (check.labels) tree2 <- checkLabels(tree2, tree1$tip.label)
-#  if (check.labels) {
-#    ind <- match(tree1$tip.label, tree2$tip.label)
-#    if (any(is.na(ind)) | length(tree1$tip.label) !=
-#      length(tree2$tip.label))
-#      stop("trees have different labels")
-#    tree2$tip.label <- tree2$tip.label[ind]
-#    ind2 <- match(seq_along(ind), tree2$edge[, 2])
-#    tree2$edge[ind2, 2] <- order(ind)
-#  }
   if (!is.binary(tree1) | !is.binary(tree2)) message("Trees are not binary!")
   bp1 <- bipart(tree1)
   bp2 <- bipart(tree2)
@@ -769,13 +743,13 @@ RF0 <- function(tree1, tree2 = NULL, normalize = FALSE, check.labels = TRUE,
 #' @export
 RF.dist <- function(tree1, tree2 = NULL, normalize = FALSE, check.labels = TRUE,
                     rooted = FALSE) {
-  if (class(tree1) == "phylo" && class(tree2) == "phylo")
+  if (inherits(tree1, "phylo") && inherits(tree2, "phylo"))
     return(RF0(tree1, tree2, normalize, check.labels, rooted))
-  if (class(tree1) == "multiPhylo" && is.null(tree2))
+  if (inherits(tree1, "multiPhylo") && is.null(tree2))
     return(mRF(tree1, normalize, rooted))
-  if (class(tree1) == "phylo" && class(tree2) == "multiPhylo")
+  if (inherits(tree1, "phylo") && inherits(tree2, "multiPhylo"))
     return(mRF2(tree1, tree2, normalize, check.labels, rooted))
-  if (class(tree2) == "phylo" && class(tree1) == "multiPhylo")
+  if (inherits(tree2, "phylo") && inherits(tree1, "multiPhylo"))
     return(mRF2(tree2, tree1, normalize, check.labels, rooted))
   else return(NULL)
 }
@@ -785,13 +759,13 @@ RF.dist <- function(tree1, tree2 = NULL, normalize = FALSE, check.labels = TRUE,
 #' @export
 wRF.dist <- function(tree1, tree2 = NULL, normalize = FALSE,
                      check.labels = TRUE, rooted = FALSE) {
-  if (class(tree1) == "phylo" && class(tree2) == "phylo")
+  if (inherits(tree1, "phylo") && inherits(tree2, "phylo"))
     return(wRF0(tree1, tree2, normalize, check.labels, rooted))
-  if (class(tree1) == "multiPhylo" && is.null(tree2))
+  if (inherits(tree1, "multiPhylo") && is.null(tree2))
     return(wRF1(tree1, normalize, check.labels, rooted))
-  if (class(tree1) == "phylo" && class(tree2) == "multiPhylo")
+  if (inherits(tree1, "phylo") && inherits(tree2, "multiPhylo"))
     return(wRF2(tree1, tree2, normalize, check.labels, rooted))
-  if (class(tree2) == "phylo" && class(tree1) == "multiPhylo")
+  if (inherits(tree2, "phylo") && inherits(tree1, "multiPhylo"))
     return(wRF2(tree2, tree1, normalize, check.labels, rooted))
   else return(NULL)
 }

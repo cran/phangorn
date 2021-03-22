@@ -99,7 +99,7 @@ add_tiplabels <- function(xy, tip.label, direction, adj, font, srt = 0, cex = 1,
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
 #' @seealso \code{\link{plot.phylo}}, \code{\link{plot.networx}}, \code{\link{jitter}}
 #' @references densiTree is inspired from the great
-#' \href{https://www.cs.auckland.ac.nz/~remco/DensiTree}{DensiTree} program of Remco
+#' \href{https://www.cs.auckland.ac.nz/~remco/DensiTree/}{DensiTree} program of Remco
 #' Bouckaert.
 #'
 #' Remco R. Bouckaert (2010) DensiTree: making sense of sets of phylogenetic
@@ -174,22 +174,30 @@ densiTree <- function(x, type = "cladogram", alpha = 1 / length(x),
   sw <- strwidth(consensus$tip.label[tl], cex = cex) * 1.1
 
   if (direction == "rightwards") {
-    plot.window(xlim = c(0, 1.0 + sw), ylim = c(0, nTip + 1))
+#    plot.window(xlim = c(0, 1.0 + sw), ylim = c(0, nTip + 1))
+    plot.default(0, type = "n", xlim = c(0, 1.0 + sw), ylim = c(0, nTip + 1),
+                 xlab = "", ylab = "", axes = FALSE, ...)
     if (scale.bar) axis(side = 1, at = seq(0, 1.0, length.out = length(label)),
                         labels = label)
   }
   if (direction == "leftwards") {
-    plot.window(xlim = c(0 - sw, 1.0), ylim = c(0, nTip + 1))
+#    plot.window(xlim = c(0 - sw, 1.0), ylim = c(0, nTip + 1))
+    plot.default(0, type = "n", xlim = c(0 - sw, 1.0), ylim = c(0, nTip + 1),
+                 xlab = "", ylab = "", axes = FALSE, ...)
     if (scale.bar) axis(side = 1, at = seq(0, 1.0, length.out = length(label)),
                         labels = rev(label))
   }
   if (direction == "downwards") {
-    plot.window(xlim = c(0, nTip + 1), ylim = c(0 - sw, 1.0))
+#    plot.window(xlim = c(0, nTip + 1), ylim = c(0 - sw, 1.0))
+    plot.default(0, type = "n", xlim = c(0, nTip + 1), ylim = c(0 - sw, 1.0),
+                 xlab = "", ylab = "", axes = FALSE, ...)
     if (scale.bar) axis(side = 2, at = seq(0, 1.0, length.out = length(label)),
                         labels = rev(label))
   }
   if (direction == "upwards") {
-    plot.window(xlim = c(0, nTip + 1), ylim = c(0, 1.0 + sw))
+#    plot.window(xlim = c(0, nTip + 1), ylim = c(0, 1.0 + sw))
+    plot.default(0, type = "n", xlim = c(0, nTip + 1), ylim = c(0, 1.0 + sw),
+                 xlab = "", ylab = "", axes = FALSE, ...)
     if (scale.bar) axis(side = 2, at = seq(0, 1.0, length.out = length(label)),
                         labels = label)
   }

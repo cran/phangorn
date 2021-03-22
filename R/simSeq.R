@@ -1,35 +1,52 @@
 #' Simulate sequences.
 #'
-#' Simulate sequences for a given evolutionary tree.
+#' Simulate sequences from a given evolutionary tree.
 #'
-#' \code{simSeq} is now a generic function to simulate sequence alignments to
-#' along a phylogeny. It
-#' is quite flexible and allows to generate DNA, RNA, amino acids, codon  or
-#' binary sequences.  It is possible to give a \code{pml} object as input simSeq
-#' return a \code{phyDat} from these model.  There is also a more low level
+#' \code{simSeq} is a generic function to simulate sequence alignments
+#' along a phylogeny. It is quite flexible and can generate DNA, RNA,
+#' amino acids, codon, morphological or binary sequences.
+#' simSeq can take as input a phylogenetic tree of class \code{phylo},
+#' or a \code{pml} object; it will return an object of class \code{phyDat}.
+#' There is also a more low level
 #' version, which lacks rate variation, but one can combine different
-#' alignments having their own rate (see example). The rate parameter acts like
+#' alignments with their own rates (see example). The rate parameter acts like
 #' a scaler for the edge lengths.
 #'
-#' For codon models \code{type="CODON"} two additional arguments \code{dnds}
+#' For codon models \code{type="CODON"}, two additional arguments \code{dnds}
 #' for the dN/dS ratio and \code{tstv} for the transition transversion ratio
 #' can be supplied.
 #'
+#' \strong{Defaults:}
+#'
+#' If \code{x} is a tree of class \code{phylo}, then sequences will be generated
+#' with the default Jukes-Cantor DNA model (\code{"JC"}).
+#'
+#' If \code{bf} is not specified, then all states will be treated as equally
+#' probable.
+#'
+#' If \code{Q} is not specified, then a uniform rate matrix will be employed.
+#'
+#'
 #' @param x a phylogenetic tree \code{tree}, i.e. an object of class
 #' \code{phylo} or and object of class \code{pml}.
-#' @param l length of the sequence to simulate.
-#' @param Q the rate matrix.
-#' @param bf base frequencies.
-#' @param rootseq a vector of length l containing the root sequence, other root
-#' sequence is randomly generated.
+#' @param l The length of the sequence to simulate.
+#' @param Q The rate matrix.
+#' @param bf Base frequencies.
+#' @param rootseq A vector of length \code{l} containing the root sequence.
+#' If not provided, the root sequence is randomly generated.
 #' @param type Type of sequences ("DNA", "AA", "CODON" or "USER").
-#' @param model Amino acid models: e.g. "WAG", "JTT", "Dayhoff" or "LG"
-#' @param levels \code{levels} takes a character vector of the different bases,
-#' default is for nucleotide sequences, only used when type = "USER".
-#' @param rate mutation rate or scaler for the edge length, a numerical value
-#' greater than zero.
-#' @param ancestral Return ancestral sequences?
+#' @param model Amino acid model of evolution to employ, for example "WAG",
+#' "JTT", "Dayhoff" or "LG". For a full list of supported models, type
+#' \code{phangorn:::.aamodels}. Ignored if type is not equal to "AA".
+#' @param levels A character vector of the different character tokens.
+#' Ignored unless type = "USER".
+#' @param rate A numerical value greater than zero giving the mutation rate
+#' or scaler for edge lengths.
+#' @param ancestral Logical specifying whether to return ancestral sequences.
+#' @param code	The ncbi genetic code number for translation (see details). By
+#' default the standard genetic code is used.
 #' @param \dots Further arguments passed to or from other methods.
+
 #' @return \code{simSeq} returns an object of class phyDat.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
 #' @seealso \code{\link{phyDat}}, \code{\link{pml}}, \code{\link{SOWH.test}}
@@ -75,10 +92,8 @@ simSeq <- function(x, ...)
 #' @export
 simSeq.phylo <- function(x, l = 1000, Q = NULL, bf = NULL, rootseq = NULL,
                          type = "DNA", model = NULL, levels = NULL, rate = 1,
-                         ancestral = FALSE, ...) {
+                         ancestral = FALSE, code=1, ...) {
   if (!is.null(model)) {
-    #    model <- match.arg(model, c("USER", "WAG", "JTT", "LG", "Dayhoff",
-    #     "cpREV", "mtmam", "mtArt", "MtZoa", "mtREV24"))
     model <- match.arg(model, .aamodels)
     getModelAA(model, bf = is.null(bf), Q = is.null(Q))
     type <- "AA"
@@ -92,20 +107,24 @@ simSeq.phylo <- function(x, l = 1000, Q = NULL, bf = NULL, rootseq = NULL,
   }
 
   pt <- match.arg(type, c("DNA", "AA", "USER", "CODON"))
-  if (pt == "DNA")
+  if (pt == "DNA"){
     levels <- c("a", "c", "g", "t")
+    if (!is.null(extras) ) {
+      if (!is.na(existing[2]) & is.null(Q))
+        tstv <- eval(extras[[existing[2]]], parent.frame())
+        Q <- c(1, tstv, 1, 1, tstv, 1)
+    }
+  }
   if (pt == "AA")
-    levels <- c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i",
-      "l", "k", "m", "f", "p", "s", "t", "w", "y", "v")
+    levels <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I", "L", "K",
+                "M", "F", "P", "S", "T", "W", "Y", "V")
+#    c("a", "r", "n", "d", "c", "q", "e", "g", "h", "i",
+#      "l", "k", "m", "f", "p", "s", "t", "w", "y", "v")
   if (pt == "CODON") {
-    levels <- c("aaa", "aac", "aag", "aat", "aca", "acc", "acg", "act",
-      "aga", "agc", "agg", "agt", "ata", "atc", "atg", "att",
-      "caa", "cac", "cag", "cat", "cca", "ccc", "ccg", "cct", "cga",
-      "cgc", "cgg", "cgt", "cta", "ctc", "ctg", "ctt", "gaa", "gac",
-      "gag", "gat", "gca", "gcc", "gcg", "gct", "gga", "ggc", "ggg",
-      "ggt", "gta", "gtc", "gtg", "gtt", "tac", "tat",
-      "tca", "tcc", "tcg", "tct", "tgc", "tgg", "tgt", "tta",
-      "ttc", "ttg", "ttt")
+    .syn <- synonymous_subs(code=code)
+    .sub <- tstv_subs(code=code)
+    tmp <- .CODON[, as.character(code)]
+    levels <- rownames(.CODON)[tmp != "*"]
     dnds <- tstv <- 1
     if (!is.null(extras)) {
       if (!is.na(existing[1]))
@@ -118,8 +137,6 @@ simSeq.phylo <- function(x, l = 1000, Q = NULL, bf = NULL, rootseq = NULL,
     if (is.null(levels)) stop("levels have to be supplied if type is USER")
 
   lbf <- length(levels)
-
-
   if (is.null(bf)) bf <- rep(1 / lbf, lbf)
   if (is.null(Q)) {
     if (type == "CODON") Q <- CodonQ(subs = .sub, syn = .syn, tstv = tstv,
@@ -135,11 +152,11 @@ simSeq.phylo <- function(x, l = 1000, Q = NULL, bf = NULL, rootseq = NULL,
   x <- reorder(x)
   edge <- x$edge
   nNodes <- max(edge)
-  res <- matrix(NA, l, nNodes)
+  res <- matrix(NA, nNodes, l)
   parent <- as.integer(edge[, 1])
   child <- as.integer(edge[, 2])
   root <- as.integer(parent[!match(parent, child, 0)][1])
-  res[, root] <- rootseq
+  res[root, ] <- rootseq
   tl <- x$edge.length
   for (i in seq_along(tl)) {
     from <- parent[i]
@@ -148,23 +165,21 @@ simSeq.phylo <- function(x, l = 1000, Q = NULL, bf = NULL, rootseq = NULL,
     # avoid numerical problems for larger P and small t
     if (any(P < 0)) P[P < 0] <- 0
     for (j in 1:m) {
-      ind <- res[, from] == levels[j]
-      res[ind, to] <- sample(levels, sum(ind), replace = TRUE, prob = P[, j])
+      ind <- res[from, ] == levels[j]
+      res[to, ind] <- sample(levels, sum(ind), replace = TRUE, prob = P[, j])
     }
   }
   k <- length(x$tip.label)
   label <- c(x$tip.label, as.character( (k + 1):nNodes))
-  colnames(res) <- label
-  if (!ancestral) res <- res[, x$tip.label, drop = FALSE]
-  if (pt == "DNA") return(phyDat.DNA(as.data.frame(res,
-      stringsAsFactors = FALSE), return.index = TRUE))
-  if (pt == "AA") return(phyDat.AA(as.data.frame(res, stringsAsFactors = FALSE),
-      return.index = TRUE))
-  if (pt == "USER") return(phyDat.default(as.data.frame(res,
-      stringsAsFactors = FALSE), levels = levels, return.index = TRUE))
+  rownames(res) <- label
+  if (!ancestral) res <- res[x$tip.label, , drop = FALSE]
+  if (pt == "DNA") return(phyDat.DNA(res, return.index = TRUE))
+  if (pt == "AA") return(phyDat.AA(res, return.index = TRUE))
+  if (pt == "USER") return(phyDat.default(res, levels = levels,
+                                          return.index = TRUE))
   if (pt == "CODON") {
-    res <- apply(res, 2, function(x) unlist(strsplit(x, "")))
-    return(phyDat.codon(as.data.frame(res, stringsAsFactors = FALSE)))
+    res <- t(apply(res, 1, function(x) unlist(strsplit(x, ""))))
+    return(phyDat.codon(res))
   }
 }
 

@@ -9,11 +9,11 @@
 bootstrap.pml(x, bs = 100, trees = TRUE, multicore = FALSE,
   mc.cores = NULL, ...)
 
-bootstrap.phyDat(x, FUN, bs = 100, multicore = FALSE,
-  mc.cores = NULL, jumble = TRUE, ...)
+bootstrap.phyDat(x, FUN, bs = 100, multicore = FALSE, mc.cores = NULL,
+  jumble = TRUE, ...)
 
-plotBS(tree, BStrees, type = "unrooted", bs.col = "black",
-  bs.adj = NULL, p = 50, frame = "none", ...)
+plotBS(tree, BStrees, type = "unrooted", bs.col = "black", bs.adj = NULL,
+  p = 50, frame = "none", ...)
 }
 \arguments{
 \item{x}{an object of class \code{pml} or \code{phyDat}.}
@@ -63,8 +63,8 @@ if not supplied the tree with labels supplied in the \code{node.label} slot.
 \description{
 \code{bootstrap.pml} performs (non-parametric) bootstrap analysis and
 \code{bootstrap.phyDat} produces a list of bootstrapped data sets.
-\code{plotBS} plots a phylogenetic tree with the with the bootstrap values
-assigned to the (internal) edges.
+\code{plotBS} plots a phylogenetic tree with the bootstrap values assigned
+to the (internal) edges.
 }
 \details{
 It is possible that the bootstrap is performed in parallel, with help of the

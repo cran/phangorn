@@ -12,8 +12,6 @@
 \alias{acgt2ry}
 \alias{removeUndeterminedSites}
 \alias{phyDat2MultipleAlignment}
-\alias{dna2codon}
-\alias{codon2dna}
 \alias{as.phyDat}
 \alias{as.phyDat.factor}
 \alias{as.phyDat.DNAbin}
@@ -24,8 +22,6 @@
 \alias{as.data.frame.phyDat}
 \alias{as.DNAbin.phyDat}
 \alias{as.AAbin.phyDat}
-\alias{write.phyDat}
-\alias{read.phyDat}
 \alias{baseFreq}
 \alias{subset.phyDat}
 \alias{[.phyDat}
@@ -36,10 +32,6 @@
 \title{Conversion among Sequence Formats}
 \usage{
 phyDat(data, type = "DNA", levels = NULL, return.index = TRUE, ...)
-
-dna2codon(x, codonstart = 1, ambiguity = "---", ...)
-
-codon2dna(x)
 
 as.phyDat(x, ...)
 
@@ -65,19 +57,13 @@ acgt2ry(obj)
 
 \method{as.AAbin}{phyDat}(x, ...)
 
-write.phyDat(x, file, format = "phylip", colsep = "", nbcol = -1,
-  ...)
-
-read.phyDat(file, format = "phylip", type = "DNA", ...)
-
 baseFreq(obj, freq = FALSE, all = FALSE, drop.unused.levels = FALSE)
 
 \method{subset}{phyDat}(x, subset, select, site.pattern = TRUE, ...)
 
 \method{[}{phyDat}(x, i, j, ..., drop = FALSE)
 
-\method{unique}{phyDat}(x, incomparables = FALSE, identical = TRUE,
-  ...)
+\method{unique}{phyDat}(x, incomparables = FALSE, identical = TRUE, ...)
 
 removeUndeterminedSites(x, ...)
 
@@ -100,29 +86,9 @@ genlight2phyDat(x, ambiguity = NA)
 
 \item{x}{An object containing sequences.}
 
-\item{codonstart}{an integer giving where to start the translation. This
-should be 1, 2, or 3, but larger values are accepted and have for effect to
-start the translation further within the sequence.}
-
-\item{ambiguity}{character for ambiguous character and no contrast is
-provided.}
-
 \item{obj}{as object of class phyDat}
 
 \item{allLevels}{return original data.}
-
-\item{file}{A file name.}
-
-\item{format}{File format of the sequence alignment (see details).  Several
-popular formats are supported: "phylip", "interleaved", "sequential",
-"clustal", "fasta" or "nexus", or any unambiguous abbreviation of these.}
-
-\item{colsep}{a character used to separate the columns (a single space by
-default).}
-
-\item{nbcol}{a numeric specifying the number of columns per row (-1 by
-default); may be negative implying that the nucleotides are printed on a
-single line.}
 
 \item{freq}{logical, if 'TRUE', frequencies or counts are returned otherwise
 proportions}
@@ -154,6 +120,9 @@ sequences are considered duplicates if distance between sequences is zero
 \item{n}{Number of sequences.}
 
 \item{names}{Names of sequences.}
+
+\item{ambiguity}{character for ambiguous character and no contrast is
+provided.}
 }
 \value{
 The functions return an object of class \code{phyDat}.
@@ -172,13 +141,6 @@ example for specifying "USER" defined data formats in the vignette
 \code{allSitePattern} returns all possible site patterns and can be useful
 in simulation studies. For further details see the vignette
 phangorn-specials.
-
-\code{write.phyDat} calls the function write.dna or write.nexus.data and
-\code{read.phyDat} calls the function \code{read.dna}, \code{read.aa} or
-\code{read.nexus.data} see for more details over there.
-
-You may import data directly with \code{\link[ape]{read.dna}} or
-\code{\link[ape]{read.nexus.data}} and convert the data to class phyDat.
 
 The generic function \code{c} can be used to to combine sequences and
 \code{unique} to get all unique sequences or unique haplotypes.
@@ -200,6 +162,10 @@ baseFreq(Laurasiatherian, freq=TRUE)
 subset(Laurasiatherian, subset=1:5)
 # the first 5 characters
 subset(Laurasiatherian, select=1:5, site.pattern = FALSE)
+# subsetting with []
+Laurasiatherian[1:5, 1:20]
+# short for
+subset(Laurasiatherian, subset=1:5, select=1:20, site.pattern = FALSE)
 # the first 5 site patterns (often more than 5 characters)
 subset(Laurasiatherian, select=1:5, site.pattern = TRUE)
 # transform into old ape format

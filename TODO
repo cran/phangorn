@@ -1,0 +1,38 @@
+TODO 2.6
+
+removeParsimonySites order (weights als argument)
+
+
+allSitePattern zu simSeq
+
+
+
+optim.pml with formula object
+
+
+Gamma + Invariant sites reparieren
+
+
+Add codon vignette, describe CODON models and more data formats etc
+http://www.iqtree.org/doc/Substitution-Models#codon-models
+skripten codonTest
+
+
+add all references for dna, aa, codon models in bib file and vignettes
+
+
+improve website
+
+
+dist.hamming dist.ml for larger distances and faster
+
+dist.logDet include option to pairwise exclude all
+
+mast mast.fit (p_vec1 + CH1) ausserhalb der loop in mast statt mast.fit
+
+
+
+
+
+
+

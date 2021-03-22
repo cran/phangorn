@@ -39,7 +39,7 @@
 #'
 #' Sergei L. Kosakovsky Pond, Simon D. W. Frost, Spencer V. Muse (2005) HyPhy:
 #' hypothesis testing using phylogenies, \emph{Bioinformatics}, \bold{21(5)}:
-#' 676--679, https://doi.org/10.1093/bioinformatics/bti079
+#' 676--679, doi:10.1093/bioinformatics/bti079
 #'
 #' Nielsen, R., and Z. Yang. (1998) Likelihood models for detecting positively
 #' selected amino acid sites and applications to the HIV-1 envelope gene.
@@ -68,7 +68,7 @@ codonTest <- function(tree, object, model = c("M0", "M1a", "M2a"),
                       frequencies = "F3x4", opt_freq=FALSE, codonstart = 1,
                       control=pml.control(maxit = 20), ...){
   if (attr(object, "type") == "DNA")
-    object <- dna2codon(object, codonstart = codonstart)
+    object <- dna2codon(object, codonstart = codonstart, ...)
   if (is.null(tree$edge.length)) tree <- nnls.phylo(tree, dist.ml(object))
   if (!("M0" %in% model)) model <- c("M0", model)
   trace <- control$trace
@@ -155,8 +155,9 @@ glance.pmlMix <- function(x, ...) {
 print.codonTest <- function(x, ...) print(x$summary)
 
 
+#' @importFrom grDevices hcl.colors
 #' @export
-plot.codonTest <- function(x, model = "M1a", col = c(2, 5, 6), ...) {
+plot.codonTest <- function(x, model = "M1a", col = hcl.colors(3), ...) {
   dat <- t(x$posterior[[model]])
   colnames(dat) <- seq_len(ncol(dat))
   barplot(dat, col = col, space = 0, border = NA,
