@@ -78,13 +78,12 @@ optimPartGamma <- function(object, shape = 1, ...) {
 dltmp <- function(fit, i = 1, transform = transform) {
   tree <- fit$tree
   data <- getCols(fit$data, tree$tip.label)
-  if (is.null(attr(tree, "order")) || attr(tree, "order") ==
-    "cladewise")
+  if (is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise")
     tree <- reorder(tree, "postorder")
   q <- length(tree$tip.label)
   node <- tree$edge[, 1]
   edge <- tree$edge[, 2]
-  m <- length(edge) + 1  # max(edge)
+  m <- max(edge)
   dat <- vector(mode = "list", length = m)
   eig <- fit$eig
   w <- fit$w[i]
@@ -102,7 +101,6 @@ dltmp <- function(fit, i = 1, transform = transform) {
   nco <- as.integer(dim(contrast)[1])
   dat[(q + 1):m] <- .Call("LogLik2", data, P, nr, nc, node, edge, nTips,
     mNodes, contrast, nco)
-#  result <- dat[[q + 1]] %*% (bf * w)
 
   parent <- tree$edge[, 1]
   child <- tree$edge[, 2]
@@ -123,8 +121,8 @@ dltmp <- function(fit, i = 1, transform = transform) {
       datp[[child[j]]] <- (tmp2 %*% P[[j]]) * dat[[child[j]]]
     }
     else {
-      tmp2 <- (datp[[parent[j]]] / ( (contrast %*% P[[j]])[data[[child[j]]], ]))
-      dl[, j] <- (tmp2 * ( (contrast %*% dP[[j]])[data[[child[j]]], ])) %*%
+      tmp2 <- datp[[parent[j]]] / ((contrast %*% P[[j]])[data[[child[j]]], ])
+      dl[, j] <- (tmp2 * ((contrast %*% dP[[j]])[data[[child[j]]], ])) %*%
         (w * bf)
     }
   }
@@ -147,7 +145,10 @@ dl <- function(x, transform = TRUE) {
 # add control and change edge
 optimPartEdge <- function(object, ...) {
   tree <- object[[1]]$tree
-  theta <- object[[1]]$tree$edge.length
+  theta <- tree$edge.length
+  theta <- pmax(theta, 1e-8)
+  tree$edge.length <- theta
+  tmptree <- tree
   n <- length(object)
   l <- length(theta)
   nrv <- numeric(n)
@@ -158,6 +159,7 @@ optimPartEdge <- function(object, ...) {
   for (i in 1:n) weight[(cnr[i] + 1):cnr[i + 1]] <- attr(object[[i]]$data,
       "weight")
   ll0 <- 0
+  for (i in 1:n) object[[i]] <- update(object[[i]], tree = tree)
   for (i in 1:n) ll0 <- ll0 + object[[i]]$logLik
   eps <- 1
   scalep <- 1
@@ -173,8 +175,9 @@ optimPartEdge <- function(object, ...) {
       # add small ridge penalty for numerical stability
     }
     thetaNew <- log(theta) + scalep * solve(F, sc)
-    tree$edge.length <- as.numeric(exp(thetaNew))
-    for (i in 1:n) object[[i]] <- update(object[[i]], tree = tree)
+    thetaNew <- pmax(thetaNew, log(1e-8))
+    tmptree$edge.length <- as.numeric(exp(thetaNew))
+    for (i in 1:n) object[[i]] <- update(object[[i]], tree = tmptree)
     ll1 <- 0
     for (i in 1:n) ll1 <- ll1 + object[[i]]$logLik
     eps <- ll1 - ll0
@@ -184,11 +187,16 @@ optimPartEdge <- function(object, ...) {
       thetaNew <- log(theta)
       ll1 <- ll0
     }
-    else scalep <- 1
+    else {
+      scalep <- 1
+      tree <- tmptree
+    }
     theta <- exp(thetaNew)
+    theta <- pmax(theta, 1e-8)
     ll0 <- ll1
     k <- k + 1
   }
+  for (i in 1:n) object[[i]] <- update(object[[i]], tree = tree)
   object
 }
 
@@ -265,8 +273,7 @@ plot.pmlPart <- function(x, ...) {
 #' partitions, on the right the parameter which are optimized specific to each
 #' partition. The parameters available are \code{"nni", "bf", "Q", "inv",
 #' "shape", "edge", "rate"}.  Each parameters can be used only once in the
-#' formula.  \code{"rate"} and \code{"nni"} are only available for the right
-#' side of the formula.
+#' formula.  \code{"rate"} is only available for the right side of the formula.
 #'
 #' For partitions with different edge weights, but same topology, \code{pmlPen}
 #' can try to find more parsimonious models (see example).
@@ -338,7 +345,7 @@ pmlPart <- function(formula, object, control = pml.control(epsilon = 1e-8,
   PartRate <- !is.na(optPart[7])
 
   if (PartNni) PartEdge <- TRUE
-
+  if(AllNNI) AllEdge <- TRUE
   if (inherits(object, "multiphyDat")) {
     if (AllNNI || AllEdge) object <- do.call(cbind.phyDat, object@seq)
     else fits <- multiphyDat2pmlPart(object, rooted = rooted, ...)
@@ -347,7 +354,7 @@ pmlPart <- function(formula, object, control = pml.control(epsilon = 1e-8,
   if (inherits(object, "phyDat")) fits <- makePart(object, rooted = rooted, ...)
   if (inherits(object, "pmlPart")) fits <- object$fits
   if (inherits(object, "list")) fits <- object
-
+  if(AllNNI) if(Ntip(fits[[1]]$tree) <  (3 + !rooted)) AllNNI <- FALSE
 
   trace <- control$trace
   epsilon <- control$epsilon
@@ -355,6 +362,29 @@ pmlPart <- function(formula, object, control = pml.control(epsilon = 1e-8,
 
   p <- length(fits)
   #   if(length(model)<p) model = rep(model, length = p)
+
+  if (AllQ) {
+    Q <- fits[[1]]$Q
+    for (i in 1:p) fits[[i]] <- update(fits[[i]], Q = Q)
+  }
+  if (AllBf) {
+    bf <- fits[[1]]$bf
+    for (i in 1:p) fits[[i]] <- update(fits[[i]], bf = bf)
+  }
+  if (AllInv) {
+    inv <- fits[[1]]$inv
+    for (i in 1:p) fits[[i]] <- update(fits[[i]], inv = inv)
+  }
+  if (AllGamma) {
+    shape <- fits[[1]]$shape
+    for (i in 1:p) fits[[i]] <- update(fits[[i]], shape = shape)
+  }
+  if (AllEdge || AllNNI) {
+    tree <- fits[[1]]$tree
+    tree$edge.length <- pmax(tree$edge.length, 1e-6)
+    for (i in 1:p) fits[[i]] <- update(fits[[i]], tree = tree)
+  }
+
 
   m <- 1
   logLik <- 0
@@ -385,7 +415,7 @@ pmlPart <- function(formula, object, control = pml.control(epsilon = 1e-8,
 
   while (eps > epsilon & m < maxit) {
     loli <- 0
-    if (any(c(PartNni, PartBf, PartInv, PartQ, PartGamma, PartEdge, PartRate))) {
+    if (any(c(PartNni, PartBf, PartInv, PartQ, PartGamma, PartEdge, PartRate))){
       for (i in 1:p) {
         fits[[i]] <- optim.pml(fits[[i]], optNni = PartNni, optBf = PartBf,
           optQ = PartQ, optInv = PartInv, optGamma = PartGamma,
@@ -529,7 +559,7 @@ pmlCluster.fit <- function(formula, fit, weight, p = 4, part = NULL,
 
   while (eps < ncw || abs(eps2) > control$eps) {
     df2 <- 0
-    if (any(c(PartNni, PartBf, PartInv, PartQ, PartGamma, PartEdge, PartRate))) {
+    if (any(c(PartNni, PartBf, PartInv, PartQ, PartGamma, PartEdge, PartRate))){
       for (i in 1:p) {
         weights[, i] <- rowSums(weight[, which(part == i),
           drop = FALSE])
@@ -772,12 +802,10 @@ plot.pmlCluster <- function(x, which = c(1L:3L), caption =
 
 #' @export
 print.pmlPart <- function(x, ...) {
-  df <- x$df
   nc <- attr(x$fits[[1]]$data, "nc")
   levels <- attr(x$fits[[1]]$data, "levels")
   r <- length(x$fits)
   nc <- attr(x$fits[[1]]$data, "nc")
-  nr <- attr(x$fits[[1]]$data, "nr")
   k <- x$fits[[1]]$k
 
   lbf <- x$df["Bf", 2]
@@ -835,10 +863,9 @@ logLik.pmlPart <- function(object, ...) {
 optNNI <- function(fit, INDEX) {
   tree <- fit$tree
   ll.0 <- fit$ll.0
-  loli <- fit$logLik
   bf <- fit$bf
   eig <- fit$eig
-  k <- fit$k
+#  k <- fit$k
   w <- fit$w
   g <- fit$g
   rootEdges <- attr(INDEX, "root")
@@ -848,14 +875,12 @@ optNNI <- function(fit, INDEX) {
 
   data <- getCols(fit$data, tree$tip.label)
   datp <- rnodes(tree, data, w, g, eig, bf)
-  # nicht elegant, spaeter auch raus
   tmp <- length(tree$tip.label)
   for (i in seq_along(w)) .dat[i, 1:tmp] <- new2old.phyDat(data)
 
   evector <- numeric(max(parent))
   evector[child] <- tree$edge.length
   m <- dim(INDEX)[1]
-  k <- min(parent)
   loglik <- numeric(2 * m)
   edgeMatrix <- matrix(0, 2 * m, 5)
   for (i in 1:m) {

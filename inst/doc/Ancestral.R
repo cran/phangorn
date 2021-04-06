@@ -16,9 +16,9 @@ parsimony(tree, primates)
 anc.acctran <- ancestral.pars(tree, primates, "ACCTRAN")
 anc.mpr <- ancestral.pars(tree, primates, "MPR")
 
-## ----seqLogo, fig.cap="Fig 1. Ancestral reconstruction for a node."-----------
-library(seqLogo)
-seqLogo( t(subset(anc.mpr, getRoot(tree), 1:20)[[1]]), ic.scale=FALSE)
+## ----seqLogo, fig.cap="Fig 1. Ancestral reconstruction for a node.", eval=FALSE----
+#  library(seqLogo)
+#  seqLogo( t(subset(anc.mpr, getRoot(tree), 1:20)[[1]]), ic.scale=FALSE)
 
 ## ---- eval=FALSE--------------------------------------------------------------
 #  if (!requireNamespace("BiocManager", quietly = TRUE))
