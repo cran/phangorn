@@ -133,6 +133,7 @@ plot(cnet, show.edge.label=TRUE)
 #  # run all available amino acid models
 #  (mt <- modelTest(dat, model="all", multicore=TRUE))
 #  
+#  env <- attr(mt, "env")
 #  fitStart <- eval(get(mt$Model[which.min(mt$BIC)], env), env)
 #  
 #  fitNJ <- pml(tree, dat, model="JTT", k=4, inv=.2)

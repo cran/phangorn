@@ -52,7 +52,7 @@ quadrature approach of Felsenstein 2001.}
 
 \item{object}{An object of class \code{pml}.}
 
-\item{optNni}{Logical value indicating whether toplogy gets optimized (NNI).}
+\item{optNni}{Logical value indicating whether topology gets optimized (NNI).}
 
 \item{optBf}{Logical value indicating whether base frequencies gets
 optimized.}
@@ -98,7 +98,7 @@ parameters.
 Base frequencies in \code{pml} can be supplied in different ways.
 For amino acid they are usually defined through specifying a model, so the
 argument bf does not need to be specified. Otherwise if \code{bf=NULL},
-each state is given equal probabilty. It can be a numeric vector given the
+each state is given equal probability. It can be a numeric vector given the
 frequencies. Last but not least \code{bf} can be string "equal", "empirical"
 and for codon models additionally "F3x4".
 
@@ -117,7 +117,7 @@ TVMe, TVM, SYM and GTR.  These models are specified as in Posada (2008).
 
 So far 17 amino acid models are supported ("WAG", "JTT", "LG", "Dayhoff",
 "cpREV", "mtmam", "mtArt", "MtZoa", "mtREV24", "VT","RtREV", "HIVw", "HIVb",
-"FLU", "Blossum62", "Dayhoff_DCMut" and "JTT_DCMut") and additionally rate
+"FLU", "Blosum62", "Dayhoff_DCMut" and "JTT_DCMut") and additionally rate
 matrices and amino acid frequencies can be supplied.
 
 It is also possible to estimate codon models (e.g. YN98), for details see

@@ -174,26 +174,17 @@ bab <- function(data, tree = NULL, trace = 1, ...) {
 
   #  New
   data <- removeParsimonyUninfomativeSites(data, recursive=TRUE)
-  dup_list <- NULL
-  addTaxa <- FALSE
-  star_tree <- FALSE
-  if(!is.null(attr(data, "dup_list"))){
-    dup_list <- attr(data, "dup_list")
-    addTaxa <- TRUE
-    if(attr(data, "nr") == 0) star_tree <- TRUE
-  }
+  star_tree <- ifelse(attr(data, "nr") == 0, TRUE, FALSE)
+  add_taxa <- ifelse(is.null(attr(data, "duplicated")), FALSE, TRUE)
   p0 <- attr(data, "p0")
 
-
   nTips <- length(data)
-  nam <- names(data)
   if (nTips < 4L  || star_tree) {
+    nam <- names(data)
     if (star_tree) tree <- stree(length(nam), tip.label = nam)
     else tree <- stree(nTips, tip.label = names(data))
-    for (i in seq_along(dup_list)) {
-      dup <- dup_list[[i]]
-      tree <- add.tips(tree, dup[, 1], dup[, 2])
-    }
+    if(add_taxa) tree <- addTaxa(tree, attr(data, "duplicated"))
+    tree <- unroot(tree)
     return(tree)
   }
 
@@ -310,21 +301,12 @@ bab <- function(data, tree = NULL, trace = 1, ...) {
   }
   for (i in seq_along(result)) {
     result[[i]] <- structure(list(edge = result[[i]], Nnode = nTips - 2L),
-                             .Names = c("edge", "Nnode"), class = "phylo", order = "postorder")
+              .Names = c("edge", "Nnode"), class = "phylo", order = "postorder")
   }
   attr(result, "TipLabel") <- tree$tip.label
   #    attr(result, "visited") = blub
   class(result) <- "multiPhylo"
-  if (addTaxa) {
-    result <- .uncompressTipLabel(result)
-    class(result) <- NULL
-    for (i in seq_along(dup_list)) {
-      dup <- dup_list[[i]]
-      result <- lapply(result, add.tips, dup[, 1], dup[, 2])
-    }
-    class(result) <- "multiPhylo"
-    result <- .compressTipLabel(result)
-  }
+  if(add_taxa) result <- addTaxa(result, attr(data, "duplicated"))
   return(result)
 }
 

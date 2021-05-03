@@ -1,4 +1,4 @@
-candidate.tree <- function(x){
+candidate.tree <- function(x, eps = 1e-8){
 #  if(attr(x, "nc") > 31){
 #     dm <- dist.ml(x)
 #     tree <- fastme.bal(dm, nni = TRUE, spr = FALSE, tbr = FALSE)
@@ -12,6 +12,7 @@ candidate.tree <- function(x){
 #    tree <- dist.ml(fit$data, bf=fit$bf, Q=fit$Q) %>% nnls.tree(tree=tree)
     tree <- acctran(tree, x)
     tree$edge.length <- tree$edge.length / sum(attr(x, "weight"))
+    tree$edge.length <- pmax(eps, tree$edge.length)
 #  }
   tree
 }
@@ -259,8 +260,9 @@ checkLabels <- function(tree, tip) {
 #'
 #' @param tree The tree on which edges the bootstrap values are plotted.
 #' @param BStrees a list of trees (object of class "multiPhylo").
-#' @param type the type of tree to plot, so far "cladogram", "phylogram" and
-#' "unrooted" are supported.
+#' @param type the type of tree to plot, one of "phylogram", "cladogram", "fan",
+#' "unrooted", "radial" or "none". If type is "none" the tree is returned with
+#' the bootstrap values assigned to the node labels.
 #' @param method either "FBP" the classical bootstrap (default) or "TBE"
 #' (transfer bootstrap)
 #' @param bs.col color of bootstrap support labels.
@@ -434,7 +436,9 @@ maxCladeCred <- function(x, tree = TRUE, part = NULL, rooted = TRUE) {
     pp <- part
   }
   pplabel <- attr(pp, "labels")
-  if (!rooted) pp <- oneWise(pp)
+  if (!rooted){
+    pp <- postprocess.prop.part(pp, method="SHORTwise")
+  }
   x <- .uncompressTipLabel(x)
   class(x) <- NULL
   m <- max(attr(pp, "number"))
@@ -445,7 +449,7 @@ maxCladeCred <- function(x, tree = TRUE, part = NULL, rooted = TRUE) {
     tmp <- checkLabels(x[[i]], pplabel)
     if (!rooted) tmp <- unroot(tmp)
     ppi <- prop.part(tmp) # trees[[i]]
-    if (!rooted) ppi <- oneWise(ppi)
+    if (!rooted) ppi <- SHORTwise(ppi)
     indi <- fmatch(ppi, pp)
     if (any(is.na(indi))) {
       res[i] <- -Inf
@@ -474,7 +478,7 @@ allCompat <- function(x) {
   x <- unroot(x)
   l <- length(x)
   spl <- prop.part(x)
-  spl <- postprocess.prop.part(spl)
+  spl <- postprocess.prop.part(spl, method = "SHORTwise")
   spl <- as.splits(spl)
   w <- attr(spl, "weights")
   ind <- (w / l) > 0.5
@@ -496,7 +500,7 @@ cladeMatrix <- function(x, rooted = FALSE) {
   if (!rooted) x <- unroot(x)
   pp <- prop.part(x)
   pplabel <- attr(pp, "labels")
-  if (!rooted) pp <- oneWise(pp)
+  if (!rooted) pp <- SHORTwise(pp)
   x <- .uncompressTipLabel(x)
   nnodes <- Nnode(x)
   class(x) <- NULL
@@ -512,7 +516,7 @@ cladeMatrix <- function(x, rooted = FALSE) {
   k <- 1
   for (i in 1:l) {
     ppi <- prop.part(x[[i]])
-    if (!rooted) ppi <- oneWise(ppi)
+    if (!rooted) ppi <- SHORTwise(ppi)
     indi <- sort(fmatch(ppi, pp))
     ivec[from[i]:to[i]] <- indi
   }

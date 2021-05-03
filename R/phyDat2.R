@@ -92,6 +92,10 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE,
     nam <- row.names(data)
   else nam <- names(data)
   if(is.null(nam))stop("data object must contain taxa names")
+  if(inherits(data, "factor")){
+    if(is.null(levels)) levels <- levels(data)
+    data <- as.matrix(data)
+  }
   if(inherits(data, "list")) data <- as.data.frame(data)
   if(inherits(data, "data.frame")) data <- t(as.matrix(data))
   if(inherits(data, "character") | inherits(data, "numeric"))
@@ -137,7 +141,7 @@ phyDat.default <- function (data, levels = NULL, return.index = TRUE,
     ind_na[is.na(res[[i]])] <- TRUE
   }
   if(any(ind_na)){
-    warning("Found unknown characters (not supplied in levels). Deleted sites with with unknown states.")
+    warning("Found unknown characters (not supplied in levels). Deleted sites with unknown states.")
     res <- lapply(res, function(x, ind_na)x[!ind_na], ind_na)
     weight <- weight[!ind_na]
     index <- index[which(ind_na == FALSE)]
@@ -207,7 +211,7 @@ phyDat.AA <- function (data, return.index = TRUE){
     ind_na[is.na(res[[i]])] <- TRUE
   }
   if(any(ind_na)){
-    warning("Found unknown characters (not supplied in levels). Deleted sites with with unknown states.")
+    warning("Found unknown characters (not supplied in levels). Deleted sites with unknown states.")
     res <- lapply(res, function(x, ind_na)x[!ind_na], ind_na)
     weight <- weight[!ind_na]
     index <- index[which(ind_na == FALSE)]
@@ -299,7 +303,7 @@ phyDat.codon <- function (data, return.index = TRUE, ambiguity = "---",
     res <- lapply(res, function(x, ind){x[is.na(x)] <- ind; x}, ind)
   }
   else if(any(ind_na)){
-    warning("Found unknown characters. Deleted sites with with unknown states.")
+    warning("Found unknown characters. Deleted sites with unknown states.")
     res <- lapply(res, function(x, ind_na)x[!ind_na], ind_na)
     weight <- weight[!ind_na]
     index <- index[which(ind_na == FALSE)]

@@ -715,14 +715,18 @@ pml.move <- function(EDGE, el, data, g, w, eig, k, nTips, bf) {
 bip <- function(x) {
   x <- reorder(x, "postorder")
   nTips <- as.integer(length(x$tip.label))
-  .Call("_phangorn_bipCPP", PACKAGE = "phangorn", x$edge, nTips)
+  res <- .Call("_phangorn_bipCPP", PACKAGE = "phangorn", x$edge, nTips)
+  attr(res, "labels") <- x$tip.label
+  res
 }
 
-
+# replace with prop.part
 bipart <- function(x) {
   x <- reorder(x, "postorder")
   nTips <- as.integer(length(x$tip.label))
-  .Call("_phangorn_bipartCPP", PACKAGE = "phangorn", x$edge, nTips)
+  res <- .Call("_phangorn_bipartCPP", PACKAGE = "phangorn", x$edge, nTips)
+  attr(res, "labels") <- x$tip.label
+  res
 }
 
 
@@ -1304,7 +1308,7 @@ pml.fit <- function(tree, data, bf = rep(1 / length(levels), length(levels)),
 #' Base frequencies in \code{pml} can be supplied in different ways.
 #' For amino acid they are usually defined through specifying a model, so the
 #' argument bf does not need to be specified. Otherwise if \code{bf=NULL},
-#' each state is given equal probabilty. It can be a numeric vector given the
+#' each state is given equal probability. It can be a numeric vector given the
 #' frequencies. Last but not least \code{bf} can be string "equal", "empirical"
 #' and for codon models additionally "F3x4".
 #'
@@ -1323,7 +1327,7 @@ pml.fit <- function(tree, data, bf = rep(1 / length(levels), length(levels)),
 #'
 #' So far 17 amino acid models are supported ("WAG", "JTT", "LG", "Dayhoff",
 #' "cpREV", "mtmam", "mtArt", "MtZoa", "mtREV24", "VT","RtREV", "HIVw", "HIVb",
-#' "FLU", "Blossum62", "Dayhoff_DCMut" and "JTT_DCMut") and additionally rate
+#' "FLU", "Blosum62", "Dayhoff_DCMut" and "JTT_DCMut") and additionally rate
 #' matrices and amino acid frequencies can be supplied.
 #'
 #' It is also possible to estimate codon models (e.g. YN98), for details see
@@ -1363,7 +1367,7 @@ pml.fit <- function(tree, data, bf = rep(1 / length(levels), length(levels)),
 #' quadrature approach of Felsenstein 2001.
 ## or "lognormal" after a lognormal
 #' @param object An object of class \code{pml}.
-#' @param optNni Logical value indicating whether toplogy gets optimized (NNI).
+#' @param optNni Logical value indicating whether topology gets optimized (NNI).
 #' @param optBf Logical value indicating whether base frequencies gets
 #' optimized.
 #' @param optQ Logical value indicating whether rate matrix gets optimized.
