@@ -16,14 +16,32 @@ plot(treeUPGMA, main="UPGMA")
 ## ----plot2, fig.cap="Unrooted NJ tree.", echo=TRUE----------------------------
 plot(treeNJ, "unrooted", main="NJ")
 
+## ----bootstrap_dist, echo=TRUE------------------------------------------------
+fun <- function(x) upgma(dist.ml(x))
+bs_upgma <- bootstrap.phyDat(primates,  fun)
+
+## ----bootstrap_dist_new, echo=TRUE, eval=FALSE--------------------------------
+#  bs_upgma <- bootstrap.phyDat(primates,  \(x){dist.ml(x) |> upgma})
+
+## ----plot_bs, fig.cap="Rooted UPGMA tree.", echo=TRUE-------------------------
+plotBS(treeUPGMA, bs_upgma, main="UPGMA")
+
 ## -----------------------------------------------------------------------------
 parsimony(treeUPGMA, primates)
 parsimony(treeNJ, primates)
 
 ## -----------------------------------------------------------------------------
 treePars  <- optim.parsimony(treeUPGMA, primates)
+
+## ----pratchet-----------------------------------------------------------------
 treeRatchet  <- pratchet(primates, trace = 0)
 parsimony(c(treePars, treeRatchet), primates)
+
+## -----------------------------------------------------------------------------
+treeRatchet  <- acctran(treeRatchet, primates)
+
+## -----------------------------------------------------------------------------
+plotBS(midpoint(treeRatchet), type="phylogram")
 
 ## -----------------------------------------------------------------------------
 (trees <- bab(subset(primates,1:10)))
@@ -88,6 +106,15 @@ plotBS(midpoint(fitJC$tree), bs, p = 50, type="p")
 cnet <- consensusNet(bs, p=0.2)
 plot(cnet, show.edge.label=TRUE)
 
+## ---- echo=TRUE, cache=TRUE---------------------------------------------------
+fit_strict <- pml(treeUPGMA, data=primates, k=4, bf=baseFreq(primates))
+fit_strict <- optim.pml(fit_strict, model="GTR", optRooted = TRUE, 
+                        rearrangement = "NNI", optGamma = TRUE, optInv = TRUE, 
+                        control = pml.control(trace = 0))
+
+## -----------------------------------------------------------------------------
+plot(fit_strict)
+
 ## ---- echo=TRUE, eval=FALSE---------------------------------------------------
 #  library(phangorn)
 #  file <- "myfile"
@@ -103,7 +130,7 @@ plot(cnet, show.edge.label=TRUE)
 #  fitStart <- pml(tree, dat, k=4)
 #  fit <- optim.pml(fitStart, model="GTR", optGamma=TRUE, rearrangement="stochastic")
 #  
-#  # 2. alternative: preper with modelTest
+#  # 2. alternative: prepare with modelTest
 #  mt <- modelTest(dat, tree=tree, multicore=TRUE)
 #  mt[order(mt$AICc),]
 #  # choose best model from the table according to AICc

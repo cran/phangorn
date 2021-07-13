@@ -1,6 +1,6 @@
 Package: phangorn
 Title: Phylogenetic Reconstruction and Analysis
-Version: 2.7.0
+Version: 2.7.1
 Authors@R: 
     c(person(given = "Klaus",
              family = "Schliep",
@@ -74,7 +74,7 @@ Encoding: UTF-8
 Repository: CRAN
 RoxygenNote: 7.1.1
 NeedsCompilation: yes
-Packaged: 2021-05-03 13:11:34 UTC; klaus
+Packaged: 2021-07-13 11:37:58 UTC; klaus
 Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Emmanuel Paradis [aut] (<https://orcid.org/0000-0003-3092-2199>),
   Leonardo de Oliveira Martins [aut]
@@ -91,4 +91,4 @@ Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Jeremy Beaulieu [ctb],
   Brian O'Meara [ctb],
   Long Qu [ctb]
-Date/Publication: 2021-05-03 16:20:02 UTC
+Date/Publication: 2021-07-13 16:00:02 UTC
