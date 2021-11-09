@@ -1,20 +1,40 @@
-candidate.tree <- function(x, eps = 1e-8){
-#  if(attr(x, "nc") > 31){
-#     dm <- dist.ml(x)
-#     tree <- fastme.bal(dm, nni = TRUE, spr = FALSE, tbr = FALSE)
-#     tree$edge.length[tree$edge.length<0] <- 1e-8
-#  }
-#  else{
+minEdge <- function(tree, tau=1e-8, enforce_ultrametric=FALSE){
+  if(tau<0) stop("tau must be >= 0!")
+  if(any(tree$edge.length < tau)){
+    rooted <- is.rooted(tree)
+    if(rooted){
+      nTip <- Ntip(tree)
+      ind <- seq_len(nTip)
+      nh <- nodeHeight(tree)[ind]
+      if(enforce_ultrametric) nh <- rep(0, nTip)
+    }
+    tree$edge.length[tree$edge.length < tau] <- tau
+    if(rooted){
+      el <- numeric(max(tree$edge))
+      el[tree$edge[,2]] <- tree$edge.length
+      nh2 <- nodeHeight(tree)[ind]
+      el[ind] <- el[ind] + (nh2 - nh)
+      tree$edge.length <- el[tree$edge[,2]]
+    }
+  }
+  tree
+}
+
+
+candidate.tree <- function(x, rooted=FALSE, eps = 1e-8, ...){
+  if(rooted){
+     dm <- dist.ml(x, ...)
+     tree <- wpgma(dm)
+  }
+  else{
     tree <- random.addition(x)
     tree <- optim.parsimony(tree, x, trace=0)
     tree <- multi2di(tree)
     tree <- unroot(tree)
-#    tree <- dist.ml(fit$data, bf=fit$bf, Q=fit$Q) %>% nnls.tree(tree=tree)
     tree <- acctran(tree, x)
     tree$edge.length <- tree$edge.length / sum(attr(x, "weight"))
-    tree$edge.length <- pmax(eps, tree$edge.length)
-#  }
-  tree
+  }
+  minEdge(tree, tau=eps)
 }
 
 
@@ -137,7 +157,7 @@ bootstrap.pml <- function(x, bs = 100, trees = TRUE, multicore = FALSE,
     fit <- update(fit, data = data)
     if(do_rearr){
       if(is_ultrametric){
-        tree <- dist.ml(data, bf=fit$bf, Q=fit$Q) %>% wpgma()
+        tree <- dist.ml(data, bf=fit$bf, Q=fit$Q) |> wpgma()
       }
       else tree <- candidate.tree(data)
 
@@ -320,7 +340,7 @@ plotBS <- function(tree, BStrees, type = "unrooted",
     }
     else {
       tree <- transferBootstrap(tree, BStrees)
-      x <- tree$node.label * 100
+      x <- tree$node.label
     }
   }
   else {
@@ -427,7 +447,7 @@ maxCladeCred <- function(x, tree = TRUE, part = NULL, rooted = TRUE) {
   if (inherits(x, "phylo")) x <- c(x)
   if (is.null(part)) {
     if (!rooted) {
-      pp <- unroot(x) %>% prop.part()
+      pp <- unroot(x) |> prop.part()
     } else {
       pp <- prop.part(x)
     }
@@ -460,6 +480,7 @@ maxCladeCred <- function(x, tree = TRUE, part = NULL, rooted = TRUE) {
   if (tree) {
     k <- which.max(res)
     tr <- x[[k]]
+    tr <- addConfidences(tr, pp)
     attr(tr, "clade.credibility") <- res[k]
     return(tr)
   }
@@ -477,9 +498,9 @@ mcc <- maxCladeCred
 allCompat <- function(x) {
   x <- unroot(x)
   l <- length(x)
-  spl <- prop.part(x)
-  spl <- postprocess.prop.part(spl, method = "SHORTwise")
-  spl <- as.splits(spl)
+  pp <- prop.part(x)
+  pp <- postprocess.prop.part(pp, method = "SHORTwise")
+  spl <- as.splits(pp)
   w <- attr(spl, "weights")
   ind <- (w / l) > 0.5
   res <- spl[ind]
@@ -490,7 +511,8 @@ allCompat <- function(x) {
     if(all(compatible2(res, spl[i]) == 0)) res <- c(res, spl[i])
   }
   tree <- as.phylo(res, FALSE)
-#  tree$edge.length <- NULL
+  tree$edge.length <- NULL
+  tree <- addConfidences(tree, pp)
   tree
 }
 

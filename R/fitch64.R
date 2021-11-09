@@ -36,17 +36,15 @@ fitch <- function(tree, data, site = "pscore"){
   if(any(!is.binary(tree))) tree <- multi2di(tree)
   tree <- reorder(tree, "postorder")
   nr <- attr(data, "nr")
-  fun <- function(tree, site="pscore"){
+  fun <- function(tree, site="pscore", nr){
     if(site=="pscore") return(f$pscore(tree$edge))
-    nr <- f$get_nr
     sites <- f$sitewise_pscore(tree$edge)
     sites[seq_len(nr)]
   }
-  fun2 <- function(tree, data, site) {
+  fun2 <- function(tree, data, site, nr) {
     data <- subset(data, tree$tip.label)
     f <- init_fitch(data, FALSE, FALSE, m=2L)
     if(site=="pscore") return(f$pscore(tree$edge))
-    nr <- f$get_nr
     sites <- f$sitewise_pscore(tree$edge)
     sites[seq_len(nr)]
   }
@@ -56,17 +54,17 @@ fitch <- function(tree, data, site = "pscore"){
       data <- subset(data, TL)
       f <- init_fitch(data, FALSE, FALSE, m=2L)
       tree <- unclass(tree)
-      res <- sapply(tree, function(x)fun(x, site=site))
+      res <- sapply(tree, function(x)fun(x, site=site, nr=nr))
     }
     else{
-      res <- sapply(tree, fun2, data, site)
+      res <- sapply(tree, fun2, data, site, nr)
     }
     return(res)
   }
   if(inherits(tree, "phylo")) {
     data <- subset(data, tree$tip.label)
     f <- init_fitch(data, FALSE, FALSE, m=2L)
-    return(fun(tree, site))
+    return(fun(tree, site, nr))
   }
   NULL
 }
@@ -154,72 +152,6 @@ fitch_spr <- function (tree, f, trace=0L)
 }
 
 
-dropTip2 <- function (edge, i, check.binary = FALSE, check.root = TRUE)
-{
-  root <- edge[nrow(edge), 1]
-  ch <- match(i, edge[, 2])
-  pa <- edge[ch, 1]
-  edge <- edge[-ch, ]
-  if (root == pa) {
-    n <- dim(edge)[1]
-    newroot <- edge[n - 2L, 1]
-    newedge <- edge[ind, 2]
-    if (newedge[1] == newroot)
-      edge[n - 1, ] <- newedge
-    else edge[n - 1, ] <- newedge[2:1]
-    edge <- edge[-n, ]
-    edge[edge == newroot] <- root
-    pa <- newroot
-    #        }
-  }
-  else {
-    nind <- match(pa, edge[, 2])
-    if(ch %% 2L) ind <- ch
-    else ind <- ch - 1L
-    #ind <- match(pa, edge[, 1])
-    if (length(ind) == 1) {
-      edge[nind, 2] <- edge[ind, 2]
-      edge <- edge[-ind, ]
-    }
-  }
-  #    edge[edge > pa] <- edge[edge > pa] - 1L
-  edge
-}
-
-
-drop_node <- function(x, i, check.binary = FALSE, check.root = TRUE,
-         all.ch = NULL) {
-  desc_i <- Descendants(x, i, "all")
-  p_i <- Ancestors(x, i, "parent")
-  x <- reroot(x, p_i, switch_root=FALSE)
-  edge <- x$edge
-  ind_desc <- match(desc_i, edge[,2])
-  ind_i <- match(i, edge[, 2])
-  x <- edge[sort(ind_desc),]
-  y <- edge[-c(ind_desc, ind_i),]
-  list(i=i, p_i=p_i, x=x, y=y)
-}
-
-
-
-drop_node_2 <- function(x, i, check.binary = FALSE, check.root = TRUE,
-                      all.ch = NULL) {
-#  desc_i <- Descendants(x, i, "all")
-  p_i <- Ancestors(x, i, "parent")
-  x <- reroot(x, p_i, switch_root=FALSE)
-  edge <- x$edge
-  ind_v <- logical(nrow(edge))
-  ind_w <- logical(max(edge))
-  ind_w[i] <- TRUE
-  for(i in rev(seq_len(nrow(edge)))) if(ind_w[edge[i, 1]]==TRUE){
-    ind_v[i] <- TRUE
-    ind_w[edge[i, 2]] <- TRUE
-  }
-  edge[ind_v,]
-}
-
-
-#indexNNI2
 indexNNI_fitch <- function(tree) {
   parent <- tree$edge[, 1]
   child <- tree$edge[, 2]
@@ -270,13 +202,10 @@ nni2 <- function(x){
 
 
 fitch_nni <- function(tree, f) {
-  #  f <- init_fitch(obj, FALSE, FALSE, m=4L) #, order=FALSE)
-  #  p0 <- sum(f$sitewise_pscore(tree$edge) * f$get_weight)
   p0 <- f$pscore(tree$edge)
   nTips <- as.integer(length(tree$tip.label))
   INDEX <- indexNNI_fitch(tree)
   l <- nrow(INDEX)
-#  f$prep_nni(tree$edge)
   f$traversetwice(tree$edge, 1L)
   M <- f$pscore_nni(INDEX[, 1L:4L, drop=FALSE])
   M <- M[, -1L] - M[, 1L]
@@ -288,7 +217,6 @@ fitch_nni <- function(tree, f) {
     pscore <- M[candidates]
     ind <- which.min(pscore)
     tree2 <- changeEdge(tree, INDEX[candidates[ind], c(2, 3)])
-    #    test <- sum(f$sitewise_pscore(tree2$edge) * f$get_weight)
     test <- f$pscore(tree2$edge)
     if (test >= p0)
       candidates <- candidates[-ind]

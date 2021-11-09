@@ -6,12 +6,13 @@
 // parallel for
 // simd
 
-using namespace Rcpp;
+//using namespace Rcpp;
 
 //Enable C++11, as we may want to have unsigned long long (uint64_t)
 // [[Rcpp::plugins(cpp11)]]
 
 
+/*
 // Examples from Dirk to find minimum dist
 double vecmin(NumericVector x) {
   // Rcpp supports STL-style iterators
@@ -26,7 +27,7 @@ int vecminInd(NumericVector x) {
   // we want the position (+1 in R)
   return it - x.begin();
 }
-
+*/
 
 
 std::vector< std::vector<uint64_t> > readFitch(const List &xlist, IntegerMatrix contr,
@@ -79,54 +80,6 @@ std::vector< std::vector<uint64_t> > readFitch(const List &xlist, IntegerMatrix 
 }
 
 
-
-/*
-// needs improvement for rooted trees (TODO)
-// assumes postorder ordering (for the root node)
-// no singeltons, only binary trees (but maybe rooted)
-// traverse (postorder) and than this, down or up
-//// [[Rcpp::export]]
-IntegerMatrix preorder(const IntegerMatrix & edge, int nTips){
-  IntegerVector parent = edge( _, 0);
-  IntegerVector children = edge( _, 1);
-  List ch = allSiblingsCPP(edge);
-  int p, k=0;
-  int m = max(parent); // edge??
-  int l = parent.size();
-  int root = parent[l-1]; //bugfix
-  int not_rooted = l % 2;
-  std::vector<int> pvec(m+1);
-  for(int i=0; i<parent.size(); ++i){
-    pvec[children[i]] = parent[i];
-  }
-  IntegerVector left(2*l); // std::vector<int> left;
-  IntegerVector right(2*l); //std::vector<int> right;
-  int j=0;
-  for(int i=parent.size(); i>0; --i){
-    p=parent[i-1];
-    k=children[i-1];
-    std::vector<int> sibs = ch[k-1];
-    left[j] = k + 2 * nTips;
-    left[j+1] = k + 2 * nTips;
-    right[j] = sibs[0];
-
-    if(p==root){
-      if(not_rooted){
-        right[j+1] = sibs[1];
-      } else {
-        right[j+1] = sibs[0];
-      }
-    } else{
-        right[j+1] = p + 2 * nTips;
-    }
-    j+=2;
-  }
-  IntegerMatrix out (left.size(), 2);
-  out(_,0) = left;
-  out(_,1) = right;
-  return out;
-}
-*/
 
 IntegerMatrix getAnc(Fitch* obj, int i){
   int states = obj->nStates;
@@ -438,30 +391,15 @@ void root_all_node(Fitch* obj, const IntegerMatrix orig)
 }
 
 
-// traversetwice
 // needed for random.addition, SPR & TBR
 void prep_spr(Fitch* obj, IntegerMatrix orig){
-//  int nSeq = obj->nSeq;
   traversetwice(obj, orig, 0L);
-//  traverse(obj, orig);
-//  IntegerMatrix M = preorder(orig, nSeq);
-//  traverse(obj, M);
   root_all_node(obj, orig);
 }
 
 
-/*
- *  traversetwice(obj, orig, 1L);
-void prep_nni(Fitch* obj, IntegerMatrix orig){
-  int nSeq = obj->nSeq;
-  traverse(obj, orig);
-  IntegerMatrix M = preorder(orig, nSeq);
-  traverse(obj, M);
-}
-*/
-
 // generic, TODO: bitcount, 2x2, 4x4
-double pscore_vector(const uint64_t* x, const uint64_t* y, const NumericVector weight,
+double pscore_vector_generic(const uint64_t* x, const uint64_t* y, const NumericVector weight,
                      int nBits, int wBits, int states){
   double pscore = 0.0;
   uint64_t ones = ~0ull;
@@ -497,7 +435,7 @@ double pscore_vector_4x4(const uint64_t* x, const uint64_t* y, const NumericVect
   uint64_t tmp = 0ull;
   uint64_t orvand = 0;
   for (int i = 0; i < wBits; ++i){
-    orvand = (x[1] & y[1]) | (x[2] & y[2]) | (x[3] & y[3]) | (x[4] & y[4]);
+    orvand = (x[0] & y[0]) | (x[1] & y[1]) | (x[2] & y[2]) | (x[3] & y[3]);
     tmp = ~orvand & ones;
     if(tmp>0ull){
       for(int l=0; l<64; ++l){
@@ -508,7 +446,7 @@ double pscore_vector_4x4(const uint64_t* x, const uint64_t* y, const NumericVect
     y += states;
   }
   for (int i = wBits; i < nBits; ++i){
-    orvand = (x[1] & y[1]) | (x[2] & y[2]) | (x[3] & y[3]) | (x[4] & y[4]);
+    orvand = (x[0] & y[0]) | (x[1] & y[1]) | (x[2] & y[2]) | (x[3] & y[3]);
     tmp = ~orvand & ones;
     pscore += popcnt64(tmp);
     x += states;
@@ -525,7 +463,7 @@ double pscore_vector_2x2(const uint64_t* x, const uint64_t* y, const NumericVect
   uint64_t tmp = 0ull;
   uint64_t orvand = 0;
   for (int i = 0; i < wBits; ++i){
-    orvand = (x[1] & y[1]) | (x[2] & y[2]);
+    orvand = (x[0] & y[0]) | (x[1] & y[1]);
     tmp = ~orvand & ones;
     if(tmp>0ull){
       for(int l=0; l<64; ++l){
@@ -536,7 +474,7 @@ double pscore_vector_2x2(const uint64_t* x, const uint64_t* y, const NumericVect
     y += states;
   }
   for (int i = wBits; i < nBits; ++i){
-    orvand = (x[1] & y[1]) | (x[2] & y[2]);
+    orvand = (x[0] & y[0]) | (x[1] & y[1]);
     tmp = ~orvand & ones;
     pscore += popcnt64(tmp);
     x += states;
@@ -545,7 +483,7 @@ double pscore_vector_2x2(const uint64_t* x, const uint64_t* y, const NumericVect
   return(pscore);
 }
 
-double pscore_vector_test(const uint64_t* x, const uint64_t* y, const NumericVector weight,
+double pscore_vector(const uint64_t* x, const uint64_t* y, const NumericVector weight,
                    int nBits, int wBits, int states)
 {
   double res=0.0;
@@ -553,12 +491,10 @@ double pscore_vector_test(const uint64_t* x, const uint64_t* y, const NumericVec
     res=pscore_vector_4x4(x, y, weight, nBits, wBits, states);
   else if (states == 2)
     res=pscore_vector_2x2(x, y, weight, nBits, wBits, states);
-//  else
-//    res=pscore_vector_generic(x, y, weight, nBits, wBits, states);
+  else
+    res=pscore_vector_generic(x, y, weight, nBits, wBits, states);
   return(res);
 }
-
-
 
 
 int pscore_quartet(const uint64_t* a, const uint64_t* b, const uint64_t* c,
@@ -650,7 +586,7 @@ IntegerMatrix pscore_nni(Fitch* obj, IntegerMatrix & M){
 
 
 
-
+/*
 int get_quartet(Fitch* obj, IntegerVector & M){
   std::vector< std::vector<uint64_t> > X = obj->X;
   int states = obj->nStates;
@@ -661,7 +597,7 @@ int get_quartet(Fitch* obj, IntegerVector & M){
         weight, nBits, wBits, states);
   return(res);
 }
-
+*/
 
 NumericVector pscore_vec(Fitch* obj, IntegerVector & edge_to, int node_from){
   // std::vector<double> res;
@@ -981,12 +917,13 @@ RCPP_MODULE(Fitch_mod) {
     using namespace Rcpp;
     class_<Fitch>("Fitch")
         .constructor<RObject, int, int>("Default constructor")
-        .property("get_nr", &Fitch::getNR)
-        .property("get_nbits", &Fitch::getnBits)
-        .property("get_weight", &Fitch::getWeight)
-        .property("get_p0", &Fitch::getP0)
-        .method("prep_spr", &prep_spr)
+//        .property("get_nr", &Fitch::getNR)
+//        .property("get_nbits", &Fitch::getnBits)
+//        .property("get_weight", &Fitch::getWeight)
+//        .property("get_p0", &Fitch::getP0)
+//        .method("get_quartet", &get_quartet)
 //        .method("prep_nni", &prep_nni)
+        .method("prep_spr", &prep_spr)
         .method("pscore_nni", &pscore_nni)
         .method("pscore", &pscore)
         .method("pscore_vec", &pscore_vec)
@@ -1000,7 +937,6 @@ RCPP_MODULE(Fitch_mod) {
         .method("getAnc", &getAnc)
         .method("getAncAmb", &getAncAmb)
         .method("traversetwice", &traversetwice)
-        .method("get_quartet", &get_quartet)
     ;
 }
 

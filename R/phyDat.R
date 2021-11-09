@@ -373,7 +373,8 @@ summary.phyDat <- function (x, ...){
   tmp <- logical(unique_sites)
   for(i in 2:nseq) tmp <- tmp | (x[[1]] != x[[i]])
   const_sites <- sum(attr(x, "weight")[tmp==0])
-  list(nseq=nseq, nchar=nchar, unique_sites=unique_sites, const_sites=const_sites)
+  list(nseq=nseq, nchar=nchar, unique_sites=unique_sites,
+       const_sites=const_sites)
 }
 
 
@@ -384,6 +385,9 @@ cbind.phyDat <- function(..., gaps="-", compress=TRUE){
   x <- list(...)
   n <- length(x)
   if (n == 1) return(x[[1]])
+
+  types <- sapply(x, function(x)attr(x, "type"))
+# if(length(unique(types))>1) stop("All alignments need to have the same type!")
   #  type <- attr(x[[1]], "type")
   nr <- numeric(n)
   ATTR <- attributes(x[[1]])
@@ -482,7 +486,8 @@ phylo <- function(edge, tip, edge.length=NULL){
 compress.phyDat <- function(data){
   attrib <- attributes(data)
   attr(data, "class") <- "list"
-  index <- grp_duplicated( matrix(unlist(data, use.names = FALSE), attrib$nr, length(data)))
+  index <- grp_duplicated( matrix(unlist(data, use.names = FALSE), attrib$nr,
+                                  length(data)))
   attrib$nr <- attr(index, "nlevels")
   attr(index, "nlevels") <- NULL
   pos <- which(!duplicated(index))
@@ -505,7 +510,8 @@ getCols <- function (data, cols, compress=FALSE){
     attrib$names <- cols
   else attrib$names <- attrib$names[cols]
   if(compress){
-    index <- grp_duplicated( matrix(unlist(data, use.names = FALSE), attrib$nr, length(data)))
+    index <- grp_duplicated( matrix(unlist(data, use.names = FALSE), attrib$nr,
+                                    length(data)))
     attrib$nr <- attr(index, "nlevels")
     attr(index, "nlevels") <- NULL
     pos <- which(!duplicated(index))
@@ -552,7 +558,7 @@ getRows <- function (data, rows, site.pattern = TRUE){
 subset.phyDat <- function (x, subset, select, site.pattern = TRUE, ...){
   if (!missing(subset)){
     if(is.numeric(subset) & any(subset>length(x))) stop("subscript out of bounds")
-    x <- getCols(x, subset)
+    x <- getCols(x, subset, ...)
   }
   if (!missing(select)){
     w <- attr(x, "weight")
@@ -572,7 +578,7 @@ subset.phyDat <- function (x, subset, select, site.pattern = TRUE, ...){
 #' @rdname phyDat
 #' @export
 "[.phyDat" <- function(x, i, j, ..., drop=FALSE){
-   subset(x, subset = i, select = j, site.pattern=FALSE)
+   subset(x, subset = i, select = j, site.pattern=FALSE, compress=FALSE)
 }
 
 
@@ -593,10 +599,12 @@ map_duplicates <-  function(x, dist=length(x)<500, ...){
   else ind <- duplicated(x)
   res <- NULL
   if(any(ind)){
-    ind2 <- grp_duplicated( matrix(unlist(x, recursive = FALSE, use.names = FALSE), nr, length(labels)), MARGIN=2)
+    ind2 <- grp_duplicated( matrix(unlist(x, recursive = FALSE,
+                            use.names = FALSE), nr, length(labels)), MARGIN=2)
     if(dist) ind2 <- grp_duplicated(y)
     ind2 <- ind2[ind]
-    res <- data.frame(duplicates=labels[ind], where=labels[!ind][ind2], stringsAsFactors = FALSE)
+    res <- data.frame(duplicates=labels[ind], where=labels[!ind][ind2],
+                      stringsAsFactors = FALSE)
   }
   res
 }
@@ -714,13 +722,22 @@ allSitePattern <- function(n, levels=c("a", "c", "g", "t"), names=NULL){
 }
 
 
-constSitePattern <- function(n, levels=c("a", "c", "g", "t"), names=NULL){
-  l <- length(levels)
+##constSitePattern <- function(n, levels=c("a", "c", "g", "t"), names=NULL){
+constSitePattern <- function(n, names=NULL, type="DNA", levels=NULL){
+  if(type=="DNA"){
+    levels <- c("a", "c", "g", "t")
+    l <- 4L
+  } else if(type=="AA"){
+    levels <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I", "L", "K", "M",
+                "F", "P", "S", "T", "W", "Y", "V")
+    l <- 20L
+  }
+  else l <- length(levels)
   X <- matrix(0, l, n)
   X <- matrix(rep(levels, each=n), n, l)
-  if(is.null(names))rownames(X) <- paste0("t", 1:n)
+  if(is.null(names)) rownames(X) <- paste0("t", seq_len(n))
   else rownames(X) <- names
-  phyDat.default(X, levels)
+  phyDat(X, type=type, levels=levels)
 }
 
 

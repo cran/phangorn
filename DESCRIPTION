@@ -1,6 +1,6 @@
 Package: phangorn
 Title: Phylogenetic Reconstruction and Analysis
-Version: 2.7.1
+Version: 2.8.0
 Authors@R: 
     c(person(given = "Klaus",
              family = "Schliep",
@@ -52,7 +52,6 @@ Authors@R:
       person(given = "Long",
              family = "Qu",
              role = "ctb"))
-Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
 Description: Allows for estimation of phylogenetic trees and networks
     using Maximum Likelihood, Maximum Parsimony, distance methods and
     Hadamard conjugation. Offers methods for tree comparison, model
@@ -61,10 +60,9 @@ Description: Allows for estimation of phylogenetic trees and networks
 License: GPL (>= 2)
 URL: https://github.com/KlausVigo/phangorn
 BugReports: https://github.com/KlausVigo/phangorn/issues
-Depends: ape (>= 5.5), R (>= 3.6.0)
-Imports: fastmatch, graphics, grDevices, igraph (>= 1.0), magrittr,
-        Matrix, methods, parallel, quadprog, Rcpp (>= 1.0.4), stats,
-        utils
+Depends: ape (>= 5.5), R (>= 4.1.0)
+Imports: fastmatch, graphics, grDevices, igraph (>= 1.0), Matrix,
+        methods, parallel, quadprog, Rcpp, stats, utils
 Suggests: Biostrings, knitr, magick, prettydoc, rgl, rmarkdown, seqinr,
         seqLogo, tinytest, xtable
 LinkingTo: Rcpp
@@ -72,9 +70,10 @@ VignetteBuilder: knitr, utils
 biocViews: Software, Technology, QualityControl
 Encoding: UTF-8
 Repository: CRAN
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
+Language: en-US
 NeedsCompilation: yes
-Packaged: 2021-07-13 11:37:58 UTC; klaus
+Packaged: 2021-11-09 09:28:44 UTC; klaus
 Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Emmanuel Paradis [aut] (<https://orcid.org/0000-0003-3092-2199>),
   Leonardo de Oliveira Martins [aut]
@@ -91,4 +90,5 @@ Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Jeremy Beaulieu [ctb],
   Brian O'Meara [ctb],
   Long Qu [ctb]
-Date/Publication: 2021-07-13 16:00:02 UTC
+Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
+Date/Publication: 2021-11-09 10:20:06 UTC

@@ -1,3 +1,46 @@
+    CHANGES in PHANGORN VERSION 2.8.0
+
+BUG FIXES
+
+    o Use USE_FC_LEN_T in the C prototypes of LAPACK functions to correspond to
+
+      code produced by gfortran >= 7. The mechanism was introduced in R 3.6.2
+
+      and is planned to make its use obligatory in R 4.2.0.
+
+    o bug in dna2codon fixed.
+
+    o codon models (codonTest) most likely did not work properly for models
+
+      other than the standard code.
+
+NEW FEATURES
+
+    o free rate model
+
+    o Mkv model (so far only for rooted trees)
+
+    o better support for ultrametric and time trees
+
+OTHER CHANGES
+
+    o optim.pml has internally been reorganized to be easier to maintain and
+
+      extend.
+
+    o pml.control got an additional argument tau which controls the minimal edge
+
+      length during optimisation.
+
+    o trees constructed with allCompat, maxCladeCred now have support values
+
+      stored in the node.labels
+
+    o switched from magrittr %>% to the native pipe |>
+
+      dropped dependency on magrittr
+
+
     CHANGES in PHANGORN VERSION 2.7.1
 
 BUG FIXES
@@ -473,7 +516,7 @@ OTHER CHANGES
 
     o improvements to read.nexus.splits, write.nexus.splits to
 
-      be more consistant with splitstree
+      be more consistant with SplitsTree
 
     o splitsNetwork got an additional argument splits
 
@@ -898,7 +941,7 @@ BUG FIXES
 
 NEW FEATURES
 
-    o optim.pml allows to optimise rooted trees
+    o optim.pml allows to optimize rooted trees
 
 OTHER CHANGES
 

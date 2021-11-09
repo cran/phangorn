@@ -1,4 +1,25 @@
 as.splits.phylo trivial=FALSE bip bipart
 as.splits.multiPhylo
 
+Mkv
+Ancestral
+
+
+pml.fit4 add Mkv + weight for bootstrap
+ratchet.par add minit als parameter
+
+
+Inv or Mkv / Ascertainment bias
+
+
+sankoff auf new umstellen:
+
+
+index.nni
+indexNNI
+indexNNI3
+indexNNI_fitch
+
+
+combine optBf und optF3x4
 

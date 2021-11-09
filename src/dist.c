@@ -1,14 +1,13 @@
 /*
  * dist.c
  *
- * (c) 2008-2019 Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2008-2021 Klaus Schliep (klaus.schliep@gmail.com)
  *
  *
  * This code may be distributed under the GNU GPL
  *
  */
 
-#define USE_RINTERNALS
 //#define both_non_NA(a,b) (!ISNA(a) && !ISNA(b))
 
 
@@ -78,7 +77,7 @@ void PD(int *x, int *y, int *n, int *weight){
 }
 
 
-void pwIndex(int *left, int* right, int *l, int *n, double *w, double *res){
+void pwIndex(const int *left, const int* right, int *l, int *n, double *w, double *res){
     int i, k;
     k=0;
     for (i = 0; i < *l; i++){
@@ -86,10 +85,9 @@ void pwIndex(int *left, int* right, int *l, int *n, double *w, double *res){
         res[k] += w[i];
         }
     }
-
+/*
 void pwIndex2(int *left, int* right, int* pos, int *l, int *n, double *w, double *res){
     int i, k, li, ri;
-//    k=0;
     for (i = 0; i < *l; i++){
         li = pos[left[i]-1L];
         ri = pos[right[i]-1L];
@@ -99,7 +97,7 @@ void pwIndex2(int *left, int* right, int* pos, int *l, int *n, double *w, double
         }
     }
 }
-
+*/
 
 
 SEXP PWI(SEXP LEFT, SEXP RIGHT, SEXP L, SEXP N, SEXP W, SEXP LI){
@@ -111,7 +109,7 @@ SEXP PWI(SEXP LEFT, SEXP RIGHT, SEXP L, SEXP N, SEXP W, SEXP LI){
     UNPROTECT(1);
     return(res);
 }
-
+/*
 SEXP PWI2(SEXP LEFT, SEXP RIGHT, SEXP POS, SEXP L, SEXP N, SEXP W, SEXP LI){
     int i, li=INTEGER(LI)[0];
     SEXP res;
@@ -121,7 +119,7 @@ SEXP PWI2(SEXP LEFT, SEXP RIGHT, SEXP POS, SEXP L, SEXP N, SEXP W, SEXP LI){
     UNPROTECT(1);
     return(res);
 }
-
+*/
 
 void distance_hadamard(double *d, int n) {
     unsigned int num_splits;

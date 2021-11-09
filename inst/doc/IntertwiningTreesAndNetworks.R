@@ -17,7 +17,6 @@ knitr::knit_hooks$set(small.mar=function(before, options, envir){
 
 ## -----------------------------------------------------------------------------
 library(phangorn)    # load the phangorn library
-library(magrittr)  
 
 ## -----------------------------------------------------------------------------
 ## automatically set the correct working directory for the examples below
@@ -57,7 +56,7 @@ plot(mrbayes.tree)
 nodelabels(mrbayes.tree$node.label, adj = c(1, 0), frame = "none")
 
 par(mfrow=c(1,1)) # Setting plot parameters
-# NeighbourNet
+# NeighborNet
 plot(Nnet,"2D")
 ## alternatively,
 # plot(Nnet,"2D")
@@ -129,18 +128,18 @@ plot(obj,"2D",show.edge.label=T, edge.color=edge.col, col.edge.label = "blue")
 
 ## ---- fig.width=7, fig.height=6-----------------------------------------------
 Nnet <- read.nexus.networx(file.path(fdir,"RAxML_distances.Wang.nxs"))
-raxml.tree <- read.tree(file.path(fdir,"RAxML_bestTree.Wang.out")) %>% unroot
+raxml.tree <- read.tree(file.path(fdir,"RAxML_bestTree.Wang.out")) |> unroot()
 raxml.bootstrap <- read.tree(file.path(fdir,"RAxML_bootstrap.Wang.out"))
 
 bs_splits <- as.splits(raxml.bootstrap)
-tree_splits <- as.splits(raxml.tree) %>% unique %>% removeTrivialSplits
+tree_splits <- as.splits(raxml.tree) |> unique() |> removeTrivialSplits()
 # we overwrite bootstrap values and set the weights 
 # to 1e-6 (almost zero), as we plot them on a log scale later on
 attr(bs_splits, "weights")[] <- 1e-6
 # combine the splits from the bootstrap and neighbor net
 # and delete duplicates and add the confidence values
 # we get rid of trivial splits
-all_splits <- c(Nnet$splits, bs_splits) %>% unique %>% removeTrivialSplits %>% addConfidences(bs_splits, scaler=100)
+all_splits <- c(Nnet$splits, bs_splits) |> unique() |> removeTrivialSplits() |> addConfidences(bs_splits, scaler=100)
 
 # For easier plotting we create a matrix with the confidences and 
 # weights as columns
@@ -185,6 +184,7 @@ all_data <- plotBS(midpoint(all_data), all_data_boot, "phylogram", p=0, main = "
 ## ---- small.mar=TRUE----------------------------------------------------------
 par(mfrow=c(1,1))
 cn <- consensusNet(c(YCh, mtG, ncAI))
-cn <- addConfidences(cn, YCh_boot) %>% addConfidences(mtG_boot, add=TRUE) %>% addConfidences(ncAI_boot, add=TRUE) %>% addConfidences(all_data_boot, add=TRUE)
+cn <- addConfidences(cn, YCh_boot) |> addConfidences(mtG_boot, add=TRUE) |> 
+  addConfidences(ncAI_boot, add=TRUE) |> addConfidences(all_data_boot, add=TRUE)
 plot(cn, "2D", show.edge.label=TRUE)
 

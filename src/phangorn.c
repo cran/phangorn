@@ -1,14 +1,12 @@
 /*
  * phangorn.c
  *
- * (c) 2008-2020  Klaus Schliep (klaus.schliep@gmail.com)
+ * (c) 2008-2021  Klaus Schliep (klaus.schliep@gmail.com)
  *
  *
  * This code may be distributed under the GNU GPL
  *
  */
-
-# define USE_RINTERNALS
 
 #include <Rmath.h>
 #include <R.h>
@@ -107,7 +105,7 @@ void getdP2(double *eva, double *ev, double *evi, int m, double el, double w, do
     free(tmp);
 }
 
-
+/*
 void getd2P(double *eva, double *ev, double *evi, int m, double el, double w, double *result){
     int i, j, h;
     double res; //tmp[m],
@@ -140,7 +138,7 @@ void getd2P2(double *eva, double *ev, double *evi, int m, double el, double w, d
     }
     free(tmp);
 }
-
+*/
 
 SEXP getdPM(SEXP eig, SEXP nc, SEXP el, SEXP w){
     R_len_t i, j, nel, nw;
@@ -192,66 +190,6 @@ SEXP getdPM2(SEXP eig, SEXP nc, SEXP el, SEXP w){
             PROTECT(P = allocMatrix(REALSXP, m, m));
             p = REAL(P);
             getdP2(eva, eve, evei, m, edgelen[j], ws[i], p);
-            SET_VECTOR_ELT(RESULT, l, P);
-            UNPROTECT(1); //P
-            l++;
-        }
-    }
-    UNPROTECT(1); //RESULT
-    return(RESULT);
-}
-
-
-SEXP getd2PM(SEXP eig, SEXP nc, SEXP el, SEXP w){
-    R_len_t i, j, nel, nw;
-    int m=INTEGER(nc)[0], l=0;
-    double *ws=REAL(w);
-    double *edgelen=REAL(el);
-    double *eva, *eve, *evei;
-    SEXP P, RESULT;
-    nel = length(el);
-    nw = length(w);
-    eva = REAL(VECTOR_ELT(eig, 0));
-    eve = REAL(VECTOR_ELT(eig, 1));
-    evei = REAL(VECTOR_ELT(eig, 2));
-    PROTECT(RESULT = allocVector(VECSXP, nel*nw));
-    double *p;
-    if(!isNewList(eig)) error("'dlist' must be a list");
-    for(j=0; j<nel; j++){
-        for(i=0; i<nw; i++){
-            PROTECT(P = allocMatrix(REALSXP, m, m));
-            p = REAL(P);
-            getd2P(eva, eve, evei, m, edgelen[j], ws[i], p);
-            SET_VECTOR_ELT(RESULT, l, P);
-            UNPROTECT(1); //P
-            l++;
-        }
-    }
-    UNPROTECT(1); //RESULT
-    return(RESULT);
-}
-
-
-SEXP getd2PM2(SEXP eig, SEXP nc, SEXP el, SEXP w){
-    R_len_t i, j, nel, nw;
-    int m=INTEGER(nc)[0], l=0;
-    double *ws=REAL(w);
-    double *edgelen=REAL(el);
-    double *eva, *eve, *evei;
-    SEXP P, RESULT;
-    nel = length(el);
-    nw = length(w);
-    eva = REAL(VECTOR_ELT(eig, 0));
-    eve = REAL(VECTOR_ELT(eig, 1));
-    evei = REAL(VECTOR_ELT(eig, 2));
-    PROTECT(RESULT = allocVector(VECSXP, nel*nw));
-    double *p;
-    if(!isNewList(eig)) error("'dlist' must be a list");
-    for(j=0; j<nel; j++){
-        for(i=0; i<nw; i++){
-            PROTECT(P = allocMatrix(REALSXP, m, m));
-            p = REAL(P);
-            getd2P2(eva, eve, evei, m, edgelen[j], ws[i], p);
             SET_VECTOR_ELT(RESULT, l, P);
             UNPROTECT(1); //P
             l++;

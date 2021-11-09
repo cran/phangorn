@@ -57,10 +57,7 @@ getOrder <- function(x) {
 }
 
 
-pBound <- function(x, UB) {
-#  tip <- names(x)
-#  att <- attributes(x)
-#  nc <- attr(x, "nc")
+pBound <- function(x, UB, LB) {
   nr <- attr(x, "nr")
   contrast <- attr(x, "contrast")
   rownames(contrast) <- attr(x, "allLevels")
@@ -80,14 +77,13 @@ pBound <- function(x, UB) {
 
   y <- y[, ind, drop = FALSE]
   weight0 <- weight0[ind]
-
+#  print(sum(weight0))
   UB <- UB[, ind, drop = FALSE]
   single_dis <- apply(y, 2, fun1)
-  # single_dis <- lowerBound
+  # single_dis <- LB
 
   nTips <- nrow(y)
   l <- length(weight0)
-
   res <- numeric(nTips)
 
   for (i in 1:(l - 1)) {
@@ -101,10 +97,12 @@ pBound <- function(x, UB) {
         #                dis <- pmax(dis, dis2)
         #                D2 <- dis[nTips] - (UB[, i] + UB[, j])
         if (dis[nTips] > dis2[nTips]) {
-          ub <- UB[, i] + UB[, j]
-          dis <- dis[nTips] - ub
-          d2 <- dis2[nTips] - dis2
-          dis <- pmax(dis, d2) - d2
+#          ub <- UB[, i] + UB[, j]
+#          dis <- dis[nTips] - ub
+#          d2 <- dis2[nTips] - dis2
+#          dis <- pmax(dis, d2) - d2
+        #  dis <- pmax(dis, dis2) - dis2
+          dis <- dis - dis2
           if (sum(dis[4:nTips]) > 0) {
             wmin <- min(weight0[i], weight0[j])
             weight0[i] <- weight0[i] - wmin
@@ -116,6 +114,7 @@ pBound <- function(x, UB) {
       if(weight0[i] < 1e-6) break()
     }
   }
+#  print(sum(weight0))
   res
 }
 
@@ -127,18 +126,19 @@ pBound <- function(x, UB) {
 #'
 #' This implementation is very slow and depending on the data may take very
 #' long time. In the worst case all (2n-5)!! possible trees have to be
-#' examined. For 10 species there are already 2027025 tip-labelled unrooted
-#' trees. It only uses some basic strategies to find a lower and upper bounds
-#' similar to penny from phylip. It uses a very basic heuristic approach of
-#' MinMax Squeeze (Holland et al. 2005) to improve the lower bound.  On the
-#' positive side \code{bab} is not like many other implementations restricted
-#' to binary or nucleotide data.
+#' examined, where n is the number of species / tips. For 10 species there are
+#' already 2027025 tip-labelled unrooted trees. It only uses some basic
+#' strategies to find a lower and upper bounds similar to penny from phylip.
+#' \code{bab} uses a very basic heuristic approach of MinMax Squeeze
+#' (Holland et al. 2005) to improve the lower bound.  On the positive side
+#' \code{bab} is not like many other implementations restricted to binary or
+#' nucleotide data.
 #'
 #' @aliases bab BranchAndBound
 #' @param data an object of class phyDat.
 #' @param tree a phylogenetic tree an object of class phylo, otherwise a
 #' pratchet search is performed.
-#' @param trace defines how much information is printed during optimisation.
+#' @param trace defines how much information is printed during optimization.
 #' @param \dots Further arguments passed to or from other methods
 #' @return \code{bab} returns all most parsimonious trees in an object of class
 #' \code{multiPhylo}.
@@ -161,13 +161,13 @@ pBound <- function(x, UB) {
 #' data(yeast)
 #' dfactorial(11)
 #' # choose only the first two genes
-#' gene12 <- subset(yeast, , 1:3158, site.pattern=FALSE)
+#' gene12 <- yeast[, 1:3158]
 #' trees <- bab(gene12)
 #'
 #' @export bab
 bab <- function(data, tree = NULL, trace = 1, ...) {
   if (!is.null(tree)) data <- subset(data, tree$tip.label)
-  pBound <- FALSE
+  pBound <- TRUE
 
   nTips <- length(data)
   if (nTips < 4) return(stree(nTips, tip.label = names(data)))
@@ -214,14 +214,14 @@ bab <- function(data, tree = NULL, trace = 1, ...) {
 
   m <- nr * (2L * nTips - 2L)
 
-  mmsAmb <- 0
   mmsAmb <- TMP %*% weight
-  mmsAmb <- mmsAmb[nTips] - mmsAmb
+#  mmsAmb <- mmsAmb[nTips] - mmsAmb
   mms0 <- 0
-  if (pBound) mms0 <- pBound(dat_used, UB)
+  if (pBound) mms0 <- pBound(dat_used, UB, TMP)
   mms0 <- mms0 + mmsAmb
-  minPars <- mms0[1]
-  kPars <- 0
+  mms0 <- mms0[nTips] - mms0
+
+  mms0 <- c(mms0, 0)
 
   f <- init_fitch(data, m=4L)
 
@@ -250,7 +250,7 @@ bab <- function(data, tree = NULL, trace = 1, ...) {
   Nnode <- 1L
   npsc <- 1
 
-  blub <- numeric(nTips)
+  visited <- numeric(nTips)
 
   result <- list()
   while (npsc > 0) {
@@ -264,30 +264,29 @@ bab <- function(data, tree = NULL, trace = 1, ...) {
 
     f$prep_spr(tmpTree)
     score <- f$pscore_vec(edge, as.integer(inord[a + 1L]))
-    score <- score + blub
-
+    score <- score + blub + mms0[a + 1L]
     ms <- min(score)
-    if (ms <= bound) {
+    if (ms < bound + .1) {
       if ((a + 1L) < nTips) {
         ind <- (1:L[a])[score <= bound]
-        trees[[a + 1]][seq_along(ind)] <- .Call("AddOnes", tmpTree,
+        trees[[a + 1]][seq_along(ind)] <- .Call('AddOnes', tmpTree,
                 as.integer(inord[a + 1L]), as.integer(ind), as.integer(L[a]),
-                as.integer(M[a]), PACKAGE = "phangorn")
+                as.integer(M[a]))
         l <- length(ind)
         # os <- order(score[ind], decreasing=TRUE)
         os <- seq_len(l)
-        # in C pushback
-        PSC <- rbind(PSC, cbind(rep(a + 1, l), os, score[ind]))
+        # in C++ pushback
+        PSC <- rbind(PSC, cbind(rep(a + 1, l), os, score[ind] - mms0[a + 1L]))
         npsc <- npsc + l
-        blub[a] <- blub[a] + l
+        visited[a + 1] <- visited[a + 1] + l
         #  PSC = rbind(PSC, cbind(rep(a+1, l), os, score[ind][os] ))
       }
       else {
         ind <- which(score == ms)
         tmp <- vector("list", length(ind))
-        tmp[seq_along(ind)] <- .Call("AddOnes", tmpTree,
+        tmp[seq_along(ind)] <- .Call('AddOnes', tmpTree,
                       as.integer(inord[a + 1L]), as.integer(ind),
-                      as.integer(L[a]), as.integer(M[a]), PACKAGE = "phangorn")
+                      as.integer(L[a]), as.integer(M[a]))
         if (ms < bound) {
           bound <- ms
           if (trace) cat("upper bound:", bound + p0, "\n")
@@ -304,7 +303,7 @@ bab <- function(data, tree = NULL, trace = 1, ...) {
               .Names = c("edge", "Nnode"), class = "phylo", order = "postorder")
   }
   attr(result, "TipLabel") <- tree$tip.label
-  #    attr(result, "visited") = blub
+  attr(result, "visited") <- visited
   class(result) <- "multiPhylo"
   if(add_taxa) result <- addTaxa(result, attr(data, "duplicated"))
   return(result)
