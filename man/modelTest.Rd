@@ -5,10 +5,9 @@
 \alias{AICc}
 \title{ModelTest}
 \usage{
-modelTest(object, tree = NULL, model = c("JC", "F81", "K80", "HKY", "SYM",
-  "GTR"), G = TRUE, I = TRUE, FREQ = FALSE, k = 4,
-  control = pml.control(epsilon = 1e-08, maxit = 10, trace = 1),
-  multicore = FALSE, mc.cores = NULL)
+modelTest(object, tree = NULL, model = NULL, G = TRUE, I = TRUE,
+  FREQ = FALSE, k = 4, control = pml.control(epsilon = 1e-08, maxit = 10,
+  trace = 1), multicore = FALSE, mc.cores = NULL)
 }
 \arguments{
 \item{object}{an object of class phyDat or pml}
@@ -55,13 +54,12 @@ work within a GUI interface and will not work under Windows.
 
 \dontrun{
 example(NJ)
-(mT <- modelTest(Laurasiatherian, tree))
+(mT <- modelTest(Laurasiatherian, tree, model = c("JC", "F81", "K80", "HKY",
+                 "SYM", "GTR")))
 
-# some R magic
-env <- attr(mT, "env")
-ls(env=env)
-(F81 <- get("F81+G", env)) # a call
-eval(F81, env=env)
+# extract best model
+(best_model <- as.pml(mT))
+
 
 data(chloroplast)
 (mTAA <- modelTest(chloroplast, model=c("JTT", "WAG", "LG")))

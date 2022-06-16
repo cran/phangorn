@@ -1,4 +1,4 @@
-#' Discrete Gamma function
+#' Discrete Gamma and Beta distribution
 #'
 #' \code{discrete.gamma} internally used for the likelihood computations in
 #' \code{pml} or \code{optim.pml}. It is useful to understand how it works
@@ -11,6 +11,7 @@
 #'
 #' @param shape Shape parameter of the gamma distribution.
 #' @param alpha Shape parameter of the gamma distribution.
+#' @param shape1,shape2 non-negative parameters of the Beta distribution.
 #' @param k Number of intervals of the discrete gamma distribution.
 #' @param inv Proportion of invariable sites.
 #' @param site.rate Indicates what type of gamma distribution to use. Options
@@ -30,7 +31,7 @@
 #' @param \dots Further arguments passed to or from other methods.
 #' @return \code{discrete.gamma} returns a matrix.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso \code{\link{pml.fit}, \link{stepfun}}
+#' @seealso \code{\link{pml.fit}, \link{stepfun}, link{pgamma}, link{pbeta}},
 #' @examples
 #' discrete.gamma(1, 4)
 #'
@@ -54,9 +55,15 @@ discrete.gamma <- function(alpha, k) {
 }
 
 
+#' @rdname discrete.gamma
+#' @importFrom stats pbeta qbeta
+#' @export
 discrete.beta <- function(shape1, shape2, k) {
-  qbeta( ( (0:(k - 1)) + .5) / k, shape1, shape2)
+  quants <- qbeta( (1:(k - 1)) / k, shape1, shape2)
+  diff(c(0, pbeta(quants, shape1 + 1, shape2), 1)) * k * shape1 /
+    (shape1 + shape2)
 }
+
 
 #' @rdname discrete.gamma
 #' @importFrom stats dgamma qgamma stepfun
@@ -251,28 +258,16 @@ LaguerreQuad <- function(shape=1, ncats=4) {
                 dimnames = list(NULL, c("rate", "weight"))))
 }
 
-# needs to be fixed
-#LogNormalQuad <- function(shape, ncats){
-#  s = shape
-#  m = -(s^2)/2
-#  pp <- gauss.quad.prob(ncats, dist="normal", mu=m, sigma=s)
-#  matrix(c(exp(pp$nodes/m), pp$weights), ncol=2L,
-#         dimnames = list(NULL, c("rate", "weight")))
-#}
-
-
 
 findRoots <- function(shape, ncats) {
   # Determine rates based on Gamma's alpha and the number of bins
   # bins roots normalized to 1 of the General Laguerre Polynomial (GLP)
   coeff  <- integer(ncats + 1)
   for (i in 0:ncats) {
-#    coeff[i + 1] <- (-1)^i*nChooseK(ncats + shape, ncats - i)/factorial(i)
     coeff[i + 1] <- (-1)^i * exp(lchoose(ncats + shape, ncats - i) - lfactorial(i))
   }
   return(sort(Re(polyroot(coeff))))
 }
-
 
 
 Laguerre <- function(x, shape, degree) {
@@ -283,40 +278,6 @@ Laguerre <- function(x, shape, degree) {
   }
   return(y)
 }
-
-
-#Took this from R.basic -- the C version did not work when LaguerreQuad was
-#called internally. Adding this function fixed this issue (JMB 9-29-2016).
-#nChooseK <- function(n, k, log=FALSE) {
-#  nChooseK0 <- function(n, k) {
-#    if((n == k) || (k==0))
-#      return(1)
-#    m <- min(k, n-k)
-#    prod(seq(from=n, to=(n-m+1), by=-1)/(seq(from=m, to=1, by=-1)))
-#  }
-  # Process the arguments
-#  if (is.logical(log)) {
-#    if (log == TRUE)
-#      log <- exp(1)
-#    else
-#      log <- NULL
-#  }
-  # Repeat n or k to make the of equal length.
-#  nn <- length(n)
-#  nk <- length(k)
-#  if (nn > nk) {
-#    k <- rep(k, length.out=nn)
-#    nk <- nn
-#  } else if (nn < nk) {
-#    n <- rep(n, length.out=nk)
-#    nn <- nk
-#  }
-#  if (is.null(log)) {
-#    gamma(n+1) / (gamma(n-k+1) * gamma(k+1))
-#  } else {
-#    (lgamma(n+1) - (lgamma(n-k+1) + lgamma(k+1))) / log(log)
-#  }
-#}
 
 
 rates_n_weights <- function(shape, k, site.rate = "gamma"){

@@ -37,7 +37,7 @@
 #' (sp <- as.splits(rtree(5)))
 #' write.nexus.splits(sp)
 #' spl <- allCircularSplits(5)
-#' plot(as.networx(spl), "2D")
+#' plot(as.networx(spl))
 #' write.splits(spl, print.labels = FALSE)
 #'
 #' @rdname read.nexus.splits
@@ -227,7 +227,7 @@ write.nexus.networx <- function(obj, file = "", taxa = TRUE, splits = TRUE,
   nvertices <- max(obj$edge)
 
   #    if(is.null(attr(obj, "coords")))
-  if (is.null(obj$.plot$vertices)) vertices <- coords(obj, "2D")
+  if (is.null(obj$.plot$vertices)) vertices <- coords.equal.angle(obj)
   else vertices <- obj$.plot$vertices
 
   # y-axis differs between R and SplitsTree
@@ -343,11 +343,11 @@ read.nexus.networx <- function(file, splits = TRUE) {
     if (length(x) == 2 * ntaxa) {
       TRANS <- matrix(x, ncol = 2, byrow = TRUE)
       TRANS[, 2] <- gsub("['\"]", "", TRANS[, 2])
-      TRANS <- list(node = as.numeric(TRANS[, 1]), label = TRANS[, 2])
+      TRANS <- data.frame(node = as.integer(TRANS[, 1]), label = TRANS[, 2])
     }
     else {
-      y <- as.numeric(x)
-      node <- numeric(ntaxa)
+      y <- as.integer(x)
+      node <- integer(ntaxa)
       label <- character(ntaxa)
       k <- 1
       for (i in seq_along(x)) {
@@ -358,11 +358,9 @@ read.nexus.networx <- function(file, splits = TRUE) {
           k <- k + 1
         }
       }
-      TRANS <- list(node = node, label = label)
+      TRANS <- data.frame(node = node, label = label)
     }
   }
-
-
   vert <- grep("VERTICES", X, ignore.case = TRUE)
   start <- vert[vert > max(dims, netStart)][1] + 1
   end <- semico[semico > start][1] - 1
@@ -382,20 +380,20 @@ read.nexus.networx <- function(file, splits = TRUE) {
   start <- edges[edges > max(dims, netStart)][1] + 1
   end <- semico[semico > start][1] - 1
   EDGE <- NULL
-  if (splits) EDGE <- matrix(0, nedges, 4, dimnames = list(NULL, c("id",
+  if (splits) EDGE <- matrix(0L, nedges, 4, dimnames = list(NULL, c("id",
       "vert_id_2", "vert_id_2", "splits_id")))
-  else EDGE <- matrix(0, nedges, 3, dimnames = list(NULL, c("id", "vert_id_2",
+  else EDGE <- matrix(0L, nedges, 3, dimnames = list(NULL, c("id", "vert_id_2",
       "vert_id_2")))
   j <- 1
   for (i in start:end) {
     tmp <- X[i]
     tmp <- gsub("\\,", "", tmp)
     tmp <- strsplit(tmp, "[[:space:]]")[[1]]
-    EDGE[j, 1] <- as.numeric(tmp[1])
-    EDGE[j, 2] <- as.numeric(tmp[2])
-    EDGE[j, 3] <- as.numeric(tmp[3])
+    EDGE[j, 1] <- as.integer(tmp[1])
+    EDGE[j, 2] <- as.integer(tmp[2])
+    EDGE[j, 3] <- as.integer(tmp[3])
     if (splits) {
-      EDGE[j, 4] <- as.numeric(sub("s=", "", tmp[4], ignore.case = TRUE))
+      EDGE[j, 4] <- as.integer(sub("s=", "", tmp[4], ignore.case = TRUE))
     }
     j <- j + 1
   }
@@ -419,6 +417,24 @@ read.nexus.networx <- function(file, splits = TRUE) {
   edge <- EDGE[, c(2:3)]
   vert <- VERT[, c(2:3)]
 
+  if(length(TRANS$label) > sum(tabulate(edge)==1L)){
+    ntip <- length(TRANS$label) - sum(tabulate(edge)==1L)
+
+    if(!is.null(spl)){
+      nspl <- length(spl)
+      spl <- addTrivialSplits(spl)
+      ind <- unlist(spl[(nspl+1):length(spl)])
+      lab <- attr(spl, "labels")[ind]
+      pos <- match(lab, TRANS$label)
+    }
+    else{stop("Problem")}
+    new_edges <- max(edge) + seq_along(ind)
+    edge <- rbind(edge, cbind(TRANS$node[pos], new_edges))
+    vert <- rbind( vert, vert[TRANS$node[pos], ])
+    if(!is.null(splitIndex))splitIndex <- c(splitIndex, (nspl+1):length(spl))
+    TRANS$node[pos] <- new_edges
+    el <- c(el, rep(0, ntip))
+  }
 
   if (translate.nodes) {
     oldLabel <- as.integer(TRANS$node)

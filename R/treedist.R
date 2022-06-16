@@ -2,7 +2,7 @@
 # tree distance functions
 #
 coph <- function(x, path = FALSE) {
-  if (is.null(attr(x, "order")) || attr(x, "order") == "cladewise")
+  if (is.null(attr(x, "order")) || attr(x, "order") != "postorder")
     x <- reorder(x, "postorder")
   el <- x$edge.length
   if (path) el <- rep(1.0, nrow(x$edge))
@@ -22,7 +22,9 @@ coph <- function(x, path = FALSE) {
 cophenetic.splits <- function(x) {
   labels <- attr(x, "labels")
   X <- splits2design(x)
-  dm <- as.vector(X %*% attr(x, "weight"))
+  weights <- attr(x, "weight")
+  if(is.null(weights)) weights <- rep(1, length(x))
+  dm <- as.vector(X %*% weights)
   attr(dm, "Size") <- length(labels)
   attr(dm, "Labels") <- labels
   attr(dm, "Diag") <- FALSE

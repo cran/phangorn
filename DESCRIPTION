@@ -1,6 +1,6 @@
 Package: phangorn
 Title: Phylogenetic Reconstruction and Analysis
-Version: 2.8.1
+Version: 2.9.0
 Authors@R: 
     c(person(given = "Klaus",
              family = "Schliep",
@@ -54,15 +54,16 @@ Authors@R:
              role = "ctb"))
 Description: Allows for estimation of phylogenetic trees and networks
     using Maximum Likelihood, Maximum Parsimony, distance methods and
-    Hadamard conjugation. Offers methods for tree comparison, model
-    selection and visualization of phylogenetic networks as described in
-    Schliep et al. (2017) <doi:10.1111/2041-210X.12760>.
+    Hadamard conjugation (Schliep 2011). Offers methods for tree comparison, 
+    model selection and visualization of phylogenetic networks as described in
+    Schliep et al. (2017).
 License: GPL (>= 2)
-URL: https://github.com/KlausVigo/phangorn
+URL: https://github.com/KlausVigo/phangorn,
+        http://klausvigo.github.io/phangorn/
 BugReports: https://github.com/KlausVigo/phangorn/issues
 Depends: ape (>= 5.5), R (>= 4.1.0)
-Imports: fastmatch, graphics, grDevices, igraph (>= 1.0), Matrix,
-        methods, parallel, quadprog, Rcpp, stats, utils
+Imports: fastmatch, generics, graphics, grDevices, igraph (>= 1.0),
+        Matrix, methods, parallel, quadprog, Rcpp, stats, utils
 Suggests: Biostrings, knitr, magick, prettydoc, rgl, rmarkdown, seqinr,
         seqLogo, tinytest, xtable
 LinkingTo: Rcpp
@@ -70,10 +71,10 @@ VignetteBuilder: knitr, utils
 biocViews: Software, Technology, QualityControl
 Encoding: UTF-8
 Repository: CRAN
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 Language: en-US
 NeedsCompilation: yes
-Packaged: 2021-12-13 14:03:14 UTC; klaus
+Packaged: 2022-06-16 13:20:38 UTC; klaus
 Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Emmanuel Paradis [aut] (<https://orcid.org/0000-0003-3092-2199>),
   Leonardo de Oliveira Martins [aut]
@@ -91,4 +92,4 @@ Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Brian O'Meara [ctb],
   Long Qu [ctb]
 Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
-Date/Publication: 2021-12-15 00:20:02 UTC
+Date/Publication: 2022-06-16 15:10:09 UTC

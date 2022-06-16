@@ -1,3 +1,22 @@
+    CHANGES in PHANGORN VERSION 2.9.0
+
+BUG FIXES
+
+    o modelTest did not work if no tree was supplied
+
+NEW FEATURES
+
+    o some tidy functions: glance.phyDat, tidy.modelTest
+
+OTHER CHANGES
+
+    o dist.ml is a lot faster for the JC69 and F81 models if there are no
+
+      ambiguous sites present.
+
+    o added a few helper function to simplified some workflows (e.g. modelTest)
+
+
     CHANGES in PHANGORN VERSION 2.8.0
 
 BUG FIXES

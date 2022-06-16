@@ -106,8 +106,6 @@ UNJ <- function(x){
 #    i <- 0
 #    j <- 0
     tmp <- out_cpp(d, r, l)
-#    tmp <- .C("out", as.double(d), as.double(r), as.integer(l), as.integer(i),
-#              as.integer(j))
     e2 <- tmp[2]
     e1 <- tmp[1]
     l1 <- d[e1, e2] / 2 + sum( (d[e1, -c(e1, e2)] - d[e2, -c(e1, e2)]) *
@@ -233,7 +231,7 @@ designUnrooted <- function(tree, order = NULL) {
 
 
 designUltra <- function(tree, sparse = TRUE) {
-  if (is.null(attr(tree, "order")) || attr(tree, "order") == "cladewise")
+  if (is.null(attr(tree, "order")) || attr(tree, "order") != "postorder")
     tree <- reorder(tree, "postorder")
   leri <- allChildren(tree)
   bp <- bip(tree)

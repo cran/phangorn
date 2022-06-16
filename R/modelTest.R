@@ -56,13 +56,12 @@ aic.weights <- function(aic) {
 #'
 #' \dontrun{
 #' example(NJ)
-#' (mT <- modelTest(Laurasiatherian, tree))
+#' (mT <- modelTest(Laurasiatherian, tree, model = c("JC", "F81", "K80", "HKY",
+#'                  "SYM", "GTR")))
 #'
-#' # some R magic
-#' env <- attr(mT, "env")
-#' ls(env=env)
-#' (F81 <- get("F81+G", env)) # a call
-#' eval(F81, env=env)
+#' # extract best model
+#' (best_model <- as.pml(mT))
+#'
 #'
 #' data(chloroplast)
 #' (mTAA <- modelTest(chloroplast, model=c("JTT", "WAG", "LG")))
@@ -72,22 +71,18 @@ aic.weights <- function(aic) {
 #' }
 #'
 #' @export modelTest
-modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
-                      "SYM", "GTR"), G = TRUE, I = TRUE, FREQ = FALSE, k = 4,
+modelTest <- function(object, tree = NULL, model = NULL, G = TRUE, I = TRUE,
+                      FREQ = FALSE, k = 4,
                       control = pml.control(epsilon = 1e-08, maxit = 10,
                       trace = 1), multicore = FALSE, mc.cores = NULL) {
-  if (multicore && is.null(mc.cores)) {
-    mc.cores <- detectCores()
-  }
+  if(.Platform$OS.type=="windows") multicore <- FALSE
+  if (multicore && is.null(mc.cores)) mc.cores <- detectCores()
   if (inherits(object, "phyDat"))
     data <- object
   if (inherits(object, "pml")) {
     data <- object$data
     if (is.null(tree))
       tree <- object$tree
-  }
-  if(!identical(sort(names(data)), sort(tree$tip.label))){
-    stop("Labels in tree and data differ!")
   }
   if (attr(data, "type") == "DNA") type <- c("JC", "F81", "K80", "HKY", "TrNe",
       "TrN", "TPM1", "K81", "TPM1u", "TPM2", "TPM2u", "TPM3", "TPM3u",
@@ -96,14 +91,17 @@ modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
   if (attr(data, "type") == "AA") type <- .aamodels
   if (attr(data, "type") == "USER") type <- "JC"
 
-  if ( (length(model) == 1) && model == "all") model <- type
+  if ( is.null(model) || (length(model)==1 && model == "all") ) model <- type
   model <- match.arg(model, type, TRUE)
 
   env <- new.env()
   assign("data", data, envir = env)
 
   if (is.null(tree)) tree <- candidate.tree(data)
-  if (is.null(tree$tip.label)){
+  if(!identical(sort(names(data)), sort(tree$tip.label))){
+    stop("Labels in tree and data differ!")
+  }
+  if (is.null(tree$edge.length)){
       tree <- acctran(tree, data)
       tree$edge.length <- tree$edge.length / sum(attr(data, "weight"))
       tree <- minEdge(tree, tau=1e-8)
@@ -118,7 +116,6 @@ modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
     (FREQ & G & I))
   nseq <- sum(attr(data, "weight"))
 
-
   fitPar <- function(model, fit, G, I, k, FREQ) {
     m <- 1
     res <- matrix(NA, n, 6)
@@ -127,6 +124,7 @@ modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
     data.frame(c("Model", "df", "logLik", "AIC", "AICc", "BIC"))
     calls <- vector("list", n)
     trees <- vector("list", n)
+    if (trace > 0) print(model)
     fittmp <- optim.pml(fit, model = model, control = control)
     res[m, 1] <- model
     res[m, 2] <- fittmp$df
@@ -157,7 +155,7 @@ modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
       fitG <- update(fittmp, k = k)
       fitG <- optim.pml(fitG, model = model, optGamma = TRUE,
         control = control)
-      res[m, 1] <- paste0(model, "+G")
+      res[m, 1] <- paste0(model, "+G(", k, ")")
       res[m, 2] <- fitG$df
       res[m, 3] <- fitG$logLik
       res[m, 4] <- AIC(fitG)
@@ -172,7 +170,7 @@ modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
       fitGI <- update(fitI, k = k)
       fitGI <- optim.pml(fitGI, model = model, optGamma = TRUE,
         optInv = TRUE, control = control)
-      res[m, 1] <- paste0(model, "+G+I")
+      res[m, 1] <- paste0(model, "+G(", k, ")+I")
       res[m, 2] <- fitGI$df
       res[m, 3] <- fitGI$logLik
       res[m, 4] <- AIC(fitGI)
@@ -216,7 +214,7 @@ modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
       fitGF <- update(fitF, k = k, shape = fitG$shape)
       fitGF <- optim.pml(fitGF, model = model, optBf = TRUE,
         optGamma = TRUE, control = control)
-      res[m, 1] <- paste0(model, "+G+F")
+      res[m, 1] <- paste0(model, "+G(", k, ")+F")
       res[m, 2] <- fitGF$df
       res[m, 3] <- fitGF$logLik
       res[m, 4] <- AIC(fitGF)
@@ -231,7 +229,7 @@ modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
       fitGIF <- update(fitIF, k = k)
       fitGIF <- optim.pml(fitGIF, model = model, optBf = TRUE,
         optInv = TRUE, optGamma = TRUE, control = control)
-      res[m, 1] <- paste0(model, "+G+I+F")
+      res[m, 1] <- paste0(model, "+G(", k, ")+I+F")
       res[m, 2] <- fitGIF$df
       res[m, 3] <- fitGIF$logLik
       res[m, 4] <- AIC(fitGIF)
@@ -277,11 +275,13 @@ modelTest <- function(object, tree = NULL, model = c("JC", "F81", "K80", "HKY",
 }
 
 
+#' @importFrom generics tidy
+#' @export
+generics::tidy
 
-tidy <- function(x, ...) UseMethod("tidy")
 
-
-tidy.modelTest <- function(x) {
+#' @export
+tidy.modelTest <- function(x, ...) {
   env <- attr(x, "env")
   l <- nrow(x)
   k <- rep(1L, l)
@@ -295,3 +295,29 @@ tidy.modelTest <- function(x) {
   }
   data.frame(Model = x$Model, k = k, shape = shape, inv = inv)
 }
+
+
+#' @rdname pml
+#' @export
+as.pml <- function (x, ...)
+{
+  if (inherits(x, "pml"))
+    return(x)
+  UseMethod("as.pml")
+}
+
+
+#' @export
+as.pml.modelTest <- function(x, model="BIC", ...){
+  model <- match.arg(model, c("AIC", "AICc", "BIC", x$Model))
+  if(model %in% c("AIC", "AICc", "BIC")){
+    model <- x$Model[which.min(x[, model])]
+  }
+  env <- attr(x, "env")
+  best_model <- get(model, env)
+  fit <- eval(best_model, env)
+  fit$model <- strsplit(model, "\\+")[[1]][1]
+  fit
+}
+
+

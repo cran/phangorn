@@ -117,17 +117,14 @@ ldfactorial <- function(x) {
 #'
 #' # write.nexus.splits(fit2, file = "test.nxs")
 #' # read this file into Spectronet or SplitsTree to show the network
-#' \dontrun{
-#' dat <- as.character(yeast)
-#' dat4 <- phyDat(dat, type="USER", levels=c("a","c", "g", "t"), ambiguity=NULL)
-#' fit4 <- h4st(dat4)
+#'
+#' fit4 <- h4st(yeast)
 #' old.par <- par(no.readonly = TRUE)
 #' par(mfrow=c(3,1))
 #' lento(fit4[[1]], main="Transversion")
 #' lento(fit4[[2]], main="Transition 1")
 #' lento(fit4[[3]], main="Transition 2")
 #' par(old.par)
-#' }
 #'
 #' @rdname hadamard
 #' @export hadamard
@@ -188,7 +185,7 @@ split2seq <- function(q) {
 #' dm <- as.matrix(dm)
 #' fit <- distanceHadamard(dm)
 #' lento(fit)
-#' plot(as.networx(fit), "2D")
+#' plot(as.networx(fit))
 #'
 #' @export distanceHadamard
 distanceHadamard <- function(dm, eps = 0.001) {
@@ -228,10 +225,10 @@ distanceHadamard <- function(dm, eps = 0.001) {
 #' @rdname hadamard
 #' @export
 h4st <- function(obj, levels = c("a", "c", "g", "t")) {
-  if (is.matrix(obj))
-    obj <- as.data.frame(t(obj))
-  if (inherits(obj, "phyDat"))
-    obj <- as.data.frame(t(as.character(obj)))
+  if (!inherits(obj, "phyDat")) stop("obj needs to be of class phyDat!")
+  if (attr(obj, "nc") != 4L) stop("Error")
+  obj <- removeAmbiguousSites(obj)
+  obj <- as.data.frame(t(as.character(obj)))
 
   n <- dim(obj)[1]
   p <- dim(obj)[2]
@@ -283,6 +280,7 @@ h4st <- function(obj, levels = c("a", "c", "g", "t")) {
 h2st <- function(obj, eps = 0.001) {
   if (!inherits(obj, "phyDat")) stop("Error")
   if (attr(obj, "nc") != 2) stop("Error")
+  obj <- removeAmbiguousSites(obj)
   nr <- attr(obj, "nr") # n
   p <- length(obj) # p
   weight <- attr(obj, "weight")

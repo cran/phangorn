@@ -6,12 +6,13 @@
 \alias{phangorn-package}
 \title{phangorn: Phylogenetic Reconstruction and Analysis}
 \description{
-Allows for estimation of phylogenetic trees and networks using Maximum Likelihood, Maximum Parsimony, distance methods and Hadamard conjugation. Offers methods for tree comparison, model selection and visualization of phylogenetic networks as described in Schliep et al. (2017) <doi:10.1111/2041-210X.12760>.
+Allows for estimation of phylogenetic trees and networks using Maximum Likelihood, Maximum Parsimony, distance methods and Hadamard conjugation (Schliep 2011). Offers methods for tree comparison, model selection and visualization of phylogenetic networks as described in Schliep et al. (2017).
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/KlausVigo/phangorn}
+  \item \url{http://klausvigo.github.io/phangorn/}
   \item Report bugs at \url{https://github.com/KlausVigo/phangorn/issues}
 }
 

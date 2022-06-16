@@ -1,8 +1,3 @@
-#
-# Data structures for ML and MP
-#
-
-
 #' Conversion among Sequence Formats
 #'
 #' These functions transform several DNA formats into the \code{phyDat} format.
@@ -40,12 +35,6 @@
 #' @param site.pattern select site pattern or sites.
 #' @param allLevels return original data.
 #' @param obj as object of class phyDat
-#' @param freq logical, if 'TRUE', frequencies or counts are returned otherwise
-#' proportions
-#' @param all all a logical; if all = TRUE, all counts of bases, ambiguous
-#' codes, missing data, and alignment gaps are returned as defined in the
-#' contrast.
-#' @param drop.unused.levels logical, drop unused levels
 #' @param incomparables for compatibility with unique.
 #' @param identical if TRUE (default) sequences have to be identical, if FALSE
 #' sequences are considered duplicates if distance between sequences is zero
@@ -56,6 +45,7 @@
 #' @return The functions return an object of class \code{phyDat}.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
 #' @seealso \code{\link{DNAbin}}, \code{\link{as.DNAbin}},
+#' \code{\link{baseFreq}}, \code{\link{glance.phyDat}}
 #' \code{\link{read.dna}}, \code{\link{read.aa}}, \code{\link{read.nexus.data}}
 #' and the chapter 1 in the \code{vignette("phangorn-specials",
 #' package="phangorn")} and the example of \code{\link{pmlMix}} for the use of
@@ -68,8 +58,6 @@
 #' Laurasiatherian
 #' # base frequencies
 #' baseFreq(Laurasiatherian)
-#' baseFreq(Laurasiatherian, all=TRUE)
-#' baseFreq(Laurasiatherian, freq=TRUE)
 #' # subsetting phyDat objects
 #' # the first 5 sequences
 #' subset(Laurasiatherian, subset=1:5)
@@ -364,20 +352,6 @@ print.phyDat <- function (x, ...){
 }
 
 
-## @export
-summary.phyDat <- function (x, ...){
-  nc  <- attr(x, "nc")
-  nseq <- length(x)
-  nchar <- sum(attr(x,"weight"))
-  unique_sites <- attr(x, "nr")
-  tmp <- logical(unique_sites)
-  for(i in 2:nseq) tmp <- tmp | (x[[1]] != x[[i]])
-  const_sites <- sum(attr(x, "weight")[tmp==0])
-  list(nseq=nseq, nchar=nchar, unique_sites=unique_sites,
-       const_sites=const_sites)
-}
-
-
 #' @export cbind.phyDat
 #' @export
 cbind.phyDat <- function(..., gaps="-", compress=TRUE){
@@ -458,30 +432,11 @@ cbind.phyDat <- function(..., gaps="-", compress=TRUE){
 c.phyDat <- cbind.phyDat
 
 
-#' @rdname phyDat
-#' @export
-baseFreq <- function(obj, freq=FALSE, all=FALSE, drop.unused.levels = FALSE){
-  if (!inherits(obj,"phyDat"))
-    stop("data must be of class phyDat")
-  labels <- attr(obj, "allLevels")
-  weight <- attr(obj,"weight")
-  n <- length(obj)
-  res <- numeric(length(labels))
-  D <- diag(length(labels))
-  for(i in 1:n)res <- res + colSums(D[obj[[i]],, drop=FALSE]*weight)
-  names(res) <- labels
-  if(!all) res <- res[attr(obj, "levels")]
-  if(!freq)res <- res/sum(res)
-  if(drop.unused.levels) return(res[res>0])
-  res
-}
-
-
-phylo <- function(edge, tip, edge.length=NULL){
-  res <- list(edge=edge, tip.label=tip, edge.length=edge.length)
-  class(res) <- "phylo"
-  res
-  }
+#phylo <- function(edge, tip, edge.length=NULL){
+#  res <- list(edge=edge, tip.label=tip, edge.length=edge.length)
+#  class(res) <- "phylo"
+#  res
+#  }
 
 compress.phyDat <- function(data){
   attrib <- attributes(data)
@@ -583,7 +538,6 @@ subset.phyDat <- function (x, subset, select, site.pattern = TRUE, ...){
 
 
 #' @rdname phangorn-internal
-#' @importFrom fastmatch fmatch
 #' @export
 map_duplicates <-  function(x, dist=length(x)<500, ...){
   labels <- names(x)
@@ -592,8 +546,6 @@ map_duplicates <-  function(x, dist=length(x)<500, ...){
   if(dist){
     y <- as.matrix(dist.hamming(x, FALSE))
     l <- nrow(y)
-#    z <- character(l)
-#    for(i in seq_len(l)) z[i] <- paste( round(y[i, ], 8), collapse="_")
     ind <- duplicated(y)
   }
   else ind <- duplicated(x)
@@ -664,6 +616,33 @@ removeUndeterminedSites <- function(x, ...){
   if(any(tmp)) x <- getRows(x, (1:nr)[!tmp])
   x
 }
+
+
+hasAmbiguousSites <- function(x){
+  contrast <- attr(x, "contrast")
+  nc <- as.integer(attr(x, "nc"))
+  con <- rowSums(contrast > 0) > 1
+  for (i in seq_along(x)) {
+    tmp <- con[x[[i]]]
+    if(any(tmp)) return(TRUE)
+  }
+  FALSE
+}
+
+
+#' @rdname phyDat
+#' @export
+removeAmbiguousSites <- function(x){
+  contrast <- attr(x, "contrast")
+  nc <- as.integer(attr(x, "nc"))
+  con <- rowSums(contrast > 0) < 2
+  index <- con[x[[1]]]
+  for (i in 2:length(x)) index <- index & con[x[[i]]]
+  index <- which(index)
+  if(length(index)==0) stop('each site contains at least one ambiguous state!')
+  subset(x, select = index)
+}
+# add to dist.ml, dist.hamming, h4st
 
 
 removeParsUninfoSites <- function(data, exact=TRUE){

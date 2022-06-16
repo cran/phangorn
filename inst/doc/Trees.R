@@ -40,63 +40,65 @@ parsimony(c(treePars, treeRatchet), primates)
 ## -----------------------------------------------------------------------------
 treeRatchet  <- acctran(treeRatchet, primates)
 
-## -----------------------------------------------------------------------------
+## ----midpoint-----------------------------------------------------------------
 plotBS(midpoint(treeRatchet), type="phylogram")
 
-## -----------------------------------------------------------------------------
+## ----bab----------------------------------------------------------------------
 (trees <- bab(subset(primates,1:10)))
 
-## -----------------------------------------------------------------------------
-fit = pml(treeNJ, data=primates)
+## ----pml----------------------------------------------------------------------
+fit <- pml(treeNJ, data=primates)
 fit
 
 ## -----------------------------------------------------------------------------
 methods(class="pml")
 
 ## -----------------------------------------------------------------------------
-fitJC  <- optim.pml(fit, TRUE)
+fitJC  <- optim.pml(fit, rearrangement="NNI")
 logLik(fitJC)
 
-## -----------------------------------------------------------------------------
+## ----GTR+G+I------------------------------------------------------------------
 fitGTR <- update(fit, k=4, inv=0.2)
 fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
     rearrangement = "NNI", control = pml.control(trace = 0))
 fitGTR
 
-## -----------------------------------------------------------------------------
+## ----stochastic---------------------------------------------------------------
 fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
     rearrangement = "stochastic", control = pml.control(trace = 0))
 fitGTR
 
-## -----------------------------------------------------------------------------
+## ----anova--------------------------------------------------------------------
 anova(fitJC, fitGTR)
 
-## -----------------------------------------------------------------------------
+## ----SH_test------------------------------------------------------------------
 SH.test(fitGTR, fitJC)
 
-## -----------------------------------------------------------------------------
+## ----AIC----------------------------------------------------------------------
 AIC(fitJC)
 AIC(fitGTR)
 AICc(fitGTR)
 BIC(fitGTR)
 
+## ---- echo=TRUE, eval=FALSE---------------------------------------------------
+#  mt <- modelTest(primates)
+
 ## ---- echo=FALSE--------------------------------------------------------------
 load("Trees.RData")
 
 ## ---- echo=TRUE, eval=FALSE---------------------------------------------------
-#  mt = modelTest(primates)
+#  mt <- modelTest(primates, model=c("JC", "F81", "K80", "HKY", "SYM", "GTR"))
 
 ## ---- echo=FALSE--------------------------------------------------------------
 library(knitr)
 kable(mt, digits=2)
 
-## ---- echo=TRUE---------------------------------------------------------------
-env <- attr(mt, "env")
-ls(envir=env)
-(fit <- eval(get("HKY+G+I", env), env))
+## ----as.pml, echo=TRUE--------------------------------------------------------
+(fit <- as.pml(mt, "HKY+G+I"))
+(fit <- as.pml(mt, "BIC"))
 
 ## ---- echo=TRUE, eval=FALSE---------------------------------------------------
-#  bs = bootstrap.pml(fitJC, bs=100, optNni=TRUE,
+#  bs <- bootstrap.pml(fitJC, bs=100, optNni=TRUE,
 #      control = pml.control(trace = 0))
 
 ## ----plotBS, fig.cap="Tree with bootstrap support. Unrooted tree (midpoint rooted) with bootstrap support values.", echo=TRUE----
@@ -134,13 +136,8 @@ plot(fit_strict)
 #  mt <- modelTest(dat, tree=tree, multicore=TRUE)
 #  mt[order(mt$AICc),]
 #  # choose best model from the table according to AICc
-#  bestmodel <- mt$Model[which.min(mt$AICc)]
+#  fitStart <- as.pml(mt, "AICc")
 #  
-#  env <- attr(mt, "env")
-#  fitStart <- eval(get("GTR+G+I", env), env)
-#  
-#  # or let R search the table
-#  fitStart <- eval(get(bestmodel, env), env)
 #  # equivalent to:   fitStart = eval(get("GTR+G+I", env), env)
 #  fit <- optim.pml(fitStart, rearrangement = "stochastic",
 #      optGamma=TRUE, optInv=TRUE, model="GTR")
@@ -160,8 +157,7 @@ plot(fit_strict)
 #  # run all available amino acid models
 #  (mt <- modelTest(dat, model="all", multicore=TRUE))
 #  
-#  env <- attr(mt, "env")
-#  fitStart <- eval(get(mt$Model[which.min(mt$BIC)], env), env)
+#  fitStart <- as.pml(mt)
 #  
 #  fitNJ <- pml(tree, dat, model="JTT", k=4, inv=.2)
 #  fit <- optim.pml(fitNJ, rearrangement = "stochastic",

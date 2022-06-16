@@ -1,7 +1,8 @@
 minEdge <- function(tree, tau=1e-8, enforce_ultrametric=FALSE){
   if(tau<0) stop("tau must be >= 0!")
-  if(any(tree$edge.length < tau)){
+  if(any(tree$edge.length < tau) || enforce_ultrametric){
     rooted <- is.rooted(tree)
+    if(enforce_ultrametric) rooted <- TRUE
     if(rooted){
       nTip <- Ntip(tree)
       ind <- seq_len(nTip)
@@ -118,9 +119,8 @@ candidate.tree <- function(x, rooted=FALSE, eps = 1e-8, ...){
 #' @export
 bootstrap.pml <- function(x, bs = 100, trees = TRUE, multicore = FALSE,
                           mc.cores = NULL, ...) {
-  if (multicore && is.null(mc.cores)) {
-    mc.cores <- detectCores()
-  }
+  if(.Platform$OS.type=="windows") multicore <- FALSE
+  if (multicore && is.null(mc.cores)) mc.cores <- detectCores()
   extras <- match.call(expand.dots = FALSE)$...
   rearr <- c("optNni", "rearrangement")
   tmp <- pmatch(names(extras), rearr)
@@ -156,11 +156,6 @@ bootstrap.pml <- function(x, bs = 100, trees = TRUE, multicore = FALSE,
     attr(data, "weight") <- weights[ind]
     fit <- update(fit, data = data)
     if(do_rearr){
-#      if(is_ultrametric){
-#        tree <- dist.ml(data, bf=fit$bf, Q=fit$Q) |> wpgma()
-#      }
-#      else tree <- candidate.tree(data)
-#      candidate.tree <- function(x, rooted=FALSE, eps = 1e-8, ...)
       tree <- candidate.tree(data, rooted = is_ultrametric, bf=fit$bf, Q=fit$Q)
       fit <- update(fit, tree = tree)
     }
@@ -191,9 +186,8 @@ bootstrap.pml <- function(x, bs = 100, trees = TRUE, multicore = FALSE,
 #' @export
 bootstrap.phyDat <- function(x, FUN, bs = 100, multicore = FALSE,
                              mc.cores = NULL, jumble = TRUE, ...) {
-  if (multicore && is.null(mc.cores)) {
-    mc.cores <- detectCores()
-  }
+  if(.Platform$OS.type=="windows") multicore <- FALSE
+  if (multicore && is.null(mc.cores)) mc.cores <- detectCores()
   weight <- attr(x, "weight")
   v <- rep(seq_along(weight), weight)
   BS <- vector("list", bs)
@@ -375,7 +369,7 @@ plotBS <- function(tree, BStrees, type = "unrooted",
     }
     ind2 <- which(label[ind] > p)
     if (length(ind2 > 0)) {
-      if(is.numeric(label)) label <- round(label)
+      if(is.numeric(label)) label <- round(label, digits = digits)
       edgelabels(label[ind][ind2], ind2,
         frame = frame,
         col = bs.col, adj = bs.adj, ...
@@ -399,7 +393,7 @@ plotBS <- function(tree, BStrees, type = "unrooted",
 #' If a list of partition is provided then the clade credibility is computed
 #' for the trees in x.
 #'
-#' \code{allCompat} returns a 50% majority rule consensus tree with added
+#' \code{allCompat} returns a 50\% majority rule consensus tree with added
 #' compatible splits similar to the option allcompat in MrBayes.
 #'
 #' @param x \code{x} is an object of class \code{multiPhylo} or \code{phylo}
@@ -509,7 +503,7 @@ allCompat <- function(x) {
   w <- attr(spl, "weights")
   ord <- order(w, decreasing = TRUE)
   for(i in ord){
-    if(all(compatible2(res, spl[i]) == 0)) res <- c(res, spl[i])
+    if(all(compatible(res, spl[i]) == 0)) res <- c(res, spl[i])
   }
   tree <- as.phylo(res, FALSE)
   tree$edge.length <- NULL
