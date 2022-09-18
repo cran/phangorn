@@ -23,8 +23,8 @@ optim.parsimony(tree, data, method = "fitch", cost = NULL, trace = 1,
   rearrangements = "SPR", ...)
 
 pratchet(data, start = NULL, method = "fitch", maxit = 1000,
-  minit = 10, k = 10, trace = 1, all = FALSE, rearrangements = "SPR",
-  perturbation = "ratchet", ...)
+  minit = 100, k = 10, trace = 1, all = FALSE,
+  rearrangements = "SPR", perturbation = "ratchet", ...)
 
 sankoff(tree, data, cost = NULL, site = "pscore")
 }
@@ -88,16 +88,22 @@ dm <- dist.hamming(Laurasiatherian)
 tree <- NJ(dm)
 parsimony(tree, Laurasiatherian)
 treeRA <- random.addition(Laurasiatherian)
-treeNNI <- optim.parsimony(tree, Laurasiatherian)
+treeSPR <- optim.parsimony(tree, Laurasiatherian)
+
+# lower number of iterations for the example (to run less than 5 seconds),
+# keep default values (maxit, minit, k) or increase them for real life
+# analyses.
 treeRatchet <- pratchet(Laurasiatherian, start=tree, maxit=100,
                         minit=5, k=5, trace=0)
-# assign edge length
+# assign edge length (number of substitutions)
 treeRatchet <- acctran(treeRatchet, Laurasiatherian)
+# remove edges of length 0
+treeRatchet <- di2multi(treeRatchet)
 
 plot(midpoint(treeRatchet))
 add.scale.bar(0,0, length=100)
 
-parsimony(c(tree,treeNNI, treeRatchet), Laurasiatherian)
+parsimony(c(tree,treeSPR, treeRatchet), Laurasiatherian)
 
 }
 \references{
@@ -108,9 +114,10 @@ Nixon, K. (1999) The Parsimony Ratchet, a New Method for Rapid Parsimony
 Analysis. \emph{Cladistics} \bold{15}, 407-414
 }
 \seealso{
-\code{\link{bab}}, \code{\link{CI}}, \code{\link{RI}}, \code{\link{ancestral.pml}},
-\code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}}
-,\code{\link{ancestral.pars}}, \code{\link{bootstrap.pml}}
+\code{\link{bab}}, \code{\link{CI}}, \code{\link{RI}},
+\code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}},
+\code{\link{pml}}, \code{\link{getClans}}, \code{\link{ancestral.pars}},
+\code{\link{bootstrap.pml}}
 }
 \author{
 Klaus Schliep \email{klaus.schliep@gmail.com}

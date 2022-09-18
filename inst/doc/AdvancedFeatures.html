@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2022-06-16" />
+<meta name="date" content="2022-09-17" />
 
 <title>Advanced features</title>
 
@@ -155,25 +155,28 @@ code span.ot { color: #007020; }
 Graz University of
 Technology<br><a class="author_email" href="mailto:#"><a href="mailto:klaus.schliep@gmail.com" class="email">klaus.schliep@gmail.com</a></a>
 </address>
-<h4 class="date project-date">2022-06-16</h4>
+<h4 class="date project-date">2022-09-17</h4>
 </section>
 
 
 <div id="TOC" class="toc">
 <div class="toc-box">
 <ul>
-<li><a href="#introduction">Introduction</a></li>
-<li><a href="#user-defined-data-formats">User defined data
-formats</a></li>
-<li><a href="#markov-models-of-character-evolution">Markov models of
-character evolution</a></li>
-<li><a href="#estimation-of-non-standard-transition-rate-matrices">Estimation
-of non-standard transition rate matrices</a></li>
-<li><a href="#codon-substitution-models">Codon substitution
-models</a></li>
-<li><a href="#generating-trees">Generating trees</a></li>
-<li><a href="#session-info">Session info</a></li>
-<li><a href="#references">References</a></li>
+<li><a href="#introduction" id="toc-introduction">Introduction</a></li>
+<li><a href="#user-defined-data-formats" id="toc-user-defined-data-formats">User defined data formats</a></li>
+<li><a href="#markov-models-of-character-evolution" id="toc-markov-models-of-character-evolution">Markov models of character
+evolution</a></li>
+<li><a href="#estimation-of-non-standard-transition-rate-matrices" id="toc-estimation-of-non-standard-transition-rate-matrices">Estimation
+of non-standard transition rate matrices</a>
+<ul>
+<li><a href="#predefined-models-for-user-defined-data" id="toc-predefined-models-for-user-defined-data">Predefined models for
+user defined data</a></li>
+</ul></li>
+<li><a href="#codon-substitution-models" id="toc-codon-substitution-models">Codon substitution models</a></li>
+<li><a href="#generating-trees" id="toc-generating-trees">Generating
+trees</a></li>
+<li><a href="#session-info" id="toc-session-info">Session info</a></li>
+<li><a href="#references" id="toc-references">References</a></li>
 </ul>
 </div>
 </div>
@@ -207,7 +210,7 @@ not important.</p>
 vector of a taxonomic unit:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(phangorn)</span></code></pre></div>
 <pre><code>## Lade nötiges Paket: ape</code></pre>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">=</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="st">&quot;r&quot;</span>,<span class="st">&quot;a&quot;</span>,<span class="st">&quot;y&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;a&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;-&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;g&quot;</span>,</span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="st">&quot;r&quot;</span>,<span class="st">&quot;a&quot;</span>,<span class="st">&quot;y&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;a&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;-&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;g&quot;</span>,</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;a&quot;</span>,<span class="st">&quot;a&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;a&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;-&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;a&quot;</span>,</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;a&quot;</span>,<span class="st">&quot;a&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;-&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;a&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;?&quot;</span>,<span class="st">&quot;g&quot;</span>),</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dimnames =</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="st">&quot;t1&quot;</span>, <span class="st">&quot;t2&quot;</span>, <span class="st">&quot;t3&quot;</span>),<span class="cn">NULL</span>), <span class="at">nrow=</span><span class="dv">3</span>, <span class="at">byrow=</span><span class="cn">TRUE</span>)</span>
@@ -218,7 +221,7 @@ vector of a taxonomic unit:</p>
 ## t3 &quot;a&quot;  &quot;a&quot;  &quot;t&quot;  &quot;-&quot;  &quot;g&quot;  &quot;a&quot;  &quot;c&quot;  &quot;c&quot;  &quot;c&quot;  &quot;t&quot;   &quot;?&quot;   &quot;g&quot;</code></pre>
 <p>Normally we would transform this matrix into an phyDat object and
 gaps are handled as ambiguous character like “?”.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>gapsdata1 <span class="ot">=</span> <span class="fu">phyDat</span>(data)</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>gapsdata1 <span class="ot">&lt;-</span> <span class="fu">phyDat</span>(data)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>gapsdata1</span></code></pre></div>
 <pre><code>## 3 sequences with 12 character and 11 different site patterns.
 ## The states are a c g t</code></pre>
@@ -226,7 +229,7 @@ gaps are handled as ambiguous character like “?”.</p>
 vector levels of the character states for the new data, in our case the
 for nucleotide states and the gap. Additional we can define ambiguous
 states which can be any of the states.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>gapsdata2 <span class="ot">=</span> <span class="fu">phyDat</span>(data, <span class="at">type=</span><span class="st">&quot;USER&quot;</span>, <span class="at">levels=</span><span class="fu">c</span>(<span class="st">&quot;a&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;-&quot;</span>),</span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>gapsdata2 <span class="ot">&lt;-</span> <span class="fu">phyDat</span>(data, <span class="at">type=</span><span class="st">&quot;USER&quot;</span>, <span class="at">levels=</span><span class="fu">c</span>(<span class="st">&quot;a&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;-&quot;</span>),</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">ambiguity =</span> <span class="fu">c</span>(<span class="st">&quot;?&quot;</span>, <span class="st">&quot;n&quot;</span>))</span></code></pre></div>
 <pre><code>## Warning in phyDat.default(data, levels = levels, return.index = return.index, :
 ## Found unknown characters (not supplied in levels). Deleted sites with unknown
@@ -238,7 +241,7 @@ states which can be any of the states.</p>
 contain the ambiguous characters “r” and “y”, got deleted. To define
 ambiguous characters like “r” and “y” explicitly we have to supply a
 contrast matrix similar to contrasts for factors.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>contrast <span class="ot">=</span> <span class="fu">matrix</span>(<span class="at">data =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,</span>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>contrast <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="at">data =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>,</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">0</span>,</span>
@@ -248,7 +251,7 @@ contrast matrix similar to contrasts for factors.</p>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">0</span>,</span>
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>),</span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">ncol =</span> <span class="dv">5</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(contrast) <span class="ot">=</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="st">&quot;a&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;r&quot;</span>,<span class="st">&quot;y&quot;</span>,<span class="st">&quot;-&quot;</span>,<span class="st">&quot;n&quot;</span>,<span class="st">&quot;?&quot;</span>),</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(contrast) <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="st">&quot;a&quot;</span>,<span class="st">&quot;c&quot;</span>,<span class="st">&quot;g&quot;</span>,<span class="st">&quot;t&quot;</span>,<span class="st">&quot;r&quot;</span>,<span class="st">&quot;y&quot;</span>,<span class="st">&quot;-&quot;</span>,<span class="st">&quot;n&quot;</span>,<span class="st">&quot;?&quot;</span>),</span>
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;c&quot;</span>, <span class="st">&quot;g&quot;</span>, <span class="st">&quot;t&quot;</span>, <span class="st">&quot;-&quot;</span>))</span>
 <span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>contrast</span></code></pre></div>
 <pre><code>##   a c g t -
@@ -261,7 +264,7 @@ contrast matrix similar to contrasts for factors.</p>
 ## - 0 0 0 0 1
 ## n 1 1 1 1 0
 ## ? 1 1 1 1 1</code></pre>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>gapsdata3 <span class="ot">=</span> <span class="fu">phyDat</span>(data, <span class="at">type=</span><span class="st">&quot;USER&quot;</span>, <span class="at">contrast=</span>contrast)</span>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>gapsdata3 <span class="ot">&lt;-</span> <span class="fu">phyDat</span>(data, <span class="at">type=</span><span class="st">&quot;USER&quot;</span>, <span class="at">contrast=</span>contrast)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>gapsdata3</span></code></pre></div>
 <pre><code>## 3 sequences with 12 character and 11 different site patterns.
 ## The states are a c g t -</code></pre>
@@ -400,11 +403,8 @@ possible and the rate is set to zero.</p>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">optim.pml</span>(fit, <span class="at">optQ=</span><span class="cn">TRUE</span>, <span class="at">subs=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>),</span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">control=</span><span class="fu">pml.control</span>(<span class="at">trace=</span><span class="dv">0</span>))</span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>fit</span></code></pre></div>
-<pre><code>## 
-## model: Mk 
-## 
+<pre><code>## model: Mk 
 ## loglikelihood: -33.01 
-## 
 ## unconstrained loglikelihood: -28.43 
 ## 
 ## Rate matrix:
@@ -416,6 +416,7 @@ possible and the rate is set to zero.</p>
 ## - 6.912e-01 6.912e-01 6.912e-01 6.912e-01 0.0000
 ## 
 ## Base frequencies:  
+##   a   c   g   t   - 
 ## 0.2 0.2 0.2 0.2 0.2</code></pre>
 <p>Here are some conventions how the models are estimated:</p>
 <p>If a model is supplied the base frequencies bf and rate matrix Q are
@@ -603,11 +604,103 @@ in equation (1)</p>
 </tr>
 </tbody>
 </table>
+<div id="predefined-models-for-user-defined-data" class="section level2">
+<h2>Predefined models for user defined data</h2>
+<p>So far there are 4 models which are just a generalization from
+nucleotide models allowing different number of states. In many cases
+only the equal rates (ER) model will be apropriate.</p>
+<table>
+<caption>Tab 2: Build in models which are available for USER defined
+data.</caption>
+<thead>
+<tr class="header">
+<th>DNA</th>
+<th>USER</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>JC</td>
+<td>ER</td>
+</tr>
+<tr class="even">
+<td>F81</td>
+<td>FREQ</td>
+</tr>
+<tr class="odd">
+<td>SYM</td>
+<td>SYM</td>
+</tr>
+<tr class="even">
+<td>GTR</td>
+<td>GTR</td>
+</tr>
+</tbody>
+</table>
+<p>There is an additional model ORDERED, which assumes ordered
+characters and only allows to switch between neighboring states. Table 3
+show the corresponding rate matrix.</p>
+<table>
+<caption>Tab 3: Rate matrix for “ORDERED” model with 5 states.</caption>
+<thead>
+<tr class="header">
+<th>a</th>
+<th>b</th>
+<th>c</th>
+<th>d</th>
+<th>e</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>a</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>b</td>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>c</td>
+<td>0</td>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>d</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>e</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 <div id="codon-substitution-models" class="section level1">
 <h1>Codon substitution models</h1>
-<p>A special case of the transition rates are codon models._phangorn_
-now offers the possibility to estimate the <span class="math inline">\(d_N/d_S\)</span> ratio (sometimes called ka/ks),
+<p>A special case of the transition rates are codon models.
+<em>phangorn</em> now offers the possibility to estimate the <span class="math inline">\(d_N/d_S\)</span> ratio (sometimes called ka/ks),
 for an overview see <span class="citation">(Yang 2014)</span>. These
 functions extend the option to estimates the <span class="math inline">\(d_N/d_S\)</span> ratio for pairwise sequence
 comparison as it is available through the function <code>kaks</code> in
@@ -621,54 +714,89 @@ q_{ij}=\left\{
          \pi_j\omega\kappa &amp; \textrm{for non synonymous transition}
     \end{array}
     \right. \nonumber
-\end{eqnarray}\]</span> where <span class="math inline">\(\omega\)</span> is the <span class="math inline">\(d_N/d_S\)</span> ratio, <span class="math inline">\(\kappa\)</span> the transition transversion ratio
+\end{eqnarray}\]</span></p>
+<p>where <span class="math inline">\(\omega\)</span> is the <span class="math inline">\(d_N/d_S\)</span> ratio, <span class="math inline">\(\kappa\)</span> the transition transversion ratio
 and <span class="math inline">\(\pi_j\)</span> is the the equilibrium
 frequencies of codon <span class="math inline">\(j\)</span>. For <span class="math inline">\(\omega\sim1\)</span> the an amino acid change is
 neutral, for <span class="math inline">\(\omega &lt; 1\)</span>
 purifying selection and <span class="math inline">\(\omega &gt;
-1\)</span> positive selection. There are four models available:
-“codon0”, where both parameter <span class="math inline">\(\kappa\)</span> and <span class="math inline">\(\omega\)</span> are fixed to 1, “codon1” where
-both parameters are estimated and “codon2” or “codon3” where <span class="math inline">\(\kappa\)</span> or <span class="math inline">\(\omega\)</span> is fixed to 1.</p>
-<p>We compute the <span class="math inline">\(d_N/d_S\)</span> for some
-sequences given a tree using the ML functions <code>pml</code> and
-<code>optim.pml</code>. First we have to transform the the nucleotide
-sequences into codons (so far the algorithms always takes triplets).</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(phangorn)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>fdir <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata/trees&quot;</span>, <span class="at">package =</span> <span class="st">&quot;phangorn&quot;</span>)</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>primates <span class="ot">&lt;-</span> <span class="fu">read.phyDat</span>(<span class="fu">file.path</span>(fdir, <span class="st">&quot;primates.dna&quot;</span>),</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">format =</span> <span class="st">&quot;interleaved&quot;</span>)</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>tree <span class="ot">&lt;-</span> <span class="fu">NJ</span>(<span class="fu">dist.ml</span>(primates))</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">dna2codon</span>(primates)</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">pml</span>(tree, dat, <span class="at">bf=</span><span class="st">&quot;F3x4&quot;</span>)</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>fit0 <span class="ot">&lt;-</span> <span class="fu">optim.pml</span>(fit, <span class="at">model=</span><span class="st">&quot;codon0&quot;</span>, <span class="at">control=</span><span class="fu">pml.control</span>(<span class="at">trace=</span><span class="dv">0</span>))</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">optim.pml</span>(fit, <span class="at">model=</span><span class="st">&quot;codon1&quot;</span>, <span class="at">control=</span><span class="fu">pml.control</span>(<span class="at">trace=</span><span class="dv">0</span>))</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">optim.pml</span>(fit, <span class="at">model=</span><span class="st">&quot;codon2&quot;</span>, <span class="at">control=</span><span class="fu">pml.control</span>(<span class="at">trace=</span><span class="dv">0</span>))</span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>fit3 <span class="ot">&lt;-</span> <span class="fu">optim.pml</span>(fit, <span class="at">model=</span><span class="st">&quot;codon3&quot;</span>, <span class="at">control=</span><span class="fu">pml.control</span>(<span class="at">trace=</span><span class="dv">0</span>))</span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(fit0, fit2, fit3, fit1)</span></code></pre></div>
-<pre><code>## Likelihood Ratio Test Table
-##   Log lik. Df Df change Diff log lik. Pr(&gt;|Chi|)    
-## 1    -2867 34                                       
-## 2    -2866 35         1             2       0.14    
-## 3    -2522 35         0           688     &lt;2e-16 ***
-## 4    -2521 36         1             2       0.20    
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
-<p>There are several ways to estimate the codon frequencies <span class="math inline">\(\pi_j\)</span>. The simplest model is to assume
-they have equal frequencies (=1/61). A second is to use the empirical
-codon frequencies, either computed using <code>baseFreq</code> or using
-the argument <code>bf=&quot;empirical&quot;</code> in <code>pml</code>. Last but
-not least the frequencies can be derived from the base frequencies at
-each codon position, the F3x4 model is set by the argument
-<code>bf=&quot;F3x4&quot;</code>. One can estimate the codon frequencies setting
-the option to <code>optBf=TRUE</code> in <code>optim.pml</code>. As the
-convergence of the 60 parameters the convergence is likely slow set the
-maximal iterations to a higher value than the default
-(e.g. <code>control = pml.control(maxit=50)</code>). Similar parameters
-of the F3x4 can also estimated using ML <code>optF3x4=TRUE</code>
-instead.</p>
-<p>The “YN98” model <span class="citation">(Yang and Nielsen
-1998)</span> is similar to the “codon1”, but additional optimizes the
-codon frequencies.</p>
+1\)</span> positive selection.</p>
+<p>Here we use data set from and follow loosely the example in <span class="citation">(Bielawski and Yang 2005)</span>. We first read in an
+alignment and phylogenetic tree for 45 sequences of the nef Gene in the
+Human HIV-2 Genome using <code>read.phyDat</code> function.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>fdir <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata/trees&quot;</span>, <span class="at">package =</span> <span class="st">&quot;phangorn&quot;</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>hiv_2_nef <span class="ot">&lt;-</span> <span class="fu">read.phyDat</span>(<span class="fu">file.path</span>(fdir, <span class="st">&quot;seqfile.txt&quot;</span>), <span class="at">format=</span><span class="st">&quot;sequential&quot;</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>tree <span class="ot">&lt;-</span> <span class="fu">read.tree</span>(<span class="fu">file.path</span>(fdir, <span class="st">&quot;tree.txt&quot;</span>))</span></code></pre></div>
+<p>With the tree and data set we can estimate currently 3 different site
+models:</p>
+<ol style="list-style-type: decimal">
+<li>The M0 model with a constant <span class="math inline">\(\omega\)</span>, where <span class="math inline">\(\omega\)</span> estimates the average over all
+sites of the alignment. M0 does not allow for distinct <span class="math inline">\(\omega\)</span> and identify classes, therefore we
+will not retrieve any information regards positive selection.<br />
+</li>
+<li>The M1a or nearly neutral model estimates two different <span class="math inline">\(\omega\)</span> value classes (<span class="math inline">\(\omega=1\)</span> &amp; <span class="math inline">\(\omega&lt;1\)</span>).</li>
+<li>The M2a or positive selection model estimates three different
+classes of <span class="math inline">\(\omega\)</span> (negative
+selection <span class="math inline">\(\omega&lt;1\)</span>, neutral
+selection <span class="math inline">\(\omega=1\)</span>, positive
+selection <span class="math inline">\(\omega&gt;1\)</span>). One can use
+a likelihood ratio test to compare the M1a and M2a to for positive
+selection.</li>
+</ol>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>cdn <span class="ot">&lt;-</span> <span class="fu">codonTest</span>(tree, hiv_2_nef)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>cdn</span></code></pre></div>
+<pre><code>##   model Frequencies  estimate logLik  df   AIC   BIC  dnds_0 dnds_1 dnds_2
+## 1    M0        F3x4 empirical  -9773  98 19741 20087 0.50486     NA     NA
+## 2   M1a        F3x4 empirical  -9313  99 18824 19168 0.06282      1     NA
+## 3   M2a        F3x4 empirical  -9244 101 18689 19040 0.05551      1  2.469
+##      p_0    p_1    p_2  tstv
+## 1 1.0000     NA     NA 4.418
+## 2 0.5564 0.4436     NA 4.364
+## 3 0.5227 0.3617 0.1156 4.849</code></pre>
+<p>Currently the choice of site models is limited to the three models
+mentioned above and are no branch models implemented so far.</p>
+<p>We can identify sites under positive selection using the Na&quot;ive
+empirical Bayes (NEB) method of (Nielsen and Yang 1998): <span class="math display">\[
+P(\omega|x_h) = \frac{P(X_h|\omega_i)p_i}{P(X_h)} =
+\frac{P(X_h|\omega_i)p_i}{\sum_j P(X_h|\omega_j)p_j}
+\]</span></p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(cdn, <span class="st">&quot;M1a&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(cdn, <span class="st">&quot;M2a&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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fXJy8oEDBzZv3lz7vnq9Xgjxxhtv/OEPf/Dy8ho2bNjChQv37t1bWloqhOjbt++5c+cuXrx47ty5vLy8jh07ent7t25d50UozYZSAiwjI2PMmDFPPvnk1q1bhRAbN2709fXt0aNHmzZt3njjDbPZuWt+AEBRMjMzR40aFRUVdf78+aeeespmn+PHj//000/+/v4ajUaj0Xz55Zc7duzQaDRpaWkdOnQQQnTt2tXSuUuXLkKI4uLiysrKc+fO3bp1q3v37j179mzRokVOTs69cA29UMhFHB999NEf//jHAQMGtG/fPjY29sSJE9u2bZs7d27//v2PHj365z//2d/ff/Jk3tXWibf8jU2ZF4vzWYvG888fKk+evV1Xq8nJy+hNJtPUqVOfe+65devW2ek2ffp06ysVX3zxxfvvv3/+/Pn/8R//0b59+549e+7bt89ytWF2dra3t3e3bt2qqqoeeuihqVOnrl69Wghx48aN9PT0t99+26kKVUoRAbZ8+fLp06evX79eCLFhw4bp06cvX7583rx5QoiRI0dWVVWtXbuWAMO9g0sc5RUaGrp2bae//8NeH+vL1u/q8OHDhYWF/v7+H3zwgfXysWPH6nS6jRs3Zmdnb926NSgoyPrajbZt2/r7+48YMUK6uXjx4okTJ2o0mqFDhx45cmT16tUrVqxo0aJFixYtJk+enJCQEBQUpNfr33777c6dOz/77LOOl6deigiwCxcuvP7669LfUVFR06dPHzp0qKV12LBh7777rkylAbjnTJo0adKkSS4c8OLFi0KI2ntFI0eO1Ol0J06cSE5O3rRpk+UyRZvGjh1rNpvj4+Pffffd7t27b9q0yXKd/VtvvdWiRYs///nPWq32v/7rv1avXt22bVsX1q9YijgHFhAQ8M0330h/X758WQhx6dIlS2tubm6nTp3kqQwAGuz555832yJ9cisxMdFsNtf+zNaxY8e2b99uvWTcuHHHjx+/efPm6dOnrT8lptPp4uPji4qKrl27tm3btnbt2jXBRimBIvbAJk+e/NprrxUVFen1+o0bNw4YMODVV1+9//77+/Xrd/To0SVLltS+qBT3OGWelALQlBQRYHFxcbdu3dq8eXNlZeXo0aPffffdGTNmPPbYY1Kr0Wh89dVX5a0QAKA0iggwNze3pUuXLl261LIkMTHx5ZdfPnHiRHBw8MCB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sjt37ly6dOnOnTuWJbNnz/bw8Pjtt9/sV+VIU8PXW3s+XfvoUgUC7C4aNcDmzZs3aNCghgy+Zs0a6V2e5UDKsWPHhBBvvPGGt7e39B7l8ccf/+GHH5watqqqqlWrVj4+PmvWrElNTZ0yZYoQYuXKlfab6qf2JJSUlHTu3Pn99983m831C7Bbt2516dJl0KBB58+fLysr2759u7RzcPXqVUuf2lNXP46/frl86upade1Nc2RC6r1eRx5yLpnt2ttbUVHRv39/y9vxGTNm1L5Xw59lkh07dri5ub3yyit3rcqRpgaut/Z8uvzRpQoE2F00XoAVFxd7enru2bOnIYPn5eXt3r37lVdeadmypfRgzcjIEEL4+/vv27fv5s2bn3/+eUBAQGRkpFPDlpeXJycnW5/xjo6ObtOmTVVVlZ2metRvcxLGjh0bEREh/V2/ADObzadPnw4NDZVe1x544IE5c+YIIW7dumXpUHvq6sfx1y/XTp2dVdvctLtOSL3X68hDziWzXXt7p06dev/992/ZsuWLL75YtmyZt7f3xo0brTu45Fl248aNiRMnCiEmTZpUWVl516ocaWrgemvPp8sfXapAgN1F4wXY6tWrfX19az8f6mf27NndunUzm81///vfhRCbN2+2NL3//vtCiJKSkoaM/8knnwghLl265FTTXdWehKSkJB8fn6KiIulmvQPMbDZXV1dfvHjx3LlzVVVVq1ev9vb2ttnNMnX105DXr4ZMnSPj19g0ByfE2fU69ZBryGzXWO93330nhNi3b59lydKlS318fKxfshv+LMvIyPD19e3atWtqaqojVTnY1PD1SuzMZwMfXarARRyy+eCDD8aOHevm5laP+3788cdGo9FsNluW9OrV6/Lly7dv3+7QoYMQomvXrpamLl26CCGKi4sdH//GjRsnT560Hl+q08vLy05TPTak9iQcP378p59+8vf3lz7I8uWXX+7YscPZT/BUVlaeO3fu1q1b3bt379mzZ4sWLXJycnr37i3sTl096neKa6euNjubZmdCGs7OQ65RZ/urr74SQvTr18+ypH///j/99JN0Tk7SkGeZECIzM3PUqFFRUVHnz59/6qmnGlhww9drZz4b+9GlTASYPHJzc//xj388/fTT9bu7p6dnZmZmTk6OZcmxY8c6duzYunXrrl279uzZc9++fZam7Oxsb29vpy5POnPmTP/+/ZOSkixLMjIyOnfu7OfnZ6fJ2a2wOQnTp08/YCU0NHTEiBEHDhywXHnloIceemjx4sXS3zdu3EhPT5eOxtiZOmfrd5YLp84m+5tW14Q0nJ2HXKPOdnBwsBDi6NGjliVHjx7V6XQPPPCAdLOBzzKTyTR16tTnnntu3bp19b4a2bXrtTOfjf3oUqZ6vjFBA2VlZWm12oEDB9bv7o8++ujgwYPHjRu3ePHiDh06HDhwYMuWLevXr5daFy9ePHHiRI1GM3To0CNHjqxevXrFihUtWjjxZiU8PHzQoEGzZ8/Oy8vr16/fZ599lpiYmJKSYr/JWTYnISgoKCgoyHKzbdu2/v7+I0aMcGrkli1bTp48OSEhISgoSK/Xv/322507d3722WfF3aauUblw6myys2l2JsQl6nrINepsDxw48Iknnpg8efJrr70WFBR05MiRt99+e/HixS1btpQ6NPBZdvjw4cLCQn9//w8++MB6+dixYxs1z+ys1858NvajS6FkO3ipEo10DiwqKqpv374NGbasrGzKlCnBwcHSN8p8+OGH1q1JSUkDBw708vLq27fv1q1b6zH+7du3Z82aFRIS4u3tPXjw4L/97W+ONDnFkUmo9zmw3377bdasWR06dAgICJg4cWJxcbGlyf7UOcupUyCumrq6xrezaXYmpOHrNdf9kHPhbNde761bt+bPnx8UFOTp6dm3b9/ExMTq6mpLawOfZXV9erLGBZYuPwdmf7125tO1jy5V0JitjpkCAKAWnAMDAKgSAQYAUCUCDACgSgQYAECVCDAAgCoRYAAAVSLAAACqRIABAFSJAAMAqBIBBgBQJQIMAKBKBBgAQJUIMACAKhFgAABVIsAAAKpEgAEAVIkAAwCoEgEGAFAlAgwAoEoEGABAlQgwAIAqEWAAAFUiwAAAqkSAAQBUiQADAKgSAQYAUCUCDACgSgQYAECVCDAAgCoRYAAAVSLAAACqRIABAFSJAAMAqBIBBgBQJQIMAKBKBBgAQJUIMACAKhFgAABVIsAAAKpEgAEAVIkAAwCoEgEGAFAlAgwAoEoEGABAlQgwAIAqEWAAAFUiwAAAqkSAAQBUiQADAKgSAQYAUCUCDACgSgQYAECVCDAAgCoRYAAAVSLAAACqRIABAFSJAAMAqBIBBgBQJQIMAKBKBBgAQJUIMACAKhFgAABV+n+WqKJBsFJMZQAAAABJRU5ErkJggg==" /><!-- --></p>
+<p>A lot if implementations differ in the way the codon frequencies are
+derived. The M0 model can be also estimated using <code>pml</code> and
+<code>optim.pml</code> functions. There are several ways to estimate the
+codon frequencies <span class="math inline">\(\pi_j\)</span>. The
+simplest model is to assume they have equal frequencies (=1/61). A
+second is to use the empirical codon frequencies, either computed using
+<code>baseFreq</code> or using the argument <code>bf=&quot;empirical&quot;</code>
+in <code>pml</code>. This is usually not really good as some codon are
+rare and have a high variance. One can estimate the frequencies from
+nucleotide frequencies with the F1x4 model. Last but not least the
+frequencies can be derived from the base frequencies at each codon
+position, the F3x4 model is set by the argument
+<code>bf=&quot;F3x4&quot;</code>.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>treeM0 <span class="ot">&lt;-</span> cdn<span class="sc">$</span>estimates[[<span class="st">&quot;M0&quot;</span>]]<span class="sc">$</span>tree <span class="co"># tree with edge lengths</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>M0 <span class="ot">&lt;-</span> <span class="fu">pml</span>(treeM0, <span class="fu">dna2codon</span>(hiv_2_nef), <span class="at">bf=</span><span class="st">&quot;F3x4&quot;</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>M0 <span class="ot">&lt;-</span> <span class="fu">optim.pml</span>(M0, <span class="at">model=</span><span class="st">&quot;codon1&quot;</span>, <span class="at">control=</span><span class="fu">pml.control</span>(<span class="at">trace=</span><span class="dv">0</span>))</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>M0</span></code></pre></div>
+<pre><code>## model: codon1 
+## loglikelihood: -9773 
+## unconstrained loglikelihood: -1372 
+## dn/ds: 0.5049 
+## ts/tv: 4.418 
+## Freq: F3x4</code></pre>
+<p>For the F3x4 model can optimize the codon frequencies setting the
+option to <code>optBf=TRUE</code> in <code>optim.pml</code>.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>M0_opt <span class="ot">&lt;-</span> <span class="fu">optim.pml</span>(M0, <span class="at">model=</span><span class="st">&quot;codon1&quot;</span>, <span class="at">optBf=</span><span class="cn">TRUE</span>, <span class="at">control=</span><span class="fu">pml.control</span>(<span class="at">trace=</span><span class="dv">0</span>))</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>M0_opt</span></code></pre></div>
+<pre><code>## model: codon1 
+## loglikelihood: -9668 
+## unconstrained loglikelihood: -1372 
+## dn/ds: 0.51 
+## ts/tv: 4.581 
+## Freq: F3x4</code></pre>
 </div>
 <div id="generating-trees" class="section level1">
 <h1>Generating trees</h1>
@@ -678,13 +806,13 @@ computes all possible bifurcating tree topologies either rooted or
 unrooted for up to 10 taxa. One has to keep in mind that the number of
 trees is growing exponentially, use <code>howmanytrees</code> from
 <em>ape</em> as a reminder.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>trees <span class="ot">&lt;-</span> <span class="fu">allTrees</span>(<span class="dv">5</span>)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">5</span>), <span class="at">mar=</span><span class="fu">rep</span>(<span class="dv">0</span>,<span class="dv">4</span>))</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>)<span class="fu">plot</span>(trees[[i]], <span class="at">cex=</span><span class="dv">1</span>, <span class="at">type=</span><span class="st">&quot;u&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>trees <span class="ot">&lt;-</span> <span class="fu">allTrees</span>(<span class="dv">5</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">5</span>), <span class="at">mar=</span><span class="fu">rep</span>(<span class="dv">0</span>,<span class="dv">4</span>))</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>)<span class="fu">plot</span>(trees[[i]], <span class="at">cex=</span><span class="dv">1</span>, <span class="at">type=</span><span class="st">&quot;u&quot;</span>)</span></code></pre></div>
 <p><img src="data:image/png;base64,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" /><!-- --></p>
 <p><code>nni</code> returns a list of all trees which are one nearest
 neighbor interchange away.</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nni</span>(trees[[<span class="dv">1</span>]])</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nni</span>(trees[[<span class="dv">1</span>]])</span></code></pre></div>
 <pre><code>## 4 phylogenetic trees</code></pre>
 <p><code>rNNI</code> and <code>rSPR</code> generate trees which are a
 defined number of NNI (nearest neighbor interchange) or SPR (subtree
@@ -692,9 +820,9 @@ pruning and regrafting) away.</p>
 </div>
 <div id="session-info" class="section level1">
 <h1>Session info</h1>
-<pre><code>## R version 4.2.0 (2022-04-22)
+<pre><code>## R version 4.2.1 (2022-06-23)
 ## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 22.04 LTS
+## Running under: Ubuntu 22.04.1 LTS
 ## 
 ## Matrix products: default
 ## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
@@ -712,22 +840,28 @@ pruning and regrafting) away.</p>
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] phangorn_2.9.0 ape_5.6-2     
+## [1] phangorn_2.10.0 ape_5.6-3      
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] igraph_1.3.1     Rcpp_1.0.8.3     rstudioapi_0.13  knitr_1.39      
+##  [1] igraph_1.3.4     Rcpp_1.0.9       rstudioapi_0.14  knitr_1.40      
 ##  [5] magrittr_2.0.3   lattice_0.20-45  R6_2.5.1         quadprog_1.5-8  
-##  [9] rlang_1.0.2      fastmatch_1.1-3  fastmap_1.1.0    highr_0.9       
-## [13] stringr_1.4.0    tools_4.2.0      parallel_4.2.0   grid_4.2.0      
-## [17] nlme_3.1-157     xfun_0.31        cli_3.3.0        jquerylib_0.1.4 
-## [21] htmltools_0.5.2  yaml_2.3.5       digest_0.6.29    Matrix_1.4-1    
-## [25] codetools_0.2-18 sass_0.4.1       prettydoc_0.4.1  evaluate_0.15   
-## [29] rmarkdown_2.14   stringi_1.7.6    compiler_4.2.0   bslib_0.3.1     
-## [33] generics_0.1.2   jsonlite_1.8.0   pkgconfig_2.0.3</code></pre>
+##  [9] rlang_1.0.5      fastmatch_1.1-3  fastmap_1.1.0    highr_0.9       
+## [13] stringr_1.4.1    tools_4.2.1      parallel_4.2.1   grid_4.2.1      
+## [17] nlme_3.1-159     xfun_0.33        cli_3.4.0        jquerylib_0.1.4 
+## [21] htmltools_0.5.3  yaml_2.3.5       digest_0.6.29    Matrix_1.5-1    
+## [25] codetools_0.2-18 sass_0.4.2       prettydoc_0.4.1  cachem_1.0.6    
+## [29] evaluate_0.16    rmarkdown_2.16   stringi_1.7.8    compiler_4.2.1  
+## [33] bslib_0.4.0      generics_0.1.3   jsonlite_1.8.0   pkgconfig_2.0.3</code></pre>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1 class="unnumbered">References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Bielawski2005" class="csl-entry">
+Bielawski, Joseph P., and Ziheng Yang. 2005. <span>“Maximum Likelihood
+Methods for Detecting Adaptive Protein Evolution.”</span> In
+<em>Statistical Methods in Molecular Evolution</em>, 103–24. New York,
+NY: Springer New York. <a href="https://doi.org/10.1007/0-387-27733-1_5">https://doi.org/10.1007/0-387-27733-1_5</a>.
+</div>
 <div id="ref-Jukes1969" class="csl-entry">
 Jukes, Thomas H., and Charles R. Cantor. 1969. <span>“{CHAPTER} 24 -
 Evolution of Protein Molecules.”</span> In <em>Mammalian Protein
@@ -755,11 +889,6 @@ Currents Tree of Life</em>.
 <div id="ref-Yang2014" class="csl-entry">
 Yang, Ziheng. 2014. <em>Molecular Evolution: A Statistical
 Approach</em>. Oxford: Oxford University Press.
-</div>
-<div id="ref-Yang1998" class="csl-entry">
-Yang, Ziheng, and Rasmus Nielsen. 1998. <span>“Synonymous and
-Nonsynonymous Rate Variation in Nuclear Genes of Mammals.”</span>
-<em>Journal of Molecular Evolution</em> 46 (4): 409–18. <a href="https://doi.org/10.1007/PL00006320">https://doi.org/10.1007/PL00006320</a>.
 </div>
 </div>
 </div>

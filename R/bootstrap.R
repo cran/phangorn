@@ -1,44 +1,3 @@
-minEdge <- function(tree, tau=1e-8, enforce_ultrametric=FALSE){
-  if(tau<0) stop("tau must be >= 0!")
-  if(any(tree$edge.length < tau) || enforce_ultrametric){
-    rooted <- is.rooted(tree)
-    if(enforce_ultrametric) rooted <- TRUE
-    if(rooted){
-      nTip <- Ntip(tree)
-      ind <- seq_len(nTip)
-      nh <- nodeHeight(tree)[ind]
-      if(enforce_ultrametric) nh <- rep(0, nTip)
-    }
-    tree$edge.length[tree$edge.length < tau] <- tau
-    if(rooted){
-      el <- numeric(max(tree$edge))
-      el[tree$edge[,2]] <- tree$edge.length
-      nh2 <- nodeHeight(tree)[ind]
-      el[ind] <- el[ind] + (nh2 - nh)
-      tree$edge.length <- el[tree$edge[,2]]
-    }
-  }
-  tree
-}
-
-
-candidate.tree <- function(x, rooted=FALSE, eps = 1e-8, ...){
-  if(rooted){
-     dm <- dist.ml(x, ...)
-     tree <- wpgma(dm)
-  }
-  else{
-    tree <- random.addition(x)
-    tree <- optim.parsimony(tree, x, trace=0)
-    tree <- multi2di(tree)
-    tree <- unroot(tree)
-    tree <- acctran(tree, x)
-    tree$edge.length <- tree$edge.length / sum(attr(x, "weight"))
-  }
-  minEdge(tree, tau=eps)
-}
-
-
 #' Bootstrap
 #'
 #' \code{bootstrap.pml} performs (non-parametric) bootstrap analysis and
@@ -121,6 +80,12 @@ bootstrap.pml <- function(x, bs = 100, trees = TRUE, multicore = FALSE,
                           mc.cores = NULL, ...) {
   if(.Platform$OS.type=="windows") multicore <- FALSE
   if (multicore && is.null(mc.cores)) mc.cores <- detectCores()
+  if(is.rooted(x$tree)){
+    if(is.ultrametric(x$tree)) method <- "ultrametric"
+    else method <- "tipdated"
+  }
+  else method <- "unrooted"
+
   extras <- match.call(expand.dots = FALSE)$...
   rearr <- c("optNni", "rearrangement")
   tmp <- pmatch(names(extras), rearr)
@@ -156,7 +121,7 @@ bootstrap.pml <- function(x, bs = 100, trees = TRUE, multicore = FALSE,
     attr(data, "weight") <- weights[ind]
     fit <- update(fit, data = data)
     if(do_rearr){
-      tree <- candidate.tree(data, rooted = is_ultrametric, bf=fit$bf, Q=fit$Q)
+      tree <- candidate_tree(data, method=method, bf=fit$bf, Q=fit$Q)
       fit <- update(fit, tree = tree)
     }
     fit <- optim.pml(fit, ...)
@@ -168,6 +133,7 @@ bootstrap.pml <- function(x, bs = 100, trees = TRUE, multicore = FALSE,
     fit
   }
   eval.success <- FALSE
+  if(method=="tipdated") do_rearr <- FALSE
   if (!eval.success & multicore) {
     res <- mclapply(BS, pmlPar, x, trees = trees, do_rearr = do_rearr, ...,
                     mc.cores = mc.cores)
@@ -295,8 +261,9 @@ checkLabels <- function(tree, tip) {
 #' \code{BStrees} is optional and if not supplied the labels supplied
 #' in the \code{node.label} slot will be used.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso  \code{\link{plot.phylo}}, \code{\link{maxCladeCred}}
-#' \code{\link{nodelabels}}, \code{\link{consensus}}, \code{\link{consensusNet}}
+#' @seealso  \code{\link{transferBootstrap}}, \code{\link{plot.phylo}},
+#' \code{\link{maxCladeCred}}, \code{\link{nodelabels}},
+#' \code{\link{consensus}}, \code{\link{consensusNet}}
 #' @references Felsenstein J. (1985) Confidence limits on phylogenies. An
 #' approach using the bootstrap. \emph{Evolution} \bold{39}, 783--791
 #'

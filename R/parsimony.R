@@ -48,9 +48,10 @@ sankoff.quartet <- function(dat, cost, p, l, weight) {
 #' found during the search.  \code{acctran} returns a tree with edge length
 #' according to the ACCTRAN criterion.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso \code{\link{bab}}, \code{\link{CI}}, \code{\link{RI}}, \code{\link{ancestral.pml}},
-#' \code{\link{nni}}, \code{\link{NJ}}, \code{\link{pml}}, \code{\link{getClans}}
-#' ,\code{\link{ancestral.pars}}, \code{\link{bootstrap.pml}}
+#' @seealso \code{\link{bab}}, \code{\link{CI}}, \code{\link{RI}},
+#' \code{\link{ancestral.pml}}, \code{\link{nni}}, \code{\link{NJ}},
+#' \code{\link{pml}}, \code{\link{getClans}}, \code{\link{ancestral.pars}},
+#' \code{\link{bootstrap.pml}}
 #' @references Felsenstein, J. (2004). \emph{Inferring Phylogenies}. Sinauer
 #' Associates, Sunderland.
 #'
@@ -65,16 +66,22 @@ sankoff.quartet <- function(dat, cost, p, l, weight) {
 #' tree <- NJ(dm)
 #' parsimony(tree, Laurasiatherian)
 #' treeRA <- random.addition(Laurasiatherian)
-#' treeNNI <- optim.parsimony(tree, Laurasiatherian)
+#' treeSPR <- optim.parsimony(tree, Laurasiatherian)
+#'
+#' # lower number of iterations for the example (to run less than 5 seconds),
+#' # keep default values (maxit, minit, k) or increase them for real life
+#' # analyses.
 #' treeRatchet <- pratchet(Laurasiatherian, start=tree, maxit=100,
 #'                         minit=5, k=5, trace=0)
-#' # assign edge length
+#' # assign edge length (number of substitutions)
 #' treeRatchet <- acctran(treeRatchet, Laurasiatherian)
+#' # remove edges of length 0
+#' treeRatchet <- di2multi(treeRatchet)
 #'
 #' plot(midpoint(treeRatchet))
 #' add.scale.bar(0,0, length=100)
 #'
-#' parsimony(c(tree,treeNNI, treeRatchet), Laurasiatherian)
+#' parsimony(c(tree,treeSPR, treeRatchet), Laurasiatherian)
 #'
 #' @rdname parsimony
 #' @export
@@ -197,8 +204,9 @@ upperBound <- function(x, cost = NULL) {
 #' @param cost A cost matrix for the transitions between two states.
 #' @param sitewise return CI/RI for alignment or sitewise
 #'
-#' @seealso \code{\link{parsimony}}, \code{\link{pratchet}}, \code{\link{fitch}},
-#' \code{\link{sankoff}}, \code{\link{bab}}, \code{\link{ancestral.pars}}
+#' @seealso \code{\link{parsimony}}, \code{\link{pratchet}},
+#' \code{\link{fitch}}, \code{\link{sankoff}}, \code{\link{bab}},
+#' \code{\link{ancestral.pars}}
 #'
 #' @rdname CI
 #' @export
@@ -427,7 +435,7 @@ optim.parsimony <- function(tree, data, method = "fitch", cost = NULL,
 #' @rdname parsimony
 #' @export
 pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
-                     minit = 10, k = 10, trace = 1, all = FALSE,
+                     minit = 100, k = 10, trace = 1, all = FALSE,
                      rearrangements = "SPR", perturbation = "ratchet", ...) {
   eps <- 1e-08
   trace <- trace - 1
@@ -444,7 +452,8 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
   # remove parsimony uniformative sites or duplicates
   # check for symmetric or
   attr(data, "informative") <- NULL
-  if(method=="fitch") data <- removeParsimonyUninfomativeSites(data, recursive=TRUE)
+  if(method=="fitch") data <- removeParsimonyUninfomativeSites(data,
+                                                               recursive=TRUE)
   else data <- unique(data)
   if(!is.null(attr(data, "informative"))) w[attr(data, "informative")] <- TRUE
   else w[] <- TRUE

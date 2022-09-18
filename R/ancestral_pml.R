@@ -179,36 +179,16 @@ ancestral2phyDat <- function(x) {
 
 
 fitchCoding2ambiguous <- function(x, type = "DNA") {
-  y <- c(
-    1L, 2L, 4L, 8L, 8L, 3L, 5L, 9L, 6L, 10L, 12L, 7L, 11L, 13L,
-    14L, 15L, 15L, 15L
-  )
+  y <- c(1L, 2L, 4L, 8L, 8L, 3L, 5L, 9L, 6L, 10L, 12L, 7L, 11L, 13L,
+    14L, 15L, 15L, 15L)
   fmatch(x, y)
-}
-
-
-fitchCoding2ambiguous2 <- function(x, type = "DNA") {
-  y <- c(1L, 2L, 4L, 8L, 8L, 3L, 5L, 9L, 6L, 10L, 12L, 7L, 11L, 13L, 14L, 15L)
-  dna <- c(
-    "a", "c", "g", "t", "t", "m", "r", "w", "s", "y", "k", "v", "h",
-    "d", "b", "n"
-  )
-  rna <- c(
-    "a", "c", "g", "u", "u", "m", "r", "w", "s", "y", "k", "v", "h",
-    "d", "b", "n"
-  )
-  res <- switch(type,
-    "DNA" = dna[fmatch(x, y)],
-    "RNA" = rna[fmatch(x, y)]
-  )
-  res
 }
 
 
 #' @rdname ancestral.pml
 #' @export
-ancestral.pars <- function(tree, data, type = c("MPR", "ACCTRAN", "POSTORDER"), cost = NULL,
-                           return = "prob") {
+ancestral.pars <- function(tree, data, type = c("MPR", "ACCTRAN", "POSTORDER"),
+                           cost = NULL, return = "prob") {
   call <- match.call()
   type <- match.arg(type)
   if (type == "ACCTRAN" || type=="POSTORDER") {
@@ -399,6 +379,7 @@ acctran <- function(tree, data) {
 
 ptree <- function(tree, data, return = "prob", acctran=TRUE) {
   tree <- reorder(tree, "postorder")
+  data <- subset(data, tree$tip.label)
   edge <- tree$edge
   att <- attributes(data)
   nr <- att$nr
@@ -412,18 +393,12 @@ ptree <- function(tree, data, return = "prob", acctran=TRUE) {
   if(length(tmp)>0 && acctran==TRUE)f$acctran_traverse(tmp)
   res <- vector("list", m)
   att$names <- c(att$names, as.character((nTip+1):m))
-#  if(return == "phyDat"){
-#    res[1:nTip] <- data[1:nTip]
-#    if(type=="DNA"){
-#      for(i in (nTip+1):m)
-#        res[[i]] <- f$getAnc(i)[1:nr]
-#    }
-#  }
   if(return == "phyDat"){
     if(type=="DNA"){
+      indx <- c(1, 2, 6, 3, 7, 9, 12, 4, 8, 10, 13, 11, 14, 15, 16)
       res[1:nTip] <- data[1:nTip]
       for(i in (nTip+1):m)
-        res[[i]] <- f$getAncAmb(i)[1:nr]
+        res[[i]] <- indx[f$getAncAmb(i)[1:nr]]
     }
     else stop("This is only for nucleotide sequences supported so far")
   }

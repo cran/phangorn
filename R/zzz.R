@@ -27,6 +27,9 @@
   "TIM1e", "TIM1", "TIM2e", "TIM2", "TIM3e", "TIM3", "TVMe",
   "TVM", "SYM", "GTR")
 
+.usermodels <- c("ER", "SYM", "FREQ", "GTR", "ORDERED")
+
+
 # environment variables
 # .CodonAlphabet <- c("aaa", "aac", "aag", "aat", "aca", "acc", "acg", "act",
 #                    "aga", "agc", "agg", "agt", "ata", "atc", "atg", "att",

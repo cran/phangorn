@@ -4,7 +4,8 @@
 \alias{splitsNetwork}
 \title{Phylogenetic Network}
 \usage{
-splitsNetwork(dm, splits = NULL, gamma = 0.1, lambda = 1e-06, weight = NULL)
+splitsNetwork(dm, splits = NULL, gamma = 0.1, lambda = 1e-06,
+  weight = NULL)
 }
 \arguments{
 \item{dm}{A distance matrix.}
@@ -49,7 +50,8 @@ write.nexus.splits(fit)
 }
 \references{
 Efron, Hastie, Johnstone and Tibshirani (2004) Least Angle
-Regression (with discussion) \emph{Annals of Statistics} \bold{32(2)}, 407--499
+Regression (with discussion) \emph{Annals of Statistics} \bold{32(2)},
+407--499
 
 K. P. Schliep (2009). Some Applications of statistical phylogenetics (PhD
 Thesis)

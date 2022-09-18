@@ -1,3 +1,36 @@
+    CHANGES in PHANGORN VERSION 2.10.0
+
+NEW FEATURES
+
+    o several improvements to simplify workflow and flatten learning curve.
+
+    o new function pml_bb, combining generation of starting trees, pml and
+
+      optim.pml and allowing modelTest object as input.
+
+    o tipdated phylogenies estimation (was with limitations possible before,
+
+      but not documented).
+
+    o Mkv model, edge length and rearrangements only work for ultrametric and
+
+      tiplabeled phylogenies so far.
+
+    o Added experimental version of RELL bootstrap (Minh et al. 2013 Ultrafast
+
+      Approximation for Phylogenetic Bootstrap).
+
+    o modelTest now tests several models for USER defined data.
+
+OTHER CHANGES
+
+    o some default values of of pratchet changed
+
+    o updated, improved and reorganized several vignettes.
+
+    o function allSitePattern got an argument additional type.
+
+
     CHANGES in PHANGORN VERSION 2.9.0
 
 BUG FIXES
@@ -14,7 +47,7 @@ OTHER CHANGES
 
       ambiguous sites present.
 
-    o added a few helper function to simplified some workflows (e.g. modelTest)
+    o added a few helper function to simplifiy some workflows (e.g. modelTest)
 
 
     CHANGES in PHANGORN VERSION 2.8.0

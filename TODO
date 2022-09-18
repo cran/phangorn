@@ -1,0 +1,45 @@
+check df for tipdated models
+
+
+read.phyDat type="USER" , levels=...
+
+
+rell bootstrap (Ultrafast Bootstrap) testing
+
+
+vignettes discrete
+
+
+ancestral
+as.phyDat für non-DNA mit [] und contrast für parsimony, export als nexus file
+"array" output
+add nodelabels an results
+
+
+
+
+test1 <- ancestral.pars(tree, Laurasiatherian, "ACCTRAN", return = "phyDat")
+test3 <- ancestral.pars(tree, Laurasiatherian, "POSTORDER", return = "phyDat")
+
+# fixed
+test2 <- ancestral.pars(tree, Laurasiatherian, "MPR", return = "phyDat")
+
+
+hash trees in C++ set_difference and sort on vectors, done
+
+unique.multiPhylo, ratchet + stochastic adding
+
+
+fix optRooted towards the root!!!
+phylo.R#1547
+
+
+createLabels
+addConfidencesMultiPhylo
+addConfidences.networx
+addConfidences.multiPhylo
+presenceAbsence
+coords
+
+
+

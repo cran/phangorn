@@ -1,6 +1,6 @@
 Package: phangorn
 Title: Phylogenetic Reconstruction and Analysis
-Version: 2.9.0
+Version: 2.10.0
 Authors@R: 
     c(person(given = "Klaus",
              family = "Schliep",
@@ -59,11 +59,11 @@ Description: Allows for estimation of phylogenetic trees and networks
     Schliep et al. (2017).
 License: GPL (>= 2)
 URL: https://github.com/KlausVigo/phangorn,
-        http://klausvigo.github.io/phangorn/
+        https://klausvigo.github.io/phangorn/
 BugReports: https://github.com/KlausVigo/phangorn/issues
-Depends: ape (>= 5.5), R (>= 4.1.0)
-Imports: fastmatch, generics, graphics, grDevices, igraph (>= 1.0),
-        Matrix, methods, parallel, quadprog, Rcpp, stats, utils
+Depends: ape (>= 5.6), R (>= 4.1.0)
+Imports: digest, fastmatch, generics, graphics, grDevices, igraph (>=
+        1.0), Matrix, methods, parallel, quadprog, Rcpp, stats, utils
 Suggests: Biostrings, knitr, magick, prettydoc, rgl, rmarkdown, seqinr,
         seqLogo, tinytest, xtable
 LinkingTo: Rcpp
@@ -71,10 +71,10 @@ VignetteBuilder: knitr, utils
 biocViews: Software, Technology, QualityControl
 Encoding: UTF-8
 Repository: CRAN
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.1
 Language: en-US
 NeedsCompilation: yes
-Packaged: 2022-06-16 13:20:38 UTC; klaus
+Packaged: 2022-09-17 11:54:28 UTC; klaus
 Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Emmanuel Paradis [aut] (<https://orcid.org/0000-0003-3092-2199>),
   Leonardo de Oliveira Martins [aut]
@@ -92,4 +92,4 @@ Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Brian O'Meara [ctb],
   Long Qu [ctb]
 Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
-Date/Publication: 2022-06-16 15:10:09 UTC
+Date/Publication: 2022-09-18 08:26:05 UTC

@@ -19,7 +19,7 @@ dat <- allSitePattern(5)
 weights <- as.vector(1000 * exp(pml(treeR1, dat)$siteLik))
 attr(dat, "weight") <- weights
 
-dat_Mk <- subset(dat, select = -c(1,342,683, 1024))
+dat_Mkv <- subset(dat, select = -c(1,342,683, 1024), site.pattern = TRUE)
 
 
 Q <- c(6:1)
@@ -41,6 +41,13 @@ pmlR3.fitted <- optim.pml(pmlR3, TRUE, optRooted = TRUE,  control =
                               pml.control(epsilon=1e-10, trace=0))
 
 
+# test input parameters
+# missing model
+expect_error(pml_bb(dat))
+# missing tip,dates
+expect_error(pml_bb(dat, model="GTR", method="tipdated"))
+
+## Parameter Optimisation
 # test edge length optimisation
     expect_equal(logLik(pmlU2.fitted), logLik(pmlU1))
     expect_equal(logLik(pmlR2.fitted), logLik(pmlR1))
@@ -54,7 +61,6 @@ pmlR3.fitted <- optim.pml(pmlR3, TRUE, optRooted = TRUE,  control =
     expect_equal(storage.mode(pmlU3.fitted$tree$edge), "integer")
 #    expect_equal(pmlR3.fitted$tree, pmlR1$tree, tolerance=5e-6)
 
-
 # test bf optimisation
     bf <- c(.1,.2,.3,.4)
     fit_T <- pml(treeU1, dat, bf=bf)
@@ -66,8 +72,9 @@ pmlR3.fitted <- optim.pml(pmlR3, TRUE, optRooted = TRUE,  control =
                         control = pml.control(epsilon=1e-10, trace=0))
     expect_equal(logLik(fit.bf), logLik(pml(treeU1, dat_tmp, bf=bf)))
     expect_equal(bf, fit.bf$bf, tolerance=5e-4)
-
-
+    fit.F81 <- pml_bb(dat_tmp, model="F81", control = pml.control(trace=0))
+    expect_equal(logLik(fit.F81), logLik(pml(treeU1, dat_tmp, bf=bf)))
+    expect_equal(bf, fit.F81$bf, tolerance=5e-4)
 # test Q optimisation
     Q <- c(6:1)
     fit_T <- pml(treeU1, dat, Q=Q)
@@ -92,7 +99,9 @@ pmlR3.fitted <- optim.pml(pmlR3, TRUE, optRooted = TRUE,  control =
                          control = pml.control(epsilon=1e-10, trace=0))
     expect_equal(logLik(fit.Inv), logLik(pml(treeU1, dat_tmp, inv=inv)))
     expect_equal(inv, fit.Inv$inv, tolerance=5e-4)
-
+    fit.JC.I <- pml_bb(dat_tmp, model="JC+I", control = pml.control(trace=0))
+    expect_equal(logLik( fit.JC.I), logLik(pml(treeU1, dat_tmp, inv=inv)))
+    expect_equal(inv, fit.JC.I$inv, tolerance=5e-4)
 
 # test Gamma optimisation
     shape <- 2
@@ -106,6 +115,10 @@ pmlR3.fitted <- optim.pml(pmlR3, TRUE, optRooted = TRUE,  control =
     expect_equal(logLik(fit.Gamma),
                  logLik(pml(treeU1, dat_tmp, shape=shape, k=4)))
     expect_equal(shape, fit.Gamma$shape, tolerance=5e-4)
+    fit.JC.G4 <- pml_bb(dat_tmp, model="JC+G(4)", control=pml.control(trace=0))
+    expect_equal(logLik( fit.JC.G4),
+                 logLik(pml(treeU1, dat_tmp, shape=shape, k=4)))
+    expect_equal(shape, fit.JC.G4$shape, tolerance=5e-4)
 
 
 # test free_rate
@@ -131,5 +144,19 @@ pmlR3.fitted <- optim.pml(pmlR3, TRUE, optRooted = TRUE,  control =
 
 
 # test Mkv model
-    expect_equal(logLik(pmlU2.fitted), logLik(pmlU1))
-
+    fit_Mk <- pml(treeR2, dat_Mkv)
+    fit_Mk <- optim.pml(fit_Mk, optRooted = TRUE, control=pml.control(trace=0))
+    fit_Mkv_1 <- pml(treeR2, dat_Mkv, ASC=TRUE)
+    fit_Mkv_1 <- optim.pml(fit_Mkv_1, optRooted = TRUE,
+                           control=pml.control(trace=0))
+    fit_Mkv_2 <- pml(treeR3, dat_Mkv, ASC=TRUE)
+    fit_Mkv_2 <- optim.pml(fit_Mkv_2, optRooted = TRUE, rearrangement = "NNI",
+                           control=pml.control(trace=0))
+    fit_Mkv_3 <- pml_bb(dat_Mkv, "JC+ASC", method="ultrametric",
+                        rearrangement = "NNI", control=pml.control(trace=0))
+    expect_equal(fit_Mkv_1$tree, treeR1, tolerance=1e-3)
+    expect_equal(fit_Mkv_2$tree, treeR1, tolerance=1e-3)
+    expect_equal(fit_Mkv_3$tree, treeR1, tolerance=1e-3)
+    expect_true(sum(fit_Mk$tree$edge.length) > sum(fit_Mkv_1$tree$edge.length))
+    expect_true(sum(fit_Mk$tree$edge.length) > sum(fit_Mkv_2$tree$edge.length))
+    expect_true(sum(fit_Mk$tree$edge.length) > sum(fit_Mkv_3$tree$edge.length))

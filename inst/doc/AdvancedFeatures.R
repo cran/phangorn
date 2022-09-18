@@ -6,23 +6,23 @@ options(digits = 4)
 
 ## ----generate data------------------------------------------------------------
 library(phangorn)
-data = matrix(c("r","a","y","g","g","a","c","-","c","t","c","g",
+data <- matrix(c("r","a","y","g","g","a","c","-","c","t","c","g",
     "a","a","t","g","g","a","t","-","c","t","c","a",
     "a","a","t","-","g","a","c","c","c","t","?","g"),
     dimnames = list(c("t1", "t2", "t3"),NULL), nrow=3, byrow=TRUE)
 data
 
 ## ----dna----------------------------------------------------------------------
-gapsdata1 = phyDat(data)
+gapsdata1 <- phyDat(data)
 gapsdata1
 
 ## ----5state-------------------------------------------------------------------
-gapsdata2 = phyDat(data, type="USER", levels=c("a","c","g","t","-"),
+gapsdata2 <- phyDat(data, type="USER", levels=c("a","c","g","t","-"),
     ambiguity = c("?", "n"))
 gapsdata2
 
 ## ----contrast-----------------------------------------------------------------
-contrast = matrix(data = c(1,0,0,0,0,
+contrast <- matrix(data = c(1,0,0,0,0,
     0,1,0,0,0,
     0,0,1,0,0,
     0,0,0,1,0,
@@ -32,10 +32,10 @@ contrast = matrix(data = c(1,0,0,0,0,
     1,1,1,1,0,
     1,1,1,1,1),
     ncol = 5, byrow = TRUE)
-dimnames(contrast) = list(c("a","c","g","t","r","y","-","n","?"),
+dimnames(contrast) <- list(c("a","c","g","t","r","y","-","n","?"),
     c("a", "c", "g", "t", "-"))
 contrast
-gapsdata3 = phyDat(data, type="USER", contrast=contrast)
+gapsdata3 <- phyDat(data, type="USER", contrast=contrast)
 gapsdata3
 
 ## -----------------------------------------------------------------------------
@@ -46,26 +46,35 @@ fit <- optim.pml(fit, optQ=TRUE, subs=c(1,0,1,2,1,0,2,1,2,2),
     control=pml.control(trace=0))
 fit
 
-## -----------------------------------------------------------------------------
-library(phangorn)
+## ----read codon data----------------------------------------------------------
 fdir <- system.file("extdata/trees", package = "phangorn")
-primates <- read.phyDat(file.path(fdir, "primates.dna"),
-                        format = "interleaved")
-tree <- NJ(dist.ml(primates))
-dat <- dna2codon(primates)
-fit <- pml(tree, dat, bf="F3x4")
-fit0 <- optim.pml(fit, model="codon0", control=pml.control(trace=0))
-fit1 <- optim.pml(fit, model="codon1", control=pml.control(trace=0))
-fit2 <- optim.pml(fit, model="codon2", control=pml.control(trace=0))
-fit3 <- optim.pml(fit, model="codon3", control=pml.control(trace=0))
-anova(fit0, fit2, fit3, fit1)
+hiv_2_nef <- read.phyDat(file.path(fdir, "seqfile.txt"), format="sequential")
+tree <- read.tree(file.path(fdir, "tree.txt"))
 
-## -----------------------------------------------------------------------------
+## ----codonTest----------------------------------------------------------------
+cdn <- codonTest(tree, hiv_2_nef)
+cdn
+
+## ----plot codon---------------------------------------------------------------
+plot(cdn, "M1a")
+plot(cdn, "M2a")
+
+## ----M0-----------------------------------------------------------------------
+treeM0 <- cdn$estimates[["M0"]]$tree # tree with edge lengths
+M0 <- pml(treeM0, dna2codon(hiv_2_nef), bf="F3x4")
+M0 <- optim.pml(M0, model="codon1", control=pml.control(trace=0))
+M0
+
+## ----M0+F3x4------------------------------------------------------------------
+M0_opt <- optim.pml(M0, model="codon1", optBf=TRUE, control=pml.control(trace=0))
+M0_opt
+
+## ----allTrees-----------------------------------------------------------------
 trees <- allTrees(5)
 par(mfrow=c(3,5), mar=rep(0,4))
 for(i in 1:15)plot(trees[[i]], cex=1, type="u")
 
-## -----------------------------------------------------------------------------
+## ----nni----------------------------------------------------------------------
 nni(trees[[1]])
 
 ## ----sessionInfo, echo=FALSE--------------------------------------------------

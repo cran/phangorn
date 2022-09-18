@@ -33,12 +33,12 @@ bipartCPP <- function(orig, nTips) {
     .Call(`_phangorn_bipartCPP`, orig, nTips)
 }
 
-bipCPP <- function(orig, nTips) {
-    .Call(`_phangorn_bipCPP`, orig, nTips)
+short_bipCPP <- function(orig, nTips) {
+    .Call(`_phangorn_short_bipCPP`, orig, nTips)
 }
 
-bip_shared <- function(tree1, tree2, nTips) {
-    .Call(`_phangorn_bip_shared`, tree1, tree2, nTips)
+bipCPP <- function(orig, nTips) {
+    .Call(`_phangorn_bipCPP`, orig, nTips)
 }
 
 allChildrenCPP <- function(orig) {

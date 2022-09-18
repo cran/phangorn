@@ -20,7 +20,7 @@ plot(treeNJ, "unrooted", main="NJ")
 fun <- function(x) upgma(dist.ml(x))
 bs_upgma <- bootstrap.phyDat(primates,  fun)
 
-## ----bootstrap_dist_new, echo=TRUE, eval=FALSE--------------------------------
+## ----bootstrap_dist_new, echo=TRUE, eval=FALSE, cache=TRUE--------------------
 #  bs_upgma <- bootstrap.phyDat(primates,  \(x){dist.ml(x) |> upgma})
 
 ## ----plot_bs, fig.cap="Rooted UPGMA tree.", echo=TRUE-------------------------
@@ -30,21 +30,32 @@ plotBS(treeUPGMA, bs_upgma, main="UPGMA")
 parsimony(treeUPGMA, primates)
 parsimony(treeNJ, primates)
 
-## -----------------------------------------------------------------------------
-treePars  <- optim.parsimony(treeUPGMA, primates)
-
 ## ----pratchet-----------------------------------------------------------------
-treeRatchet  <- pratchet(primates, trace = 0)
-parsimony(c(treePars, treeRatchet), primates)
+treeRatchet  <- pratchet(primates, trace = 0, minit=100)
+parsimony(treeRatchet, primates)
 
-## -----------------------------------------------------------------------------
+## ----acctran------------------------------------------------------------------
 treeRatchet  <- acctran(treeRatchet, primates)
+
+## ----di2multi-----------------------------------------------------------------
+treeRatchet  <- di2multi(treeRatchet)
+
+## ----unique trees-------------------------------------------------------------
+if(inherits(treeRatchet, "multiPhylo")){
+  treeRatchet <- unique(treeRatchet)
+}
 
 ## ----midpoint-----------------------------------------------------------------
 plotBS(midpoint(treeRatchet), type="phylogram")
+add.scale.bar()
+
+## -----------------------------------------------------------------------------
+treeRA <- random.addition(primates)
+treeSPR  <- optim.parsimony(treeRA, primates)
+parsimony(c(treeRA, treeSPR), primates)
 
 ## ----bab----------------------------------------------------------------------
-(trees <- bab(subset(primates,1:10)))
+(trees <- bab(primates[1:10,]))
 
 ## ----pml----------------------------------------------------------------------
 fit <- pml(treeNJ, data=primates)
@@ -57,16 +68,45 @@ methods(class="pml")
 fitJC  <- optim.pml(fit, rearrangement="NNI")
 logLik(fitJC)
 
-## ----GTR+G+I------------------------------------------------------------------
-fitGTR <- update(fit, k=4, inv=0.2)
-fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
+## ----F81+G+I, cache=TRUE------------------------------------------------------
+fitF81 <- update(fitJC, k=4, inv=0.2, bf=baseFreq(primates))
+fitF81
+
+## ----GTR+G+I, cache=TRUE------------------------------------------------------
+fitGTR <- optim.pml(fitF81, model="GTR", optInv=TRUE, optGamma=TRUE,
     rearrangement = "NNI", control = pml.control(trace = 0))
 fitGTR
 
-## ----stochastic---------------------------------------------------------------
+## ----stochastic, cache=TRUE---------------------------------------------------
 fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
     rearrangement = "stochastic", control = pml.control(trace = 0))
 fitGTR
+
+## ----pml_bb, cache=TRUE-------------------------------------------------------
+fitGTR <- pml_bb(primates, model="GTR+G(4)+I", control = pml.control(trace = 0))
+fitGTR
+
+## ---- echo=TRUE, eval=FALSE---------------------------------------------------
+#  mt <- modelTest(primates)
+
+## ---- echo=FALSE--------------------------------------------------------------
+load("Trees.RData")
+
+## ---- echo=TRUE, eval=TRUE, cache=TRUE----------------------------------------
+mt <- modelTest(primates, model=c("JC", "F81", "K80", "HKY", "SYM", "GTR"), 
+                control = pml.control(trace = 0))
+
+## ---- echo=FALSE--------------------------------------------------------------
+library(knitr)
+kable(mt, digits=2)
+
+## ----as.pml, echo=TRUE--------------------------------------------------------
+(fit <- as.pml(mt, "HKY+G(4)+I"))
+(fit <- as.pml(mt, "BIC"))
+
+## ----pml_bb_modelTest, cache=TRUE---------------------------------------------
+fit_mt <- pml_bb(mt, control = pml.control(trace = 0))
+fit_mt
 
 ## ----anova--------------------------------------------------------------------
 anova(fitJC, fitGTR)
@@ -81,23 +121,6 @@ AICc(fitGTR)
 BIC(fitGTR)
 
 ## ---- echo=TRUE, eval=FALSE---------------------------------------------------
-#  mt <- modelTest(primates)
-
-## ---- echo=FALSE--------------------------------------------------------------
-load("Trees.RData")
-
-## ---- echo=TRUE, eval=FALSE---------------------------------------------------
-#  mt <- modelTest(primates, model=c("JC", "F81", "K80", "HKY", "SYM", "GTR"))
-
-## ---- echo=FALSE--------------------------------------------------------------
-library(knitr)
-kable(mt, digits=2)
-
-## ----as.pml, echo=TRUE--------------------------------------------------------
-(fit <- as.pml(mt, "HKY+G+I"))
-(fit <- as.pml(mt, "BIC"))
-
-## ---- echo=TRUE, eval=FALSE---------------------------------------------------
 #  bs <- bootstrap.pml(fitJC, bs=100, optNni=TRUE,
 #      control = pml.control(trace = 0))
 
@@ -109,62 +132,77 @@ cnet <- consensusNet(bs, p=0.2)
 plot(cnet, show.edge.label=TRUE)
 
 ## ---- echo=TRUE, cache=TRUE---------------------------------------------------
-fit_strict <- pml(treeUPGMA, data=primates, k=4, bf=baseFreq(primates))
-fit_strict <- optim.pml(fit_strict, model="GTR", optRooted = TRUE, 
-                        rearrangement = "NNI", optGamma = TRUE, optInv = TRUE, 
-                        control = pml.control(trace = 0))
+fit_strict <- pml_bb(primates, model="HKY+G(4)", method="ultrametric",
+                     control = pml.control(trace = 0))
 
 ## -----------------------------------------------------------------------------
 plot(fit_strict)
 
+## ---- tipdated data-----------------------------------------------------------
+fdir <- system.file("extdata/trees", package = "phangorn")
+tmp <- read.csv(file.path(fdir,"H3N2_NA_20.csv"))
+H3N2 <- read.phyDat(file.path(fdir,"H3N2_NA_20.fasta"), format="fasta")
+
+## ---- tipdated processing-----------------------------------------------------
+dates <- setNames(tmp$numdate_given, tmp$name)
+head(dates)
+
+## ---- tipdated fit------------------------------------------------------------
+fit_td <- pml_bb(H3N2, model="GTR+G(4)", method="tipdated", tip.dates=dates, 
+               rearrangement="NNI", control = pml.control(trace = 0))
+
+## ---- tipdated plot-----------------------------------------------------------
+tree_td <- fit_td$tree
+root_time <- max(dates) - max(node.depth.edgelength(tree_td))
+plot(tree_td, show.tip.label = FALSE)
+axisPhylo(root.time = root_time, backward = FALSE)
+
 ## ---- echo=TRUE, eval=FALSE---------------------------------------------------
 #  library(phangorn)
 #  file <- "myfile"
-#  dat <- read.phyDat(file)
+#  dat <- read.phyDat(file, format="fasta")
 #  dm <- dist.ml(dat, "F81")
 #  tree <- NJ(dm)
 #  # as alternative for a starting tree:
 #  tree <- pratchet(dat)          # parsimony tree
 #  tree <- nnls.phylo(tree, dm)   # need edge weights
 #  
-#  
 #  # 1. alternative: quick and dirty: GTR + G
-#  fitStart <- pml(tree, dat, k=4)
-#  fit <- optim.pml(fitStart, model="GTR", optGamma=TRUE, rearrangement="stochastic")
+#  (fit <- pml_bb(dat, model="GTR+G"))
 #  
-#  # 2. alternative: prepare with modelTest
-#  mt <- modelTest(dat, tree=tree, multicore=TRUE)
-#  mt[order(mt$AICc),]
-#  # choose best model from the table according to AICc
-#  fitStart <- as.pml(mt, "AICc")
-#  
-#  # equivalent to:   fitStart = eval(get("GTR+G+I", env), env)
-#  fit <- optim.pml(fitStart, rearrangement = "stochastic",
-#      optGamma=TRUE, optInv=TRUE, model="GTR")
+#  # 2. alternative: choose with modelTest
+#  mt <- modelTest(dat, multicore=TRUE)
+#  mt[order(mt$BIC),]
+#  # chooses best model from the table according to BIC (default)
+#  fit <- pml_bb(mt)
 #  bs <- bootstrap.pml(fit, bs=100, optNni=TRUE, multicore=TRUE)
+#  
+#  tree_ml <- plotBS(fit$tree, bs)
+#  # export the tree
+#  write.tree(tree_ml, file="tree_ml.nwk")
 
 ## ---- echo=TRUE, eval=FALSE---------------------------------------------------
 #  library(phangorn)
 #  file <- "myfile"
-#  dat <- read.phyDat(file, type = "AA")
+#  dat <- read.phyDat(file, type = "AA", format="fasta")
+#  
+#  # compute a neighbor joining tree
 #  dm <- dist.ml(dat, model="JTT")
 #  tree <- NJ(dm)
 #  
-#  # parallel will only work safely from command line
-#  # and not at all windows
-#  (mt <- modelTest(dat, model=c("JTT", "LG", "WAG"),
-#      multicore=TRUE))
+#  # parallel will only work safely from command line and not at all windows
+#  # Select specific models.
+#  (mt <- modelTest(dat, model=c("JTT", "LG", "WAG"), multicore=TRUE))
 #  # run all available amino acid models
 #  (mt <- modelTest(dat, model="all", multicore=TRUE))
 #  
-#  fitStart <- as.pml(mt)
-#  
-#  fitNJ <- pml(tree, dat, model="JTT", k=4, inv=.2)
-#  fit <- optim.pml(fitNJ, rearrangement = "stochastic",
-#      optInv=TRUE, optGamma=TRUE)
-#  fit
-#  
+#  (fit <- pml_bb(mt))
+#  # non-parametric bootstrap
 #  bs <- bootstrap.pml(fit, bs=100, optNni=TRUE, multicore=TRUE)
+#  
+#  tree_ml <- plotBS(fit$tree, bs)
+#  # export the tree
+#  write.tree(tree_ml, file="tree_ml.nwk")
 
 ## ----sessionInfo, echo=FALSE--------------------------------------------------
 sessionInfo()

@@ -1,51 +1,44 @@
-#' Conversion among Sequence Formats
+#' Generic functions for class phyDat
 #'
-#' These functions transform several DNA formats into the \code{phyDat} format.
-#' \code{allSitePattern} generates an alignment of all possible site patterns.
+#' These functions help to manipulate alignments of class phyDat.
 #'
-#' If \code{type} "USER" a vector has to be give to \code{levels}. For example
-#' c("a", "c", "g", "t", "-") would create a data object that can be used in
-#' phylogenetic analysis with gaps as fifth state.  There is a more detailed
-#' example for specifying "USER" defined data formats in the vignette
-#' "phangorn-specials".
 #'
-#' \code{allSitePattern} returns all possible site patterns and can be useful
+#' \code{allSitePattern} generates all possible site patterns and can be useful
 #' in simulation studies. For further details see the vignette
-#' phangorn-specials.
+#' AdvancedFeatures.
 #'
 #' The generic function \code{c} can be used to to combine sequences and
 #' \code{unique} to get all unique sequences or unique haplotypes.
 #'
-#' \code{acgt2ry} converts a \code{phyDat} object of nucleotides into an binary
-#' ry-coded dataset.
+#' \code{phyDat} stores identical columns of an alignment only once and keeps an
+#' index of the original positions. This saves memory and especially
+#' computations as these are usually need to be done only once for each site
+#' pattern.
+#' In the example below the matrix x in the example has 8 columns, but column 1
+#' and 2 and also 3 and 5 are identical. The \code{phyDat} object y has only 6
+#' site pattern. If argument \code{site.pattern=FALSE} the indexing behaves like
+#' on the original matrix x. \code{site.pattern=TRUE} can be useful inside
+#' functions.
 #'
 #' @aliases
-#' as.phyDat.character as.phyDat.data.frame as.phyDat.matrix
-#' as.MultipleAlignment as.MultipleAlignment.phyDat cbind.phyDat c.phyDat
-#' acgt2ry removeUndeterminedSites phyDat2MultipleAlignment
-#' @param data An object containing sequences.
+#' cbind.phyDat c.phyDat removeUndeterminedSites
 #' @param x An object containing sequences.
-#' @param type Type of sequences ("DNA", "AA", "CODON" or "USER").
 #' @param levels Level attributes.
-#' @param return.index If TRUE returns a index of the site patterns.
 #' @param n Number of sequences.
 #' @param names Names of sequences.
 #' @param subset a subset of taxa.
 #' @param select a subset of characters.
-#' @param site.pattern select site pattern or sites.
-#' @param allLevels return original data.
-#' @param obj as object of class phyDat
+#' @param site.pattern select site pattern or sites (see details).
 #' @param incomparables for compatibility with unique.
 #' @param identical if TRUE (default) sequences have to be identical, if FALSE
 #' sequences are considered duplicates if distance between sequences is zero
 #' (happens frequently with ambiguous sites).
-#' @param ambiguity character for ambiguous character and no contrast is
-#' provided.
+#' @param type Type of sequences ("DNA", "AA" or "USER").
 #' @param ... further arguments passed to or from other methods.
 #' @return The functions return an object of class \code{phyDat}.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso \code{\link{DNAbin}}, \code{\link{as.DNAbin}},
-#' \code{\link{baseFreq}}, \code{\link{glance.phyDat}}
+#' @seealso \code{link{phyDat}}, \code{link{DNAbin}}, \code{link{as.DNAbin()}},
+#' \code{\link{baseFreq}}, \code{\link{glance.phyDat}},
 #' \code{\link{read.dna}}, \code{\link{read.aa}}, \code{\link{read.nexus.data}}
 #' and the chapter 1 in the \code{vignette("phangorn-specials",
 #' package="phangorn")} and the example of \code{\link{pmlMix}} for the use of
@@ -69,285 +62,29 @@
 #' subset(Laurasiatherian, subset=1:5, select=1:20, site.pattern = FALSE)
 #' # the first 5 site patterns (often more than 5 characters)
 #' subset(Laurasiatherian, select=1:5, site.pattern = TRUE)
-#' # transform into old ape format
-#' LauraChar <- as.character(Laurasiatherian)
-#' # and back
-#' Laura <- phyDat(LauraChar)
-#' all.equal(Laurasiatherian, Laura)
+#'
+#' x <- matrix(c("a", "a", "c", "g", "c", "t", "a", "g",
+#'               "a", "a", "c", "g", "c", "t", "a", "g",
+#'               "a", "a", "c", "c", "c", "t", "t", "g"), nrow=3, byrow = TRUE,
+#'             dimnames = list(c("t1", "t2", "t3"), 1:8))
+#' (y <- phyDat(x))
+#'
+#' subset(y, 1:2)
+#' subset(y, 1:2, compress=TRUE)
+#'
+#' subset(y, select=1:3, site.pattern = FALSE) |> as.character()
+#' subset(y, select=1:3, site.pattern = TRUE) |> as.character()
+#' y[,1:3] # same as subset(y, select=1:3, site.pattern = FALSE)
+#'
 #' # Compute all possible site patterns
 #' # for nucleotides there $4 ^ (number of tips)$ patterns
 #' allSitePattern(5)
 #'
 #' @rdname phyDat
 #' @export
-phyDat <- function (data, type="DNA", levels=NULL, return.index = TRUE, ...){
-#  if (inherits(data, "DNAbin")) type <- "DNA"
-  pt <- match.arg(type, c("DNA", "AA", "CODON", "USER"))
-  if(pt=="DNA") dat <- phyDat.DNA(data, return.index=return.index, ...)
-  if(pt=="AA") dat <- phyDat.AA(data, return.index=return.index, ...)
-  if(pt=="CODON") dat <- phyDat.codon(data, return.index=return.index, ...)
-  if(pt=="USER") dat <- phyDat.default(data, levels = levels,
-                                       return.index=return.index, ...)
-  dat
-}
-
-
-#' @rdname phyDat
-#' @export
-as.phyDat <- function (x, ...){
-  if (inherits(x, "phyDat")) return(x)
-  UseMethod("as.phyDat")
-}
-
-
-#' @rdname phyDat
-#' @method as.phyDat factor
-#' @export
-as.phyDat.factor <- function(x, ...){
-  nam <- names(x)
-  lev <- levels(x)
-  x <- as.character(x)
-  names(x) <- nam
-  phyDat(x, type="USER", levels = lev, ...)
-}
-
-
-#' @rdname phyDat
-#' @method as.phyDat DNAbin
-#' @export
-as.phyDat.DNAbin <- function(x, ...) phyDat.DNA(x, ...)
-
-
-#' @rdname phyDat
-#' @method as.phyDat alignment
-#' @export
-as.phyDat.alignment <- function (x, type="DNA", ...){
-  x$seq <- tolower(x$seq)
-  data <- sapply(x$seq, strsplit, "")
-  names(data) <- x$nam
-  if(type=="DNA") dat <- phyDat.DNA(data, ...)
-  if(type=="AA") dat <- phyDat.AA(data, ...)
-  if(type=="CODON") dat <- phyDat.codon(data, ...)
-  if(type=="USER") dat <- phyDat.default(data, ...)
-  dat
-}
-
-
-#as.alignment.phyDat <- function(x, ...) as.alignment(as.character(x))
-#' @rdname phyDat
-#' @export
-phyDat2alignment <-  function(x){
-  z <- as.character(x)
-  nam <- rownames(z)
-  type <- attr(x, "type")
-  seq <- switch(type,
-                DNA = tolower(apply(z, 1, paste, collapse="")),
-                AA = toupper(apply(z, 1, paste, collapse="")))
-  names(seq) <- NULL
-  res <- list(nb=length(seq), nam=nam, seq=seq, com=NA)
-  class(res) <- "alignment"
-  res
-}
-
-
-#' @rdname phyDat
-#' @method as.phyDat MultipleAlignment
-#' @export
-as.phyDat.MultipleAlignment <- function(x, ...){
-  if (requireNamespace("Biostrings")){
-  if(inherits(x, "DNAMultipleAlignment"))
-    res <- phyDat.DNA(Biostrings::as.matrix(x))
-  if(inherits(x, "RNAMultipleAlignment"))
-    res <- phyDat.DNA(Biostrings::as.matrix(x))
-  if(inherits(x, "AAMultipleAlignment"))
-    res <- phyDat.AA(Biostrings::as.matrix(x))
-  return(res)
-  }
-  return(NULL)
-}
-
-
-# @rdname phyDat
-#' @export
-as.MultipleAlignment <- function (x, ...){
-  if (inherits(x, "MultipleAlignment")) return(x)
-  UseMethod("as.MultipleAlignment")
-}
-
-
-#' @rdname phyDat
-#' @export
-as.MultipleAlignment.phyDat <- function(x, ...){
-  if (requireNamespace("Biostrings")){
-  z <- as.character(x)
-#  nam <- rownames(z)
-  type <- attr(x, "type")
-  seq <- switch(type,
-                DNA = tolower(apply(z, 1, paste, collapse="")),
-                AA = toupper(apply(z, 1, paste, collapse="")))
-  if(type=="DNA") return(Biostrings::DNAMultipleAlignment(seq))
-  if(type=="AA") return(Biostrings::AAMultipleAlignment(seq))
-  }
-  return(NULL)
-}
-
-
-#' @export
-phyDat2MultipleAlignment <- as.MultipleAlignment.phyDat
-
-
-#' @export
-as.phyDat.matrix <- function (x, ...) phyDat(data=x, ...)
-
-
-#' @export
-as.phyDat.character <- function (x, ...) phyDat(data=x, ...)
-
-# @rdname phyDat
-#' @export
-as.phyDat.data.frame <- function (x, ...) phyDat(data=x, ...)
-
-
-#' @rdname phyDat
-#' @export
-acgt2ry <- function(obj){
-   ac <- c("a", "c", "g", "t", "u", "m", "r", "w", "s", "y",
-        "k", "v", "h", "d", "b", "n", "?", "-")
-   AC <- matrix(c(c(1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1,
-        0, 1, 1, 1), c(0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1,
-        0, 1, 1, 1, 1), c(0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1,
-        0, 1, 1, 1, 1, 1), c(0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1,
-        0, 1, 1, 1, 1, 1, 1)), 18, 4, dimnames = list(NULL, c("a",
-        "c", "g", "t")))
-   ry <- AC[c(7, 10), ]
-   RY <- AC %*% t(ry)
-   RY[RY==2] <- 1
-   dimnames(RY) <- list(NULL, c("r", "y"))
-   attr(obj, "levels") <- c("r", "y")
-   attr(obj, "nc") <- 2
-   attr(obj, "type") <- "USER"
-   attr(obj, "contrast") <- RY
-   obj <- phyDat.default(as.character(obj, allLevels=FALSE),
-                         levels = c("r", "y"), ambiguity = NULL)
-   obj
-}
-
-
-#' @rdname phyDat
-#' @export
-as.character.phyDat <- function (x, allLevels=TRUE, ...){
-  nr <- attr(x, "nr")
-#  nc <- attr(x, "nc")
-  type <- attr(x, "type")
-  labels <- attr(x, "allLevels")
-
-  if (!is.null(attr(x, "index"))) {
-    index <- attr(x, "index")
-    if (is.data.frame(index))
-      index <- index[, 1]
-  }
-  else index <- rep(1:nr, attr(x, "weight"))
-  if (type == "USER") {
-    #levels in acgt2ry
-    if(!allLevels){
-      tmp <- attr(x, "levels")
-      contrast <- attr(x, "contrast")
-      contrast[contrast>0] <- 1
-      ind <- which(rowSums(contrast)==1)
-      contrast[rowSums(contrast)>1, ] <- 0
-      labels <- rep(NA, length(attr(x, "allLevels")))
-      labels[ind] <- tmp[contrast%*%c(seq_along(tmp))]
-    }
-  }
-  if(type == "AA") labels <- toupper(labels)
-  if(type == "CODON"){
-    nr <- length(index)
-    result <- matrix(NA, nrow = length(x), ncol = 3L*nr)
-    labels <- strsplit(labels, "")
-    for (i in seq_along(x)) result[i, ] <- unlist(labels[ x[[i]][index] ])
-  }
-  else {
-    result <- matrix(NA, nrow = length(x), ncol = nr)
-    for (i in seq_along(x)) result[i, ] <- labels[x[[i]]]
-    result <- result[, index, drop = FALSE]
-  }
-  rownames(result) <- names(x)
-  result
-}
-
-
-#' @rdname phyDat
-#' @export
-as.data.frame.phyDat <- function(x, ...){
-  nr <- attr(x, "nr")
-#  nc <- attr(x, "nc")
-  labels <- attr(x, "allLevels")
-  if(attr(x, "type") == "AA") labels <- toupper(labels)
-  result <- vector("list", length(x))
-  if (is.null(attr(x, "index")))
-    index <- rep(1:nr, attr(x, "weight"))
-  else {
-    index <- attr(x, "index")
-    if (is.data.frame(index))
-      index <- index[, 1]
-  }
-  for (i in seq_along(x)) result[[i]] <- labels[x[[i]][index]]
-  attr(result, "names") <- names(x)
-  attr(result, "row.names") <- seq_along(index)
-  attr(result, "class") <- "data.frame"
-  result
-}
-
-
-
-#' @rdname phyDat
-#' @export
-as.DNAbin.phyDat <- function (x, ...){
-  if(attr(x, "type")=="DNA"){
-  nr <- attr(x, "nr")
-  ac <- attr(x, "allLevels")
-  result <- matrix(as.raw(0), nrow = length(x), ncol = nr)
-  # from ape ._cs_
-  cs <- c("a", "g", "c", "t", "r", "m", "w", "s", "k", "y", "v", "h",
-    "d", "b", "n", "-", "?")
-  # from ape ._bs_
-  bs <- as.raw(c(136, 72, 40, 24, 192, 160, 144, 96, 80, 48, 224, 176, 208,
-                 112, 240, 4, 2))
-  ord <- match(ac, cs)
-  ord[5] <- 4
-
-  for (i in seq_along(x)){
-    ind <- ord[x[[i]]]
-    result[i,] <- bs[ind]
-  }
-  if (is.null(attr(x, "index")))
-    index <- rep(1:nr, attr(x, "weight"))
-  else {
-    index <- attr(x, "index")
-    if (is.data.frame(index))
-      index <- index[, 1]
-  }
-  result <- result[, index, drop = FALSE]
-  rownames(result) <- names(x)
-  class(result) <- "DNAbin"
-  return(result)
-  }
-  else stop("x must be a nucleotide sequence")
-}
-
-
-#' @rdname phyDat
-#' @export
-as.AAbin.phyDat <- function(x,...) {
-   if(attr(x, "type")=="AA") return(as.AAbin(as.character(x, ...)))
-   else stop("x must be a amino acid sequence")
-}
-
-
-#' @export
 print.phyDat <- function (x, ...){
   cat(length(x), "sequences with",sum(attr(x,"weight")), "character and",
-    attr(x,"nr"),"different site patterns.\n")
+      attr(x,"nr"),"different site patterns.\n")
   cat("The states are",attr(x,"levels"), "\n")
 }
 
@@ -432,12 +169,6 @@ cbind.phyDat <- function(..., gaps="-", compress=TRUE){
 c.phyDat <- cbind.phyDat
 
 
-#phylo <- function(edge, tip, edge.length=NULL){
-#  res <- list(edge=edge, tip.label=tip, edge.length=edge.length)
-#  class(res) <- "phylo"
-#  res
-#  }
-
 compress.phyDat <- function(data){
   attrib <- attributes(data)
   attr(data, "class") <- "list"
@@ -446,7 +177,9 @@ compress.phyDat <- function(data){
   attrib$nr <- attr(index, "nlevels")
   attr(index, "nlevels") <- NULL
   pos <- which(!duplicated(index))
-  attrib$weight <- tapply(attrib$weight, index, sum)
+  weight <- tapply(attrib$weight, index, sum)
+  names(weight) <- NULL
+  attrib$weight <- weight
   if(is.null(attrib$index)) attrib$index <-index
   else attrib$index <- index[attrib$index]
   for(i in seq_len(length(data))) data[[i]] <- data[[i]][pos]
@@ -464,19 +197,9 @@ getCols <- function (data, cols, compress=FALSE){
   if (is.character(cols))
     attrib$names <- cols
   else attrib$names <- attrib$names[cols]
-  if(compress){
-    index <- grp_duplicated( matrix(unlist(data, use.names = FALSE), attrib$nr,
-                                    length(data)))
-    attrib$nr <- attr(index, "nlevels")
-    attr(index, "nlevels") <- NULL
-    pos <- which(!duplicated(index))
-    attrib$weight <- tapply(attrib$weight, index, sum)
-    if(is.null(attrib$index)) attrib$index <-index
-    else attrib$index <- index[attrib$index]
-    for(i in seq_len(length(data))) data[[i]] <- data[[i]][pos]
-  }
   attributes(data) <- attrib
   attr(data, "class") <- "phyDat"
+  if(compress) return(compress.phyDat(data))
   data
 }
 
@@ -512,12 +235,15 @@ getRows <- function (data, rows, site.pattern = TRUE){
 #' @export
 subset.phyDat <- function (x, subset, select, site.pattern = TRUE, ...){
   if (!missing(subset)){
-    if(is.numeric(subset) & any(subset>length(x))) stop("subscript out of bounds")
+    if(is.numeric(subset) & any(subset>length(x)))
+        stop("subscript out of bounds")
     x <- getCols(x, subset, ...)
   }
   if (!missing(select)){
     w <- attr(x, "weight")
-    if(site.pattern) if(any(select > length(w))) stop("subscript out of bounds")
+    if(site.pattern){
+      if(any(select > length(w))) stop("subscript out of bounds")
+    }
     else if(any(select > sum(w))) stop("subscript out of bounds")
     if(any(is.na(select))) return(NULL)
     x <- getRows(x, select, site.pattern=site.pattern)
@@ -640,9 +366,8 @@ removeAmbiguousSites <- function(x){
   for (i in 2:length(x)) index <- index & con[x[[i]]]
   index <- which(index)
   if(length(index)==0) stop('each site contains at least one ambiguous state!')
-  subset(x, select = index)
+  subset(x, select = index, site.pattern = TRUE)
 }
-# add to dist.ml, dist.hamming, h4st
 
 
 removeParsUninfoSites <- function(data, exact=TRUE){
@@ -679,7 +404,7 @@ removeParsimonyUninfomativeSites <- function(data, recursive=FALSE, exact=TRUE){
     dup <- map_duplicates(data)
     if (!is.null(dup)) {
       dup_list <- c(list(dup), dup_list)
-      data <- subset(data, setdiff(names(data), dup[, 1]))
+      data <- subset(data, setdiff(names(data), dup[, 1]), site.pattern=TRUE)
     }
     else break() # tmp <- FALSE
   }
@@ -690,13 +415,19 @@ removeParsimonyUninfomativeSites <- function(data, recursive=FALSE, exact=TRUE){
 
 #' @rdname phyDat
 #' @export
-allSitePattern <- function(n, levels=c("a", "c", "g", "t"), names=NULL){
+allSitePattern <- function(n, levels=NULL, names=NULL, type="DNA"){
+  type <- match.arg(type, c("DNA", "AA", "USER"))
+  if(type=="DNA") levels <- c("a", "c", "g", "t")
+  if(type=="AA") levels <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
+                             "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V")
   l <- length(levels)
   X <- matrix(NA_integer_, n, l^n)
   if(is.null(names))rownames(X) <- paste0("t", 1:n)
   else rownames(X) <- names
   for(i in 1:n)
     X[i, ] <- rep(rep(levels, each=l^(i-1)), l^(n-i))
+  if(type=="DNA") return(phyDat.DNA(X, compress=FALSE, return.index=FALSE))
+  if(type=="AA") return(phyDat.AA(X, return.index=FALSE))
   phyDat.default(X, levels, compress=FALSE, return.index=FALSE)
 }
 
@@ -842,21 +573,3 @@ read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
   obj
 }
 
-
-#' @rdname phyDat
-#' @export
-genlight2phyDat <- function(x, ambiguity=NA){
-  tmp <- as.matrix(x)
-  lev <- na.omit(unique(as.vector(tmp)))
-  phyDat(tmp, "USER", levels=lev, ambiguity=ambiguity)
-}
-
-
-#' @rdname phyDat
-#' @method image phyDat
-#' @export
-image.phyDat <- function(x, ...){
-  if(attr(x, "type") == "AA") image(as.AAbin(x), ...)
-  if(attr(x, "type") == "DNA") image(as.DNAbin(x), ...)
-  else return(NULL)
-}

@@ -84,20 +84,16 @@ modelTest <- function(object, tree = NULL, model = NULL, G = TRUE, I = TRUE,
     if (is.null(tree))
       tree <- object$tree
   }
-  if (attr(data, "type") == "DNA") type <- c("JC", "F81", "K80", "HKY", "TrNe",
-      "TrN", "TPM1", "K81", "TPM1u", "TPM2", "TPM2u", "TPM3", "TPM3u",
-      "TIM1e", "TIM1", "TIM2e", "TIM2", "TIM3e", "TIM3", "TVMe", "TVM",
-      "SYM", "GTR")
+  if (attr(data, "type") == "DNA") type <- .dnamodels
   if (attr(data, "type") == "AA") type <- .aamodels
-  if (attr(data, "type") == "USER") type <- "JC"
-
+  if (attr(data, "type") == "USER") type <- .usermodels
   if ( is.null(model) || (length(model)==1 && model == "all") ) model <- type
   model <- match.arg(model, type, TRUE)
 
   env <- new.env()
   assign("data", data, envir = env)
 
-  if (is.null(tree)) tree <- candidate.tree(data)
+  if (is.null(tree)) tree <- candidate_tree(data)
   if(!identical(sort(names(data)), sort(tree$tip.label))){
     stop("Labels in tree and data differ!")
   }

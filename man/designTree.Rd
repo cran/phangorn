@@ -9,11 +9,14 @@
 \alias{designSplits}
 \title{Compute a design matrix or non-negative LS}
 \usage{
-designTree(tree, method = "unrooted", sparse = FALSE, ...)
+designTree(tree, method = "unrooted", sparse = FALSE, tip.dates = NULL,
+  ...)
 
-nnls.tree(dm, tree, rooted = FALSE, trace = 1, weight = NULL, balanced = FALSE)
+nnls.tree(dm, tree, method = c("unrooted", "ultrametric", "tipdated"),
+  rooted = NULL, trace = 1, weight = NULL, balanced = FALSE,
+  tip.dates = NULL)
 
-nnls.phylo(x, dm, rooted = FALSE, trace = 0, ...)
+nnls.phylo(x, dm, method = "unrooted", trace = 0, ...)
 
 nnls.splits(x, dm, trace = 0)
 
@@ -24,15 +27,17 @@ designSplits(x, splits = "all", ...)
 \arguments{
 \item{tree}{an object of class \code{phylo}}
 
-\item{method}{design matrix for an "unrooted" or "rooted" ultrametric tree.}
+\item{method}{compute an "unrooted", "ultrametric" or "tipdated" tree.}
 
 \item{sparse}{return a sparse design matrix.}
+
+\item{tip.dates}{a vector of sampling times associated to the tips of tree.}
 
 \item{\dots}{further arguments, passed to other methods.}
 
 \item{dm}{a distance matrix.}
 
-\item{rooted}{compute a "rooted" or "unrooted" tree.}
+\item{rooted}{compute a "ultrametric" or "unrooted" tree (better use method).}
 
 \item{trace}{defines how much information is printed during optimization.}
 
@@ -71,7 +76,7 @@ tree2 <- nnls.tree(dm, tree)
 
 }
 \seealso{
-\code{\link[ape]{fastme}},
+\code{\link[ape]{fastme}}, \code{\link[ape]{rtt}},
 \code{\link[phangorn]{distanceHadamard}},
 \code{\link[phangorn]{splitsNetwork}}, \code{\link[phangorn]{upgma}}
 }

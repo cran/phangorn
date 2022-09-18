@@ -69,8 +69,9 @@ cophenetic.networx <- function(x) {
 #' \code{sprdist} computes the approximate SPR distance (Oliveira Martins et
 #' al. 2008, de Oliveira Martins 2016).
 #'
-#' @details The Robinson-Foulds distance between two trees \eqn{T_1} and \eqn{T_2} with
-#' \eqn{n} tips is defined as (following the notation Steel and Penny 1993):
+#' @details The Robinson-Foulds distance between two trees \eqn{T_1} and
+#' \eqn{T_2} with \eqn{n} tips is defined as (following the notation Steel and
+#' Penny 1993):
 #' \deqn{d(T_1, T_2) = i(T_1) + i(T_2) - 2v_s(T_1, T_2)} where \eqn{i(T_1)}
 #' denotes the number of internal edges and \eqn{v_s(T_1, T_2)} denotes the
 #' number of internal splits shared by the two trees. The normalized
@@ -147,15 +148,6 @@ treedist <- function(tree1, tree2, check.labels = TRUE) {
   tree1 <- unroot(tree1)
   tree2 <- unroot(tree2)
   if (check.labels) tree2 <- checkLabels(tree2, tree1$tip.label)
-#  if (check.labels) {
-#    ind <- match(tree1$tip.label, tree2$tip.label)
-#    if (any(is.na(ind)) | length(tree1$tip.label) !=
-#      length(tree2$tip.label))
-#      stop("trees have different labels")
-#    tree2$tip.label <- tree2$tip.label[ind]
-#    ind2 <- match(seq_along(ind), tree2$edge[, 2])
-#    tree2$edge[ind2, 2] <- order(ind)
-#  }
 
   tree1 <- reorder(tree1, "postorder")
   tree2 <- reorder(tree2, "postorder")
@@ -190,9 +182,6 @@ treedist <- function(tree1, tree2, check.labels = TRUE) {
     w2 <- numeric(max(tree2$edge))
     w1[tree1$edge[, 2]] <- tree1$edge.length
     w2[tree2$edge[, 2]] <- tree2$edge.length
-
-#    v1 <- tree1$edge.length
-#    v2 <- tree2$edge.length
 
     ind3 <- match(bp1, bp2, nomatch = 0L)
     ind4 <- ind3[ind3 > 0]
@@ -620,20 +609,10 @@ mRF <- function(trees, normalize = FALSE, rooted = FALSE) {
       trees <- unroot(trees)
     }
   }
-
   if (any(has.singles(trees))) trees <- lapply(trees, collapse.singles)
-
-  #    n <- length(attr(trees, "TipLabel"))
-
-  #    if (any(sapply(trees, is.rooted))) {
-  #        warning("some trees were rooted, unrooted all")
-  #        trees <- lapply(trees, unroot)
-  #    }
   if (any(!is.binary(trees))) {
     message("Some trees are not binary. Result may not what you expect!")
   }
-  #    trees <- reorder(trees, "postorder")
-  #    trees <- lapply(trees, reorder, "postorder")
   Nnodes <- Nnode(trees)
   trees <- .uncompressTipLabel(trees)
   trees <- unclass(trees)
@@ -649,8 +628,6 @@ mRF <- function(trees, normalize = FALSE, rooted = FALSE) {
     for (j in (i + 1):l) {
       RF[k] <- Nnodes[i] + Nnodes[j] - 2 *
         sum(fmatch(xx[[j]], tmp, nomatch = 0L) > 0L)
-      #  RF[k] <- sum(match(xx[[j]], tmp, nomatch=0L)==0L) +
-      #  sum(match(tmp, xx[[j]], nomatch=0L)==0L)
       if (normalize) RF[k] <- RF[k] / (Nnodes[i] + Nnodes[j] - 2)
       k <- k + 1
     }
