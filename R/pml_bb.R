@@ -9,6 +9,11 @@
 #' according to BIC.
 #'
 #' Currently very experimental and likely to change.
+#'
+#' \code{tip.dates} should be a named vector of sampling times, in any time
+#' unit, with time increasing toward the present. For example, this may be in
+#' units of “days since study start” or “years since 10,000 BCE”, but not
+#' “millions of yearsago”.
 #' @param x An alignment of class (either class \code{phyDat}, \code{DNAbin} or
 #' \code{AAbin}) or an object of class \code{modelTest}.
 #' @param model A string providing model (e.g. "GTR+G(4)+I"). Not necessary if
@@ -66,7 +71,7 @@ pml_bb <- function(x, model=NULL, rearrangement="stochastic",
       stop("Please supply a model!")
     } else {
       para <- split_model(x=model, type=type)
-      fit <- pml(start, x, k=para$k, ASC=para$ASC)
+      fit <- pml(start, x, k=para$k, ASC=para$ASC, site.rate = para$site_model)
     }
     if(method=="tipdated" && !is.null(attr(start, "rate")))
       fit <- update(fit, rate=attr(start, "rate"))
@@ -91,6 +96,7 @@ pml_bb <- function(x, model=NULL, rearrangement="stochastic",
 #' @export pml
 split_model <- function(x="GTR + G(4) + I", type="DNA"){
   mods <- NULL
+  site_model <- "gamma"
   if(type=="DNA") mods <- .dnamodels
   if(type=="AA") mods <- .aamodels
   if(type=="USER") mods <- .usermodels
@@ -122,6 +128,39 @@ split_model <- function(x="GTR + G(4) + I", type="DNA"){
     }
   }
   if(length(m)>0){
+    pos <- grep("GQ\\(", m)
+    if(length(pos)==1){
+      optGamma <- TRUE
+      k_tmp <- sub("GQ\\(", "", m[pos])
+      k_tmp <- sub("\\)", "", k_tmp)
+      k <- as.integer(k_tmp)
+      m <- m[-pos]
+      site_model <- "gamma_quadrature"
+    }
+  }
+  if(length(m)>0){
+    pos <- grep("GRW\\(", m)
+    if(length(pos)==1){
+      optGamma <- TRUE
+      k_tmp <- sub("GRW\\(", "", m[pos])
+      k_tmp <- sub("\\)", "", k_tmp)
+      k <- as.integer(k_tmp)
+      m <- m[-pos]
+      site_model <- "gamma_unbiased"
+    }
+  }
+  if(length(m)>0){
+    pos <- grep("R\\(", m)
+    if(length(pos)==1){
+      site_model <- "free_rate"
+      optGamma <- TRUE
+      k_tmp <- sub("R\\(", "", m[pos])
+      k_tmp <- sub("\\)", "", k_tmp)
+      k <- as.integer(k_tmp)
+      m <- m[-pos]
+    }
+  }
+  if(length(m)>0){
     pos <- grep("I", m)
     if(length(pos)==1){
       optInv <- TRUE
@@ -142,6 +181,7 @@ split_model <- function(x="GTR + G(4) + I", type="DNA"){
       m <- m[-pos]
     }
   }
+  if(length(m)>0) warning("Some parameters are unknown")
   list(model=model, optFreq=optFreq, optInv=optInv, optGamma=optGamma, k=k,
-       ASC=ASC)
+       ASC=ASC, site_model=site_model)
 }

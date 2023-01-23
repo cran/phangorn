@@ -42,8 +42,8 @@ optim.pml(object, optNni = FALSE, optBf = FALSE, optQ = FALSE,
 details.}
 
 \item{site.rate}{Indicates what type of gamma distribution to use. Options
-are "gamma" approach of Yang 1994 (default), "quadrature" after the Laguerre
-quadrature approach of Felsenstein 2001 or "freerate".}
+are "gamma" approach of Yang 1994 (default), ""gamma_quadrature"" after the
+Laguerre quadrature approach of Felsenstein 2001 or "freerate".}
 
 \item{ASC}{ascertainment bias correction (ASC), allows to estimate models
 like Lewis' Mkv.}
@@ -90,7 +90,7 @@ site patterns.}
 \description{
 \code{pml} computes the likelihood of a phylogenetic tree given a sequence
 alignment and a model. \code{optim.pml} optimizes the different model
-parameters.
+parameters. For a more user-friendly interface see \code{\link{pml_bb}}.
 }
 \details{
 Base frequencies in \code{pml} can be supplied in different ways.

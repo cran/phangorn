@@ -74,6 +74,8 @@ codonTest <- function(tree, object, model = c("M0", "M1a", "M2a"),
   trace <- control$trace
   control$trace <- trace - 1
 
+  has_index <- !is.null(attr(object, "index"))
+
   if (trace > 2) print("optimize model M0")
   fit <- pml(tree, object, bf = frequencies)
   M0 <- optim.pml(fit, model="codon1", control = control)
@@ -103,7 +105,7 @@ codonTest <- function(tree, object, model = c("M0", "M1a", "M2a"),
       dnds_0 = M1a$dnds[1], dnds_1 = 1, dnds_2 = NA,
       p_0 = M1a$omega[1], p_1 = M1a$omega[2], p_2 = NA,
       tstv = M1a$fits[[1]]$tstv))
-    prob[["M1a"]] <- neb(M1a)
+    if(has_index) prob[["M1a"]] <- neb(M1a)
     estimates[["M1a"]] <- M1a
   }
   if ("M2a" %in% model) {
@@ -119,7 +121,7 @@ codonTest <- function(tree, object, model = c("M0", "M1a", "M2a"),
       p_0 = M2a$omega[1], p_1 = M2a$omega[2],
       p_2 = M2a$omega[3],
       tstv = M2a$fits[[1]]$tstv))
-    prob[["M2a"]] <- neb(M2a)
+    if(has_index) prob[["M2a"]] <- neb(M2a)
     estimates[["M2a"]] <- M2a
   }
 
@@ -159,9 +161,14 @@ print.codonTest <- function(x, ...) print(x$summary)
 #' @export
 plot.codonTest <- function(x, model = "M1a", col = hcl.colors(3), ...) {
   dat <- t(x$posterior[[model]])
+  l <- nrow(dat)
   colnames(dat) <- seq_len(ncol(dat))
-  barplot(dat, col = col, space = 0, border = NA,
-          legend.text = prettyNum(x$estimates[[model]]$dnds), ...)
+  rownames(dat) <- prettyNum(x$estimates[[model]]$dnds, digits=3)
+  dat <- dat[l:1, ]
+  barplot(dat, col = rev(col[1:l]), space = 0, border = NA,
+          legend.text = rownames(dat),
+          ylim=c(0, 1.15), args.legend=list(horiz=TRUE, x="top",
+                         box.col = "white", box.lty = 0), ...)
 }
 
 

@@ -38,7 +38,7 @@ contrast
 gapsdata3 <- phyDat(data, type="USER", contrast=contrast)
 gapsdata3
 
-## -----------------------------------------------------------------------------
+## ----optim.pml subs-----------------------------------------------------------
 library(ape)
 tree <- unroot(rtree(3))
 fit <- pml(tree, gapsdata3)
@@ -51,11 +51,17 @@ fdir <- system.file("extdata/trees", package = "phangorn")
 hiv_2_nef <- read.phyDat(file.path(fdir, "seqfile.txt"), format="sequential")
 tree <- read.tree(file.path(fdir, "tree.txt"))
 
-## ----codonTest----------------------------------------------------------------
-cdn <- codonTest(tree, hiv_2_nef)
+## ---- echo=FALSE--------------------------------------------------------------
+load("AF.RData")
+
+## ----codonTest, eval=FALSE----------------------------------------------------
+#  cdn <- codonTest(tree, hiv_2_nef)
+#  cdn
+
+## ----codonTest_cheat, echo=FALSE----------------------------------------------
 cdn
 
-## ----plot codon---------------------------------------------------------------
+## ----plot_codon---------------------------------------------------------------
 plot(cdn, "M1a")
 plot(cdn, "M2a")
 
@@ -65,17 +71,12 @@ M0 <- pml(treeM0, dna2codon(hiv_2_nef), bf="F3x4")
 M0 <- optim.pml(M0, model="codon1", control=pml.control(trace=0))
 M0
 
-## ----M0+F3x4------------------------------------------------------------------
-M0_opt <- optim.pml(M0, model="codon1", optBf=TRUE, control=pml.control(trace=0))
+## ----M0+F3x4, eval=FALSE------------------------------------------------------
+#  M0_opt <- optim.pml(M0, model="codon1", optBf=TRUE, control=pml.control(trace=0))
+#  M0_opt
+
+## ----M0+F3x4_cheat, echo=FALSE------------------------------------------------
 M0_opt
-
-## ----allTrees-----------------------------------------------------------------
-trees <- allTrees(5)
-par(mfrow=c(3,5), mar=rep(0,4))
-for(i in 1:15)plot(trees[[i]], cex=1, type="u")
-
-## ----nni----------------------------------------------------------------------
-nni(trees[[1]])
 
 ## ----sessionInfo, echo=FALSE--------------------------------------------------
 sessionInfo()

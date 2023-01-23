@@ -1,3 +1,28 @@
+    CHANGES in PHANGORN VERSION 2.11.0
+
+OTHER CHANGES
+
+    o Vignettes have been reorganised, rewritten and vastly improved thanks to
+
+      Iris.
+
+    o small improvements to plot.codonTest, plot.networx
+
+    o rell bootstrap values are now computed by default in optim.pml / pml_bb
+
+BUG FIXES
+
+    o fixed bug which caused warning on CRAN
+
+    o densiTree does not draw an empty plot any more
+
+    o Replace rgl.texts with texts3d, oull reqiest by Duncan Murdoch (thanks)
+
+    o changes in read.nexus.splits and read.nexus.networx to work with the
+
+      moving targets SplitsTree6/SplitsTreeCE
+
+
     CHANGES in PHANGORN VERSION 2.10.0
 
 NEW FEATURES

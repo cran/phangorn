@@ -48,6 +48,9 @@ read.nexus.splits <- function(file) {
   semico <- grep(";", X)
   X <- gsub("\\[(.*?)\\]", "", X) # get rid of comments
   i1 <- grep("TAXLABELS", X, ignore.case = TRUE)
+  sp <- grep("SPLITS;", X, ignore.case = TRUE)
+  i1 <- i1[i1 < sp]
+  if(length(i1)>1)i1 <- i1[length(i1)]
   taxlab <- ifelse(length(i1) > 0, TRUE, FALSE)
   if (taxlab) {
     end <- semico[semico >= i1][1]
@@ -57,7 +60,6 @@ read.nexus.splits <- function(file) {
     x <- x[nzchar(x)]
     x <- gsub("['\"]", "", x)
   }
-  sp <- grep("SPLITS;", X, ignore.case = TRUE)
   spEnd <- grep("END;", X, ignore.case = TRUE)
   spEnd <- spEnd[spEnd > sp][1]
   dims <- grep("DIMENSION", X, ignore.case = TRUE)
@@ -309,8 +311,14 @@ read.nexus.networx <- function(file, splits = TRUE) {
   X <- scan(file = file, what = "", sep = "\n", quiet = TRUE)
   semico <- grep(";", X)
   X <- gsub("\\[(.*?)\\]", "", X) # get rid of comments
-
   netStart <- grep("BEGIN NETWORK;", X, ignore.case = TRUE)
+  if(length(netStart)==0){
+    if(splits) {
+      warning("File does not contain network block, return only splits!")
+      return(spl)
+    }
+    else stop("File does not contain network block!")
+  }
   netEnd <- grep("END;", X, ignore.case = TRUE)
   netEnd <- netEnd[netEnd > netStart][1]
   dims <- grep("DIMENSION", X, ignore.case = TRUE)

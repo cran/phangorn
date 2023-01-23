@@ -1,6 +1,6 @@
 Package: phangorn
 Title: Phylogenetic Reconstruction and Analysis
-Version: 2.10.0
+Version: 2.11.1
 Authors@R: 
     c(person(given = "Klaus",
              family = "Schliep",
@@ -18,9 +18,13 @@ Authors@R:
       person(given = "Alastair",
              family = "Potts",
              role = "aut"),
+      person(given = "Iris",
+             family = "Bardel-Kahr",
+             role = "aut",
+             comment = c(ORCID = "0000-0002-8950-834X")),            
       person(given = "Tim W.",
              family = "White",
-             role = "aut"),
+             role = "ctb"),
       person(given = "Cyrill",
              family = "Stachniss",
              role = "ctb"),
@@ -51,7 +55,16 @@ Authors@R:
              role = "ctb"),
       person(given = "Long",
              family = "Qu",
-             role = "ctb"))
+             role = "ctb"), 
+      person(given= "Joseph", 
+             family="Brown", 
+             role = "ctb", 
+             comment = c(ORCID = "0000-0002-3835-8062")),
+      person(given="Santiago", 
+             family="Claramunt", 
+             role = "ctb", 
+             comment = c(ORCID = "0000-0002-8926-5974"))
+             )
 Description: Allows for estimation of phylogenetic trees and networks
     using Maximum Likelihood, Maximum Parsimony, distance methods and
     Hadamard conjugation (Schliep 2011). Offers methods for tree comparison, 
@@ -64,23 +77,24 @@ BugReports: https://github.com/KlausVigo/phangorn/issues
 Depends: ape (>= 5.6), R (>= 4.1.0)
 Imports: digest, fastmatch, generics, graphics, grDevices, igraph (>=
         1.0), Matrix, methods, parallel, quadprog, Rcpp, stats, utils
-Suggests: Biostrings, knitr, magick, prettydoc, rgl, rmarkdown, seqinr,
-        seqLogo, tinytest, xtable
+Suggests: Biostrings, knitr, magick, rgl, rmarkdown, seqinr, seqLogo,
+        tinytest, xtable
 LinkingTo: Rcpp
 VignetteBuilder: knitr, utils
 biocViews: Software, Technology, QualityControl
 Encoding: UTF-8
 Repository: CRAN
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Language: en-US
 NeedsCompilation: yes
-Packaged: 2022-09-17 11:54:28 UTC; klaus
+Packaged: 2023-01-22 23:45:05 UTC; klaus
 Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Emmanuel Paradis [aut] (<https://orcid.org/0000-0003-3092-2199>),
   Leonardo de Oliveira Martins [aut]
     (<https://orcid.org/0000-0001-5247-1320>),
   Alastair Potts [aut],
-  Tim W. White [aut],
+  Iris Bardel-Kahr [aut] (<https://orcid.org/0000-0002-8950-834X>),
+  Tim W. White [ctb],
   Cyrill Stachniss [ctb],
   Michelle Kendall [ctb],
   Keren Halabi [ctb],
@@ -90,6 +104,8 @@ Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Mike Gilchrist [ctb],
   Jeremy Beaulieu [ctb],
   Brian O'Meara [ctb],
-  Long Qu [ctb]
+  Long Qu [ctb],
+  Joseph Brown [ctb] (<https://orcid.org/0000-0002-3835-8062>),
+  Santiago Claramunt [ctb] (<https://orcid.org/0000-0002-8926-5974>)
 Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
-Date/Publication: 2022-09-18 08:26:05 UTC
+Date/Publication: 2023-01-23 10:10:02 UTC

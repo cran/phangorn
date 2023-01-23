@@ -35,8 +35,7 @@ candidate_tree <- function(x, method=c("unrooted", "ultrametric", "tipdated"),
     enforce_ultrametric <- TRUE
   }
   if(method=="unrooted"){
-    tree <- random.addition(x)
-    tree <- optim.parsimony(tree, x, trace=0)
+    tree <- pratchet(x, maxit=10L, trace=0, perturbation = "ratchet")
     tree <- multi2di(tree)
     tree <- unroot(tree)
     tree <- acctran(tree, x)
@@ -50,6 +49,7 @@ candidate_tree <- function(x, method=c("unrooted", "ultrametric", "tipdated"),
     tree <- rtt(tree, tip.dates[tree$tip.label])
     tree <- nnls.tree(dm, tree, method = "tipdated",
                       tip.dates=tip.dates[tree$tip.label])
+    tree$tip.dates <- tip.dates[tree$tip.label]
   }
   minEdge(tree, tau=eps, enforce_ultrametric=enforce_ultrametric)
 }

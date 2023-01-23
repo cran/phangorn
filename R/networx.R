@@ -478,214 +478,6 @@ consensusNet <- function(obj, prob = 0.3, ...) {
 }
 
 
-#' @rdname addConfidences
-#' @export
-createLabel <- function(x, y, label_y, type = "edge", nomatch = NA) {
-  spl_x <- as.splits(x)
-  if (inherits(x, "phylo", TRUE) == 1) spl_x <- spl_x[x$edge[, 2]]
-  spl_y <- as.splits(y)
-  if (inherits(y, "phylo", TRUE) == 1) spl_y <- spl_y[y$edge[, 2]]
-
-  tiplabel <- attr(spl_x, "labels")
-  nTips <- length(tiplabel)
-
-  spl_y <- changeOrder(spl_y, tiplabel)
-  spl_y <- SHORTwise(spl_y)
-
-  ind <- match(SHORTwise(spl_x), spl_y)
-  pos <-  which(!is.na(ind))
-
-  res <- rep(nomatch, length(spl_x))
-
-  if (length(label_y) == 1L) label_y <- rep(label_y, length(spl_y))
-  res[pos] <- label_y[ind[pos]]
-  if (type == "edge" && inherits(x, "networx")) {
-    return(res[x$splitIndex])
-  }
-  res
-}
-
-
-
-
-#' Compare splits and add support values to an object
-#'
-#' Add support values to a \code{splits}, \code{phylo} or \code{networx}
-#' object.
-#'
-#' @param x an object of class \code{splits}, \code{phylo} or \code{networx}
-#' @param y an object of class \code{splits}, \code{phylo}, \code{multiPhylo}
-#' or \code{networx}
-#' @param ...  Further arguments passed to or from other methods.
-#' @param label_y label of y matched on x. Will be usually of
-#' length(as.splits(x)).
-#' @param type should labels returned for edges (in \code{networx}) or splits.
-#' @param nomatch default value if no match between x and y is found.
-#' @return The object \code{x} with added bootstrap / MCMC support values.
-#' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso \code{\link{as.splits}}, \code{\link{as.networx}},
-#' \code{\link{RF.dist}}, \code{\link{plot.phylo}}
-#' @references Schliep, K., Potts, A. J., Morrison, D. A. and Grimm, G. W.
-#' (2017), Intertwining phylogenetic trees and networks.
-#' \emph{Methods Ecol Evol}.\bold{8}, 1212--1220. doi:10.1111/2041-210X.12760
-#' @keywords cluster
-#' @examples
-#'
-#' data(woodmouse)
-#' woodmouse <- phyDat(woodmouse)
-#' tmpfile <- normalizePath(system.file(
-#'              "extdata/trees/RAxML_bootstrap.woodmouse", package="phangorn"))
-#' boot_trees <- read.tree(tmpfile)
-#'
-#' dm <- dist.ml(woodmouse)
-#' tree <- upgma(dm)
-#' nnet <- neighborNet(dm)
-#'
-#' tree <- addConfidences(tree, boot_trees)
-#' nnet <- addConfidences(nnet, boot_trees)
-#'
-#' plot(tree, show.node.label=TRUE)
-#' plot(nnet, show.edge.label=TRUE)
-#'
-#' @rdname addConfidences
-#' @export
-addConfidences <- function(x, y, ...) UseMethod("addConfidences")
-
-
-# some function to add confidences on splits if trees have different taxa
-# used in addConfidences.splits
-addConfidencesMultiPhylo <- function(spl, trees) {
-  fun <- function(spl, intersect_labels) {
-    spl2 <- spl
-    index <- match(attr(spl, "labels"), intersect_labels)
-    attr(spl2, "labels") <- intersect_labels
-    for (i in seq_along(spl2)) {
-      spl2[[i]] <- sort(na.omit(index[spl[[i]]]))
-    }
-    l_spl <- lengths(spl2)
-    l <- length(intersect_labels)
-    ind <- which((l_spl > 1) & (l_spl < (l - 1L)))
-    if (length(ind) == 0) return(NULL)
-    list(spl = spl2[ind], index = ind)
-  }
-
-  spl_labels <- attr(spl, "labels")
-  zaehler <- numeric(length(spl))
-  nenner <- numeric(length(spl))
-  for (i in seq_along(trees)) {
-    intersect_labels <- intersect(trees[[i]]$tip.label, spl_labels)
-    if (length(intersect_labels) > 3) {
-      tmp <- fun(spl, intersect_labels)
-      if (!is.null(tmp)) {
-        tree_spl <- as.splits(trees[[i]])
-        if (!identical(intersect_labels, trees[[i]]$tip.label))
-          tree_spl <- fun(tree_spl, intersect_labels)[[1]]
-        comp <- compatible_2(as.bitsplits(tmp[[1]]), as.bitsplits(tree_spl))
-        ind <- tmp$index
-        zaehler[ind] <- zaehler[ind] + comp
-        nenner[ind] <- nenner[ind] + 1L
-      }
-    }
-  }
-  confidences <- zaehler / nenner
-  attr(spl, "confidences") <- confidences
-  spl
-}
-
-
-#' @export
-addConfidences.splits <- function(x, y, scaler = 1, ...) {
-  if (hasArg(add))
-    add <- list(...)$add
-  else add <- FALSE
-
-  tiplabel <- attr(x, "labels")
-  nTips <- length(tiplabel)
-  #    x = addTrivialSplits(x)
-  if (inherits(y, "phylo")) {
-    ind <- match(tiplabel, y$tip.label)
-    if (any(is.na(ind)) | length(tiplabel) != length(y$tip.label))
-      stop("trees have different labels")
-    y$tip.label <- y$tip.label[ind]
-    ind2 <- match(seq_along(ind), y$edge[, 2])
-    y$edge[ind2, 2] <- order(ind)
-  }
-  if (inherits(y, "multiPhylo")) {
-    if (inherits(try(.compressTipLabel(y), TRUE), "try-error")) {
-      res <- addConfidencesMultiPhylo(x, y)
-      return(res)
-    }
-  }
-
-  spl <- as.splits(y)
-# postprocess.proppart
-  spl <- changeOrder(spl, tiplabel)
-  spl <- SHORTwise(spl)
-  ind <- match(SHORTwise(x), spl)
-  #    pos <-  which(ind > nTips)
-  pos <-  which(!is.na(ind))
-  confidences <- rep(NA_real_, length(x)) # numeric(length(x))  #character
-
-  if(is.numeric(attr(spl, "confidences")))
-     confidences[pos] <- attr(spl, "confidences")[ind[pos]] * scaler
-  else confidences[pos] <- attr(spl, "confidences")[ind[pos]]
-  if (add == TRUE) confidences <- paste(prettyNum(attr(x, "confidences")),
-      prettyNum(confidences * scaler), sep = "/")
-  #        y$node.label[ind[pos] - nTips]
-  attr(x, "confidences") <- confidences
-  x
-}
-
-
-#' @export
-addConfidences.networx <- function(x, y, scaler = 1, ...) {
-  spl <- x$splits
-  spl <- addConfidences(spl, y, scaler = scaler, ...)
-  x$splits <- spl
-  x
-}
-
-#' @rdname addConfidences
-#' @export
-addConfidences.phylo <- function(x, y, ...) {
-  #    call <- x$call
-  if (hasArg(as.is))
-    as.is <- list(...)$as.is
-  else as.is <- TRUE
-  nTips <- length(x$tip.label)
-  spl <- as.splits(x) |> SHORTwise()
-  conf <- attr(addConfidences(spl, y), "confidences")
-  l <- lengths(spl)
-  if (is.character(conf)) as.is <- TRUE
-    # conf <- as.numeric(conf)
-  ind <- (l == 1L) | (l == (nTips - 1L)) | (l == nTips)
-  conf[ind == TRUE] <- NA_real_
-  nTips <- length(x$tip.label)
-  if (!as.is) conf <- conf * 100
-  x$node.label <- conf[-c(1:nTips)]
-  x
-}
-
-
-#' @export
-addConfidences.multiPhylo <- function(x, y, ...) {
-  x <- .uncompressTipLabel(x)
-  x <- unclass(x)
-  x <- lapply(x, addConfidences, y)
-  class(x) <- "multiPhylo"
-  x
-}
-
-#' @rdname addConfidences
-#' @export
-presenceAbsence <- function(x, y) {
-  spl <- as.splits(y)
-  l <- length(spl)
-  attr(spl, "confidences") <- rep(1, l)
-  addConfidences(x, y)
-}
-
-
 #' @export
 reorder.networx <- function(x, order =  "cladewise", index.only = FALSE, ...) {
   order <- match.arg(order, c("cladewise", "postorder"))
@@ -903,6 +695,8 @@ edgeLabels <- function(xx, yy, zz = NULL, edge) {
 #' @param col.edge.label the colors used for the edge labels.
 #' @param font.node.label the font used for the node labels.
 #' @param font.edge.label the font used for the edge labels.
+#' @param underscore a logical specifying whether the underscores in tip labels
+#' should be written as spaces (the default) or left as are (if TRUE).
 #' @param \dots Further arguments passed to or from other methods.
 #' @rdname plot.networx
 #' @note The internal representation is likely to change.
@@ -945,7 +739,7 @@ plot.networx <- function(x, type = "equal angle", use.edge.length = TRUE,
                          cex = par("cex"), cex.node.label = cex,
                          cex.edge.label = cex, col.node.label = tip.color,
                          col.edge.label = tip.color, font.node.label = font,
-                         font.edge.label = font, ...) {
+                         font.edge.label = font, underscore = FALSE, ...) {
   type <- match.arg(type, c("equal angle", "3D", "2D"))
   if (use.edge.length == FALSE){
     x$edge.length[] <- 1
@@ -962,6 +756,10 @@ plot.networx <- function(x, type = "equal angle", use.edge.length = TRUE,
   }
   if (is.null(node.label)) node.label <- as.character(1:max(x$edge))
   if (show.tip.label) node.label[1:nTips] <- ""
+  if (show.tip.label){
+    if (is.expression(x$tip.label)) underscore <- TRUE
+    if (!underscore) x$tip.label <- gsub("_", " ", x$tip.label)
+  }
 
   lspl <- max(x$splitIndex)
   if (!is.null(split.color)) {
@@ -1038,7 +836,7 @@ plotRGL <- function(coords, net, show.tip.label = TRUE, show.edge.label = FALSE,
   open3d <- rgl::open3d
   segments3d  <- rgl::segments3d
   spheres3d <- rgl::spheres3d
-  rgl.texts <- rgl::rgl.texts
+  texts3d <- rgl::texts3d
 
   edge <- net$edge
 
@@ -1061,10 +859,10 @@ plotRGL <- function(coords, net, show.tip.label = TRUE, show.edge.label = FALSE,
   }
   if (show.tip.label) {
     if (is.null(net$translate))
-      rgl.texts(x[1:nTips] + 2.05 * radius, y[1:nTips], z[1:nTips],
+      texts3d(x[1:nTips] + 2.05 * radius, y[1:nTips], z[1:nTips],
                 net$tip.label, color = tip.color, cex = cex, font = font)
     else
-      rgl.texts(x[net$translate$node] + 2.05 * radius, y[net$translate$node],
+      texts3d(x[net$translate$node] + 2.05 * radius, y[net$translate$node],
         z[net$translate$node], net$tip.label, color = tip.color, cex = cex,
         font = font)
   }
@@ -1072,11 +870,11 @@ plotRGL <- function(coords, net, show.tip.label = TRUE, show.edge.label = FALSE,
     ec <- edgeLabels(x, y, z, edge)
     if (is.null(edge.label)) edge.label <- net$splitIndex
     # else edge.label = net$splitIndex
-    rgl.texts(ec[, 1], ec[, 2], ec[, 3], edge.label, color = col.edge.label,
+    texts3d(ec[, 1], ec[, 2], ec[, 3], edge.label, color = col.edge.label,
       cex = cex.edge.label, font = font.edge.label)
   }
   if (show.node.label) {
-    rgl.texts(x, y, z, node.label, color = col.node.label, cex = cex.node.label,
+    texts3d(x, y, z, node.label, color = col.node.label, cex = cex.node.label,
       font = font.node.label)
   }
 }

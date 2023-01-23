@@ -1,11 +1,19 @@
 check df for tipdated models
 
+check add_edge_length for tipdated data
 
-read.phyDat type="USER" , levels=...
+rate model:
+ * fix df
+ * fix print method, guess model
+
+test plotBS speziel bei rooted trees
+
+read.phyDat type="USER" , levels=...   DONE
+
+rell bootstrap (Ultrafast Bootstrap) testing  TODO
 
 
-rell bootstrap (Ultrafast Bootstrap) testing
-
+summary_edges
 
 vignettes discrete
 
@@ -16,8 +24,6 @@ as.phyDat für non-DNA mit [] und contrast für parsimony, export als nexus file
 add nodelabels an results
 
 
-
-
 test1 <- ancestral.pars(tree, Laurasiatherian, "ACCTRAN", return = "phyDat")
 test3 <- ancestral.pars(tree, Laurasiatherian, "POSTORDER", return = "phyDat")
 
@@ -25,9 +31,9 @@ test3 <- ancestral.pars(tree, Laurasiatherian, "POSTORDER", return = "phyDat")
 test2 <- ancestral.pars(tree, Laurasiatherian, "MPR", return = "phyDat")
 
 
-hash trees in C++ set_difference and sort on vectors, done
 
 unique.multiPhylo, ratchet + stochastic adding
+mit hash.phylo
 
 
 fix optRooted towards the root!!!
@@ -41,5 +47,41 @@ addConfidences.multiPhylo
 presenceAbsence
 coords
 
+
+matchEdges raus?? in bootstrap.R
+
+
+checks:
+  parsimony: RI, CI document
+             old2new raus???
+
+  phylo:     optimF3x4
+             init_rell, rell
+
+  networx:   addConfidencesMultiPhylo, createLabel, addConfidences.multiPhylo,
+             presenceAbsence
+             coords
+             closest.edge, closest.node
+
+  phyDat:    removeUndeterminedSites
+
+  ancestral_pml: ancestral.pars mit allen Varianten
+
+  splitsNetwork
+
+  treeManipulation: midpoint.multiPhylo, pruneTree
+
+  read.phyDat mit nexus format
+
+  bug fixes:
+
+  fitch.spr both sides und openMP
+
+  pmlMix
+
+
+
+optim.pml mit empirical statt estimated als default.
+check my gamma distributions
 
 

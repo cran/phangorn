@@ -37,12 +37,12 @@
 #' @param ... further arguments passed to or from other methods.
 #' @return The functions return an object of class \code{phyDat}.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso \code{link{phyDat}}, \code{link{DNAbin}}, \code{link{as.DNAbin()}},
-#' \code{\link{baseFreq}}, \code{\link{glance.phyDat}},
+#' @seealso \code{\link{DNAbin}}, \code{\link{as.DNAbin}},
+#' \code{\link{baseFreq}}, \code{\link{glance.phyDat}}, \code{\link{dna2codon}},
 #' \code{\link{read.dna}}, \code{\link{read.aa}}, \code{\link{read.nexus.data}}
-#' and the chapter 1 in the \code{vignette("phangorn-specials",
+#' and the chapter 1 in the \code{vignette("AdvancedFeatures",
 #' package="phangorn")} and the example of \code{\link{pmlMix}} for the use of
-#' \code{allSitePattern}
+#' \code{\link{allSitePattern}}.
 #' @keywords cluster
 #' @examples
 #'
@@ -414,12 +414,19 @@ removeParsimonyUninfomativeSites <- function(data, recursive=FALSE, exact=TRUE){
 
 
 #' @rdname phyDat
+#' @param code The ncbi genetic code number for translation.
+#' By default the standard genetic code is used.
 #' @export
-allSitePattern <- function(n, levels=NULL, names=NULL, type="DNA"){
-  type <- match.arg(type, c("DNA", "AA", "USER"))
+allSitePattern <- function(n, levels=NULL, names=NULL, type="DNA", code=1){
+  type <- match.arg(type, c("DNA", "AA", "CODON", "USER"))
   if(type=="DNA") levels <- c("a", "c", "g", "t")
   if(type=="AA") levels <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
                              "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V")
+  if(type=="CODON"){
+    tmp <- .CODON[, as.character(code)]
+    levels <- rownames(.CODON)
+    levels <- levels[tmp != "*"]
+  }
   l <- length(levels)
   X <- matrix(NA_integer_, n, l^n)
   if(is.null(names))rownames(X) <- paste0("t", 1:n)
@@ -428,7 +435,12 @@ allSitePattern <- function(n, levels=NULL, names=NULL, type="DNA"){
     X[i, ] <- rep(rep(levels, each=l^(i-1)), l^(n-i))
   if(type=="DNA") return(phyDat.DNA(X, compress=FALSE, return.index=FALSE))
   if(type=="AA") return(phyDat.AA(X, return.index=FALSE))
-  phyDat.default(X, levels, compress=FALSE, return.index=FALSE)
+  res <- phyDat.default(X, levels, compress=FALSE, return.index=FALSE)
+  if(type=="CODON"){
+    attr(res, "type") <- "CODON"
+    attr(res, "code") <- code
+  }
+  res
 }
 
 
