@@ -1,3 +1,84 @@
+    CHANGES in PHANGORN VERSION 2.12.0
+
+NEW FEATURES
+
+    o new function supgma, performing serial sampled UPGMA
+
+      (Drummond, Rodrigo 2000)
+
+    o new function gap_as_state, treating gaps as a state.
+
+    o new function keep_as_tip allows to prune a tree and keep nodes as a tip
+
+      (suggested by Hedvig Skirgård)
+
+    o nnls now can estimate trees with calibrations and tip dated trees
+
+    o the functions Descendants, Ancestors, Siblings, mrca.phy now also accept a
+
+      character vector for the node argument and not only integers.
+
+    o Ancestral state reconstruction was rewritten.
+
+      The output of ancestral.pars and ancestral.pars could return different
+
+      objects. anc_pml and anc_pars are now prefered over ancestral.pml and
+
+      ańcestral.pars. Output is now an object of class ancestral, which contains
+
+      tree with node labels, the original alignment and reconstructions.
+
+      The should be considered experimental as the internals of this function
+
+      might change in future.
+
+      Ancestral states of constant sites are now always this state.
+
+    o Joint reconstruction for ML is now available.
+
+    o Improvements to several plot functions to get nicer plots out of the box.
+
+      Nicer defaults for plot.pml, mainly for rooted trees.
+
+    o plotAnc got an argument scheme allowing to use different color schemes,
+
+      especially for amino acid models shared with image.AAbin and assumes an
+
+      ancestral object.
+
+    o plot.networx gets two additional arguments, direction as in plot.phylo and
+
+      angle to rotate the network.
+
+    o new function composition_test, indicating possible problems with base /
+
+      state composition, similar to the test in iqtree.
+
+OTHER CHANGES
+
+    o pml.control got an argument statefreq, which controls if "empirical"
+
+      or (ML) "estimated" state/base frequencies are used/computed. The change
+
+      of the default to "empirical" speeds up functions modelTest and
+
+      pml_bb/optim.pml. However estimates will differ to previous versions,
+
+      which were implicitly using "estimated".
+
+    o some improvements to pmlPart.
+
+    o the sankoff algorithm has been rewritten.
+
+BUG FIXES
+
+    o pml_bb roots the tree, if method is either ultrametric or tipdated. Fixes
+
+      problem when modelTest object was supplied.
+
+    o nnls.tree now checks if the tree has singletons.
+
+
     CHANGES in PHANGORN VERSION 2.11.0
 
 OTHER CHANGES
@@ -16,7 +97,7 @@ BUG FIXES
 
     o densiTree does not draw an empty plot any more
 
-    o Replace rgl.texts with texts3d, oull reqiest by Duncan Murdoch (thanks)
+    o Replace rgl.texts with texts3d, pull request by Duncan Murdoch (thanks)
 
     o changes in read.nexus.splits and read.nexus.networx to work with the
 

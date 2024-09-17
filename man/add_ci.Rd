@@ -28,6 +28,9 @@ blue.}
 \item{\dots}{arguments passed to other functions, \code{\link{legend}} or
 \code{\link{bxp}}.}
 }
+\value{
+Nothing. Function is called for adding to a plot.
+}
 \description{
 These are low-level plotting commands to draw the confidence
 intervals on the node of a tree as rectangles with coloured backgrounds or
@@ -43,14 +46,14 @@ tree <- upgma(dm)
 set.seed(123)
 trees <- bootstrap.phyDat(Laurasiatherian,
                           FUN=function(x)upgma(dist.hamming(x)), bs=100)
-                          tree <- plotBS(tree, trees, "phylogram")
 tree <- plotBS(tree, trees, "phylogram")
 add_ci(tree, trees)
 plot(tree, direction="downwards")
 add_boxplot(tree, trees, boxwex=.7)
 }
 \seealso{
-\code{\link{plot.phylo}}, \code{\link{plotBS}}
+\code{\link[ape]{plot.phylo}}, \code{\link{plotBS}},
+\code{\link{add_edge_length}}, \code{\link{maxCladeCred}}
 }
 \author{
 Emmanuel Paradis, Santiago Claramunt, Joseph Brown, Klaus Schliep

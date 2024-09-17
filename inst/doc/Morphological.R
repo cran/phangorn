@@ -12,13 +12,13 @@ fdir <- system.file("extdata", package = "phangorn")
 mm <- read.csv(file.path(fdir, "mites.csv"), row.names = 1)
 mm_pd <- phyDat(as.matrix(mm), type = "USER", levels = 0:7)
 
-## ----write nexus, eval=FALSE--------------------------------------------------
+## ----write_nexus, eval=FALSE--------------------------------------------------
 #  write.phyDat(mm_pd, file.path(fdir, "mites.nex"), format = "nexus")
 
-## ---- read nexus--------------------------------------------------------------
+## ----read_nexus---------------------------------------------------------------
 mm_pd <- read.phyDat(file.path(fdir, "mites.nex"), format = "nexus", type = "STANDARD")
 
-## ----contrast matrix----------------------------------------------------------
+## ----contrast_matrix----------------------------------------------------------
 contrast <- matrix(data = c(1,0,0,0,0,0,0,0,0,
     0,1,0,0,0,0,0,0,0,
     0,0,1,0,0,0,0,0,0,
@@ -55,15 +55,12 @@ mm_tree_rooted <- root(mm_tree, outgroup = "C._cymba", resolve.root = TRUE,
                        edgelabel = TRUE)
 
 ## ----plot_trees, eval=FALSE---------------------------------------------------
-#  # plot all trees
-#  plotBS(mm_tree_rooted, digits = 2)
-#  
 #  # subsetting for tree nr. 9
 #  plotBS(mm_tree_rooted[[9]], digits = 2)
 #  
 #  # save plot as pdf
 #  pdf(file = "mm_rooted.pdf")
-#  plotBS(mm_tree_rooted, digits = 2)
+#  plotBS(mm_tree_rooted[[9]], digits = 2)
 #  dev.off()
 
 ## ----consensus tree-----------------------------------------------------------

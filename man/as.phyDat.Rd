@@ -7,14 +7,19 @@
 \alias{as.phyDat.matrix}
 \alias{as.MultipleAlignment}
 \alias{as.MultipleAlignment.phyDat}
+\alias{as.StringSet}
+\alias{as.StringSet.phyDat}
 \alias{acgt2ry}
 \alias{phyDat2MultipleAlignment}
 \alias{as.phyDat}
 \alias{as.phyDat.factor}
 \alias{as.phyDat.DNAbin}
+\alias{as.phyDat.AAbin}
 \alias{as.phyDat.alignment}
 \alias{phyDat2alignment}
 \alias{as.phyDat.MultipleAlignment}
+\alias{as.phyDat.AAStringSet}
+\alias{as.phyDat.DNAStringSet}
 \alias{as.character.phyDat}
 \alias{as.data.frame.phyDat}
 \alias{as.DNAbin.phyDat}
@@ -30,11 +35,21 @@ as.phyDat(x, ...)
 
 \method{as.phyDat}{DNAbin}(x, ...)
 
+\method{as.phyDat}{AAbin}(x, ...)
+
 \method{as.phyDat}{alignment}(x, type = "DNA", ...)
 
 phyDat2alignment(x)
 
 \method{as.phyDat}{MultipleAlignment}(x, ...)
+
+\method{as.phyDat}{AAStringSet}(x, ...)
+
+\method{as.phyDat}{DNAStringSet}(x, ...)
+
+as.StringSet(x, ...)
+
+\method{as.StringSet}{phyDat}(x, ...)
 
 \method{as.MultipleAlignment}{phyDat}(x, ...)
 
@@ -102,9 +117,9 @@ all.equal(Laurasiatherian, as.phyDat(LauraDNAbin))
 
 }
 \seealso{
-[DNAbin()], [as.DNAbin()],
+\code{\link[ape]{DNAbin}}, \code{\link[ape]{as.DNAbin}},
 \code{\link{baseFreq}}, \code{\link{glance.phyDat}},
-\code{\link{read.dna}}, \code{\link{read.aa}}, \code{\link{read.nexus.data}}
+\code{\link[ape]{read.dna}}, \code{\link[ape]{read.nexus.data}}
 and the chapter 1 in the \code{vignette("phangorn-specials",
 package="phangorn")} and the example of \code{\link{pmlMix}} for the use of
 \code{allSitePattern}

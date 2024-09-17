@@ -11,20 +11,6 @@ dec2Bin <- function(x) {
 }
 
 
-# returns binary (0, 1) vector of length k
-dec2bin <- function(x, k = ceiling(log2(x))) {
-  i <- 1L
-  res <- integer(k)
-  while (x > 0) {
-    if (x %% 2L)
-      res[i] <- 1L
-    x <- x %/% 2L
-    i <- i + 1L
-  }
-  res
-}
-
-# double factorial: log version
 #' @rdname dfactorial
 #' @export
 ldfactorial <- function(x) {
@@ -32,8 +18,6 @@ ldfactorial <- function(x) {
   res <- lgamma(2 * x) - (lgamma(x) + (x - 1) * log(2))
   res
 }
-
-# double factorial
 
 
 #' Arithmetic Operators
@@ -225,7 +209,7 @@ distanceHadamard <- function(dm, eps = 0.001) {
 #' @rdname hadamard
 #' @export
 h4st <- function(obj, levels = c("a", "c", "g", "t")) {
-  if (!inherits(obj, "phyDat")) stop("obj needs to be of class phyDat!")
+  if (!inherits(obj, "phyDat")) stop("obj must be of class phyDat")
   if (attr(obj, "nc") != 4L) stop("Error")
   obj <- removeAmbiguousSites(obj)
   obj <- as.data.frame(t(as.character(obj)))

@@ -1,70 +1,33 @@
 Package: phangorn
 Title: Phylogenetic Reconstruction and Analysis
-Version: 2.11.1
+Version: 2.12.1
 Authors@R: 
-    c(person(given = "Klaus",
-             family = "Schliep",
-             role = c("aut", "cre"),
+    c(person("Klaus", "Schliep", role = c("aut", "cre"),
              email = "klaus.schliep@gmail.com",
              comment = c(ORCID = "0000-0003-2941-0161")),
-      person(given = "Emmanuel",
-             family = "Paradis",
-             role = "aut",
+      person("Emmanuel", "Paradis", role = "aut",
              comment = c(ORCID = "0000-0003-3092-2199")),
-      person(given = "Leonardo",
-             family = "de Oliveira Martins",
-             role = "aut",
+      person("Leonardo", "de Oliveira Martins", role = "aut",
              comment = c(ORCID = "0000-0001-5247-1320")),
-      person(given = "Alastair",
-             family = "Potts",
-             role = "aut"),
-      person(given = "Iris",
-             family = "Bardel-Kahr",
-             role = "aut",
+      person("Alastair", "Potts", role = "aut"),
+      person("Iris", "Bardel-Kahr", role = "aut",
              comment = c(ORCID = "0000-0002-8950-834X")),            
-      person(given = "Tim W.",
-             family = "White",
-             role = "ctb"),
-      person(given = "Cyrill",
-             family = "Stachniss",
-             role = "ctb"),
-      person(given = "Michelle",
-             family = "Kendall",
-             role = "ctb",
+      person("Tim W.", "White", role = "ctb"),
+      person("Cyrill", "Stachniss", role = "ctb"),
+      person("Michelle", "Kendall", role = "ctb",
              email = "m.kendall@imperial.ac.uk"),
-      person(given = "Keren",
-             family = "Halabi",
-             role = "ctb"),
-      person(given = "Richel",
-             family = "Bilderbeek",
-             role = "ctb"),
-      person(given = "Kristin",
-             family = "Winchell",
-             role = "ctb"),
-      person(given = "Liam",
-             family = "Revell",
-             role = "ctb"),
-      person(given = "Mike",
-             family = "Gilchrist",
-             role = "ctb"),
-      person(given = "Jeremy",
-             family = "Beaulieu",
-             role = "ctb"),
-      person(given = "Brian",
-             family = "O'Meara",
-             role = "ctb"),
-      person(given = "Long",
-             family = "Qu",
-             role = "ctb"), 
-      person(given= "Joseph", 
-             family="Brown", 
-             role = "ctb", 
+      person("Keren", "Halabi",  role = "ctb"),
+      person("Richel", "Bilderbeek",  role = "ctb"),
+      person("Kristin", "Winchell", role = "ctb"),
+      person("Liam", "Revell", role = "ctb"),
+      person("Mike", "Gilchrist", role = "ctb"),
+      person("Jeremy", "Beaulieu", role = "ctb"),
+      person("Brian", "O'Meara", role = "ctb"),
+      person("Long", "Qu", role = "ctb"), 
+      person(given= "Joseph", "Brown", role = "ctb", 
              comment = c(ORCID = "0000-0002-3835-8062")),
-      person(given="Santiago", 
-             family="Claramunt", 
-             role = "ctb", 
-             comment = c(ORCID = "0000-0002-8926-5974"))
-             )
+      person(given="Santiago", "Claramunt", role = "ctb", 
+             comment = c(ORCID = "0000-0002-8926-5974")))
 Description: Allows for estimation of phylogenetic trees and networks
     using Maximum Likelihood, Maximum Parsimony, distance methods and
     Hadamard conjugation (Schliep 2011). Offers methods for tree comparison, 
@@ -74,20 +37,22 @@ License: GPL (>= 2)
 URL: https://github.com/KlausVigo/phangorn,
         https://klausvigo.github.io/phangorn/
 BugReports: https://github.com/KlausVigo/phangorn/issues
-Depends: ape (>= 5.6), R (>= 4.1.0)
+Depends: ape (>= 5.8), R (>= 4.1.0)
 Imports: digest, fastmatch, generics, graphics, grDevices, igraph (>=
         1.0), Matrix, methods, parallel, quadprog, Rcpp, stats, utils
-Suggests: Biostrings, knitr, magick, rgl, rmarkdown, seqinr, seqLogo,
-        tinytest, xtable
+Suggests: apex, Biostrings, ggseqlogo, ggplot2, knitr, magick, rgl,
+        rmarkdown, seqinr, testthat (>= 3.0.0), tinytest, vdiffr,
+        xtable
 LinkingTo: Rcpp
 VignetteBuilder: knitr, utils
 biocViews: Software, Technology, QualityControl
 Encoding: UTF-8
 Repository: CRAN
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Language: en-US
+Config/testthat/edition: 3
 NeedsCompilation: yes
-Packaged: 2023-01-22 23:45:05 UTC; klaus
+Packaged: 2024-09-17 15:09:22 UTC; klaus
 Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Emmanuel Paradis [aut] (<https://orcid.org/0000-0003-3092-2199>),
   Leonardo de Oliveira Martins [aut]
@@ -108,4 +73,4 @@ Author: Klaus Schliep [aut, cre] (<https://orcid.org/0000-0003-2941-0161>),
   Joseph Brown [ctb] (<https://orcid.org/0000-0002-3835-8062>),
   Santiago Claramunt [ctb] (<https://orcid.org/0000-0002-8926-5974>)
 Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
-Date/Publication: 2023-01-23 10:10:02 UTC
+Date/Publication: 2024-09-17 17:00:02 UTC

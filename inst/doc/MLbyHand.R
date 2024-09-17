@@ -51,14 +51,14 @@ AIC(fitGTR)
 AICc(fitGTR)
 BIC(fitGTR)
 
-## ---- echo=TRUE, eval=TRUE, cache=TRUE----------------------------------------
+## ----echo=TRUE, eval=TRUE, cache=TRUE-----------------------------------------
 bs <- bootstrap.pml(fitJC, bs=100, optNni=TRUE,
     control = pml.control(trace = 0))
 
 ## ----plotBS, fig.cap="Tree with bootstrap support. Unrooted tree (midpoint rooted) with bootstrap support values.", echo=TRUE----
 plotBS(midpoint(fitJC$tree), bs, p = 50, type="p")
 
-## ----ConsensusNet, fig.cap="ConsensusNet from the bootstrap sample.", echo=TRUE----
+## ----ConsensusNet, fig.cap="ConsensusNet from the bootstrap sample.", echo=TRUE, eval=TRUE----
 cnet <- consensusNet(bs, p=0.2)
 plot(cnet, show.edge.label=TRUE)
 

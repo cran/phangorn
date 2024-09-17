@@ -107,6 +107,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sorted_bipartCPP
+std::vector< std::vector<int> > sorted_bipartCPP(IntegerMatrix orig, int nTips);
+RcppExport SEXP _phangorn_sorted_bipartCPP(SEXP origSEXP, SEXP nTipsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type orig(origSEXP);
+    Rcpp::traits::input_parameter< int >::type nTips(nTipsSEXP);
+    rcpp_result_gen = Rcpp::wrap(sorted_bipartCPP(orig, nTips));
+    return rcpp_result_gen;
+END_RCPP
+}
 // short_bipCPP
 std::vector< std::vector<int> > short_bipCPP(IntegerMatrix orig, int nTips);
 RcppExport SEXP _phangorn_short_bipCPP(SEXP origSEXP, SEXP nTipsSEXP) {
@@ -208,30 +220,28 @@ END_RCPP
 RcppExport SEXP AddOnes(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP C_rowMin(SEXP, SEXP, SEXP);
 RcppExport SEXP C_sprdist(SEXP, SEXP, SEXP);
+RcppExport SEXP dist2spectra(SEXP, SEXP, SEXP);
 RcppExport SEXP FS4(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP FS5(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP getDAD(SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP getdPM(SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP getdPM2(SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP getPM(SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP getPrep(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP grpDupAtomMat(SEXP, SEXP, SEXP);
+RcppExport SEXP invSites(SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP ll_free2(void);
+RcppExport SEXP ll_init2(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP LogLik2(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP optE(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP optQrtt(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP PML0(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP PML4(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP PWI(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP dist2spectra(SEXP, SEXP, SEXP);
-RcppExport SEXP getDAD(SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP getPM(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP getPrep(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP getdPM(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP getdPM2(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP grpDupAtomMat(SEXP, SEXP, SEXP);
-RcppExport SEXP invSites(SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP ll_free2();
-RcppExport SEXP ll_init2(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP optE(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP optQrtt(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP pNodes(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP rowMax(SEXP, SEXP, SEXP);
-RcppExport SEXP sankoff3(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP sankoff3B(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP sankoff_c(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP sankoff_nni_c(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP sankoffMPR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP sankoffQuartet(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP _rcpp_module_boot_Fitch_mod();
 
 static const R_CallMethodDef CallEntries[] = {
@@ -243,6 +253,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_phangorn_getIndex", (DL_FUNC) &_phangorn_getIndex, 3},
     {"_phangorn_Transfer_Index", (DL_FUNC) &_phangorn_Transfer_Index, 3},
     {"_phangorn_bipartCPP", (DL_FUNC) &_phangorn_bipartCPP, 2},
+    {"_phangorn_sorted_bipartCPP", (DL_FUNC) &_phangorn_sorted_bipartCPP, 2},
     {"_phangorn_short_bipCPP", (DL_FUNC) &_phangorn_short_bipCPP, 2},
     {"_phangorn_bipCPP", (DL_FUNC) &_phangorn_bipCPP, 2},
     {"_phangorn_allChildrenCPP", (DL_FUNC) &_phangorn_allChildrenCPP, 1},
@@ -252,33 +263,31 @@ static const R_CallMethodDef CallEntries[] = {
     {"_phangorn_cophenetic_cpp", (DL_FUNC) &_phangorn_cophenetic_cpp, 4},
     {"_phangorn_threshStateC", (DL_FUNC) &_phangorn_threshStateC, 2},
     {"_rcpp_module_boot_Fitch_mod", (DL_FUNC) &_rcpp_module_boot_Fitch_mod, 0},
-    {"AddOnes",                (DL_FUNC) &AddOnes,                 5},
-    {"C_rowMin",               (DL_FUNC) &C_rowMin,                3},
-    {"C_sprdist",              (DL_FUNC) &C_sprdist,               3},
-    {"FS4",                    (DL_FUNC) &FS4,                    15},
-    {"FS5",                    (DL_FUNC) &FS5,                    11},
-    {"LogLik2",                (DL_FUNC) &LogLik2,                10},
-    {"PML0",                   (DL_FUNC) &PML0,                   14},
-    {"PML4",                   (DL_FUNC) &PML4,                   15},
-    {"PWI",                    (DL_FUNC) &PWI,                     6},
-    {"dist2spectra",           (DL_FUNC) &dist2spectra,            3},
-    {"getDAD",                 (DL_FUNC) &getDAD,                  5},
-    {"getPM",                  (DL_FUNC) &getPM,                   4},
-    {"getPrep",                (DL_FUNC) &getPrep,                 6},
-    {"getdPM",                 (DL_FUNC) &getdPM,                  4},
-    {"getdPM2",                (DL_FUNC) &getdPM2,                 4},
-    {"grpDupAtomMat",          (DL_FUNC) &grpDupAtomMat,           3},
-    {"invSites",               (DL_FUNC) &invSites,                5},
-    {"ll_free2",               (DL_FUNC) &ll_free2,                0},
-    {"ll_init2",               (DL_FUNC) &ll_init2,                4},
-    {"optE",                   (DL_FUNC) &optE,                   18},
-    {"optQrtt",                (DL_FUNC) &optQrtt,                17},
-    {"pNodes",                 (DL_FUNC) &pNodes,                  6},
-    {"rowMax",                 (DL_FUNC) &rowMax,                  3},
-    {"sankoff3",               (DL_FUNC) &sankoff3,                8},
-    {"sankoff3B",              (DL_FUNC) &sankoff3B,              10},
-    {"sankoffMPR",             (DL_FUNC) &sankoffMPR,              7},
-    {"sankoffQuartet",         (DL_FUNC) &sankoffQuartet,          4},
+    {"AddOnes",                    (DL_FUNC) &AddOnes,                     5},
+    {"C_rowMin",                   (DL_FUNC) &C_rowMin,                    3},
+    {"C_sprdist",                  (DL_FUNC) &C_sprdist,                   3},
+    {"dist2spectra",               (DL_FUNC) &dist2spectra,                3},
+    {"FS4",                        (DL_FUNC) &FS4,                        15},
+    {"FS5",                        (DL_FUNC) &FS5,                        11},
+    {"getDAD",                     (DL_FUNC) &getDAD,                      5},
+    {"getdPM",                     (DL_FUNC) &getdPM,                      4},
+    {"getdPM2",                    (DL_FUNC) &getdPM2,                     4},
+    {"getPM",                      (DL_FUNC) &getPM,                       4},
+    {"getPrep",                    (DL_FUNC) &getPrep,                     6},
+    {"grpDupAtomMat",              (DL_FUNC) &grpDupAtomMat,               3},
+    {"invSites",                   (DL_FUNC) &invSites,                    5},
+    {"ll_free2",                   (DL_FUNC) &ll_free2,                    0},
+    {"ll_init2",                   (DL_FUNC) &ll_init2,                    4},
+    {"LogLik2",                    (DL_FUNC) &LogLik2,                    10},
+    {"optE",                       (DL_FUNC) &optE,                       18},
+    {"optQrtt",                    (DL_FUNC) &optQrtt,                    17},
+    {"PML0",                       (DL_FUNC) &PML0,                       14},
+    {"PML4",                       (DL_FUNC) &PML4,                       15},
+    {"PWI",                        (DL_FUNC) &PWI,                         6},
+    {"rowMax",                     (DL_FUNC) &rowMax,                      3},
+    {"sankoff_c",                  (DL_FUNC) &sankoff_c,                  10},
+    {"sankoff_nni_c",              (DL_FUNC) &sankoff_nni_c,              10},
+    {"sankoffMPR",                 (DL_FUNC) &sankoffMPR,                  7},
     {NULL, NULL, 0}
 };
 

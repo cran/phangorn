@@ -88,14 +88,14 @@ int countCycle_cpp(IntegerMatrix M){
 // [[Rcpp::export]]
 IntegerVector countCycle2_cpp(IntegerMatrix M){
   int tmp;
-  int l = M.nrow();
-  int m = M.ncol();
+  size_t l = M.nrow();
+  size_t m = M.ncol();
   IntegerVector res(l);
-  for (int i=0; i<l; i++) {
+  for (size_t i=0; i<l; i++) {
     tmp = 0L;
     if(M[i] != M[i + (m -1) * l])tmp=1L;
-    for (int j=1; j<m; j++) {
-      if(M[i + (j-1L)* l] != M[i + j * l])tmp++;
+    for (size_t j=1; j<m; j++) {
+      if(M[i + (j-1L)* l] != M[i + j * l])tmp++;    ///
     }
     res[i]=tmp;
   }
@@ -207,6 +207,13 @@ std::vector< std::vector<int> > bipartCPP(IntegerMatrix orig, int nTips) {
       std::sort(out[i].begin(), out[i].end());
     }
     return out;    // return the list
+}
+
+// [[Rcpp::export]]
+std::vector< std::vector<int> > sorted_bipartCPP(IntegerMatrix orig, int nTips) {
+  std::vector< std::vector<int> > out=bipartCPP(orig, nTips);
+  std::sort(out.begin(), out.end());
+  return out;
 }
 
 
@@ -388,12 +395,12 @@ Fast cophenetic distance
 */
 
 
-void copheneticHelpCpp(std::vector<int> left, std::vector<int> right, int h, NumericVector nh, int nTips, NumericVector dm){
+void copheneticHelpCpp(std::vector<int> left, std::vector<int> right, size_t h, NumericVector nh, int nTips, NumericVector dm){
     int ind;
     for(std::size_t i=0; i<left.size(); i++){
         for(std::size_t j=0; j<right.size(); j++){
             ind = give_index3(left[i], right[j], nTips);
-            dm[ind] = 2.0*nh[h] - nh[left[i]-1L] - nh[right[j]-1L];
+            dm[ind] = 2.0*nh[h] - nh[left[i]-1] - nh[right[j]-1];
         }
     }
 }
@@ -409,7 +416,8 @@ NumericVector cophenetic_cpp(IntegerMatrix edge, NumericVector edge_length,
     std::vector< std::vector<int> > bip = bipCPP(edge, nTips);
     NumericVector dm( nTips * (nTips-1) /2 );
     int l=0, left, right;
-    for(int h=nNode; h<(nNode + nTips); h++){
+     size_t max_nodes = (nNode + nTips);
+    for(size_t h=nNode; h < max_nodes; h++){
         // changed from NumericVector to IntegerVector
         IntegerVector tmp_ch = ch[h];
         l = tmp_ch.size();

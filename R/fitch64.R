@@ -152,7 +152,8 @@ fitch_spr <- function (tree, f, trace=0L)
 }
 
 
-indexNNI_fitch <- function(tree) {
+indexNNI_fitch <- function(tree, offset=2L*Ntip(tree), rooted=is.rooted(tree)) {
+  offset <- as.integer(offset)
   parent <- tree$edge[, 1]
   child <- tree$edge[, 2]
   ind <- child
@@ -169,17 +170,34 @@ indexNNI_fitch <- function(tree) {
   #      /       \
   #     b         c     c(a,b,c,d,e,f)
 
+  #           d         d is f + offset, if offset > 0
+  #          /
+  #         f
+  #        / \
+  #       e   \
+  #      / \   c
+  #     a   b
+
   k <- 1
   for (i in ind) {
     f <- pvector[i]
     ab <- cvector[[i]]
     ind1 <- cvector[[f]]
     cd <- ind1[ind1 != i]
+    ef <- c(i, f)
     if (pvector[f]){
-      cd <- c(cd, f + 2L * nTips)
-      ef <- c(i, f)
+      cd <- c(cd, f + offset)
     }
-    else ef <- c(i, cd[2])
+    if(offset < 0L){
+      tmp <- pvector[f]
+      if(tmp==0L) tmp <- f
+      # think about this more
+      cd[2] <- tmp
+    }
+    #    else if(rooted) cd <- c(cd, NA_integer_)
+    #    else if(!rooted) ef <- c(i, cd[2])
+    #    else cd[2] <- f
+    if (length(cd)==1) cd <- c(cd, NA_integer_) # if trees are rooted
     edgeMatrix[k, ] <- c(ab, cd, ef)
     k <- k + 1
   }
@@ -189,7 +207,7 @@ indexNNI_fitch <- function(tree) {
 
 
 nni2 <- function(x){
-  INDEX <- indexNNI_fitch(x)[, 1:4]
+  INDEX <- indexNNI_fitch(x)[, 1:4, drop=FALSE]
   INDEX <- rbind(INDEX[, c(1, 3, 2, 4)], INDEX[, c(2, 3, 1, 4)])
   l <- nrow(INDEX)
   res <- vector("list", l)
@@ -217,8 +235,6 @@ fitch_nni <- function(tree, f) {
     ind <- which.min(pscore)
     tree2 <- changeEdge(tree, INDEX[candidates[ind], c(2, 3)])
     test <- f$pscore(tree2$edge)
-    if (test >= p0)
-      candidates <- candidates[-ind]
     if (test < p0) {
       p0 <- test
       swap <- swap + 1
@@ -226,6 +242,7 @@ fitch_nni <- function(tree, f) {
       indi <- which(INDEX[, 5] %in% INDEX[candidates[ind],])
       candidates <- setdiff(candidates, indi)
     }
+    else candidates <- candidates[-ind]
   }
   p0 <- f$pscore(tree$edge)
   list(tree = tree, pscore = p0, swap = swap)
@@ -244,7 +261,7 @@ optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", ...) {
   }
   if (is.null(attr(tree, "order")) || attr(tree, "order") != "postorder")
     tree <- reorder(tree, "postorder")
-  if (class(data)[1] != "phyDat") stop("data must be of class phyDat")
+  if (!inherits(data, "phyDat")) stop("data must be of class phyDat")
 
   rt <- FALSE
 

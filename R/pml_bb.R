@@ -1,19 +1,28 @@
 #' Likelihood of a tree.
 #'
-#' \code{pml_bb} for pml black box infers a phylogentic tree infers a tree using
-#' maximum likelihood (ML).
+#' \code{pml_bb} for pml black box infers a phylogenetic tree infers a tree
+#' using maximum likelihood (ML).
 #'
 #' \code{pml_bb} is a convenience function combining \code{pml} and
 #' \code{optim.pml}. If no tree is supplied, the function will generate a
 #' starting tree. If a modelTest object is supplied the model will be chosen
 #' according to BIC.
 #'
-#' Currently very experimental and likely to change.
-#'
 #' \code{tip.dates} should be a named vector of sampling times, in any time
 #' unit, with time increasing toward the present. For example, this may be in
 #' units of “days since study start” or “years since 10,000 BCE”, but not
-#' “millions of yearsago”.
+#' “millions of years ago”.
+#'
+#' \code{model} takes a string and tries to extract the model. When an
+#' \code{modelTest} object the best BIC model is chosen by default.
+#' The string should contain a substitution model (e.g. JC, GTR, WAG) and can
+#' additional have  a term "+I" for invariant sites, "+G(4)" for a discrete
+#' gamma model, "+R(4)" for a free rate model. In case of amino acid models
+#' a term "+F" for estimating the amino acid frequencies. Whether nucleotide
+#' frequencies are estimated is defined by \code{\link{pml.control}}.
+#'
+#' Currently very experimental and likely to change.
+#'
 #' @param x An alignment of class (either class \code{phyDat}, \code{DNAbin} or
 #' \code{AAbin}) or an object of class \code{modelTest}.
 #' @param model A string providing model (e.g. "GTR+G(4)+I"). Not necessary if
@@ -27,17 +36,21 @@
 #' @param \dots Further arguments passed to or from other methods.
 #' @return \code{pml_bb} returns an object of class pml.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso \code{\link{optim.pml}}, \code{\link{modelTest}}, \code{\link{rtt}}
+#' @seealso \code{\link{optim.pml}}, \code{\link{modelTest}},
+#' \code{\link[ape]{rtt}}, \code{\link{pml.control}}
 #' @keywords cluster
 #' @examples
 #'
-#' \dontrun{
 #' data(woodmouse)
-#' tmp <- pml_bb(woodmouse)
+#' tmp <- pml_bb(woodmouse, model="HKY+I", rearrangement="NNI")
 #'
+#' \dontrun{
 #' data(Laurasiatherian)
 #' mt <- modelTest(Laurasiatherian)
 #' fit <- pml_bb(mt)
+#'
+#' # estimate free rate model with 2 rate categories
+#' fit_HKY_R2 <- pml_bb(woodmouse, model="HKY+R(2)")
 #'}
 #' @rdname pml_bb
 #' @export
@@ -76,6 +89,12 @@ pml_bb <- function(x, model=NULL, rearrangement="stochastic",
     if(method=="tipdated" && !is.null(attr(start, "rate")))
       fit <- update(fit, rate=attr(start, "rate"))
   }
+  if(optRooted && !is.rooted(fit$tree)){
+    start <- candidate_tree(fit$data, method=method,
+                            tip.dates = tip.dates, eps=1e-7)
+    fit <- update(fit, tree=start)
+    if(method=="tipdated") fit <- update(fit, rate=attr(start, "rate"))
+  }
   type <- attr(fit$data, "type")
   para <- split_model(model, type)
   if(type=="AA" && para$optFreq){
@@ -87,6 +106,7 @@ pml_bb <- function(x, model=NULL, rearrangement="stochastic",
                      optInv=para$optInv, rearrangement = rearrangement,
                      optRate=optRate, optRooted=optRooted, ...)
   }
+  if(!is.null(tip.dates)) fit$tip.dates <- tip.dates
   fit
 }
 
@@ -107,7 +127,7 @@ split_model <- function(x="GTR + G(4) + I", type="DNA"){
   tmp <-  match(m, mods)
   if(all(is.na(tmp))) stop("Could not find model!")
   else pos <- tmp[!is.na(tmp)]
-  if(length(pos)>1)  stop("Error, fould several models!")
+  if(length(pos)>1)  stop("Error, found several models!")
 
   model <- mods[pos]
   m <- m[is.na(tmp)]

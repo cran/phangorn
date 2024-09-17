@@ -37,9 +37,9 @@
 #' @param ... further arguments passed to or from other methods.
 #' @return The functions return an object of class \code{phyDat}.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso \code{\link{DNAbin}}, \code{\link{as.DNAbin}},
+#' @seealso \code{\link[ape]{DNAbin}}, \code{\link[ape]{as.DNAbin}},
 #' \code{\link{baseFreq}}, \code{\link{glance.phyDat}}, \code{\link{dna2codon}},
-#' \code{\link{read.dna}}, \code{\link{read.aa}}, \code{\link{read.nexus.data}}
+#' \code{\link[ape]{read.dna}}, \code{\link[ape]{read.nexus.data}}
 #' and the chapter 1 in the \code{vignette("AdvancedFeatures",
 #' package="phangorn")} and the example of \code{\link{pmlMix}} for the use of
 #' \code{\link{allSitePattern}}.
@@ -98,12 +98,10 @@ cbind.phyDat <- function(..., gaps="-", compress=TRUE){
   if (n == 1) return(x[[1]])
 
   types <- sapply(x, function(x)attr(x, "type"))
-# if(length(unique(types))>1) stop("All alignments need to have the same type!")
-  #  type <- attr(x[[1]], "type")
+  if(any(types!=types[1]))stop("Alignments must have same type!")
   nr <- numeric(n)
   ATTR <- attributes(x[[1]])
   nr[1] <- sum(attr(x[[1]], "weight"))
-  #  levels <- attr(x[[1]], "levels")
   allLevels <- attr(x[[1]], "allLevels")
   gapsInd <- match(gaps, allLevels)
   snames <- vector("list", n)
@@ -111,7 +109,6 @@ cbind.phyDat <- function(..., gaps="-", compress=TRUE){
   wvec <- numeric(n+1)
   objNames <- as.character(object)
   if(any(duplicated(objNames))) objNames <- paste0(objNames, 1:n)
-  #  tmp <- as.character(x[[1]])
 
   for(i in 1:n){
     snames[[i]] <- names(x[[i]])
@@ -166,6 +163,33 @@ cbind.phyDat <- function(..., gaps="-", compress=TRUE){
 # @rdname phyDat
 #' @export c.phyDat
 #' @export
+rbind.phyDat <- function(...){
+  x <- list(...)
+  types <- sapply(x, function(x)attr(x, "type"))
+  l <- sapply(x, function(x)sum(attr(x, "weight")))
+  if(any(l!=l[1]))stop("Alignments have different # of characters!")
+  if(any(types!=types[1]))stop("Alignments must have same type!")
+  nam <- lapply(x, names) |> unlist()
+  if(any(duplicated(nam)))stop("Duplicated names!")
+  m <- lengths(x)
+  mcs <- c(0, cumsum(m))
+  res <- matrix(NA_character_, sum(m), l[1], dimnames=list(nam, NULL))
+  for(i in seq_along(x)){
+    res[(mcs[i]+1):mcs[i+1], ] <- as.character(x[[i]])
+  }
+  if(types[1]=="USER"){
+    contrast <- attr(x[[1]], "contrast")
+    dimnames(contrast) <- list(attr(x[[1]], "allLevels"),
+                               attr(x[[1]], "levels"))
+    return(phyDat(res, type="USER", contrast=contrast))
+  }
+  phyDat(res, type=types[1])
+}
+
+
+# @rdname phyDat
+#' @export c.phyDat
+#' @export
 c.phyDat <- cbind.phyDat
 
 
@@ -179,12 +203,26 @@ compress.phyDat <- function(data){
   pos <- which(!duplicated(index))
   weight <- tapply(attrib$weight, index, sum)
   names(weight) <- NULL
-  attrib$weight <- weight
+  attrib$weight <- as.vector(weight)
   if(is.null(attrib$index)) attrib$index <-index
   else attrib$index <- index[attrib$index]
   for(i in seq_len(length(data))) data[[i]] <- data[[i]][pos]
   attributes(data) <- attrib
   attr(data, "class") <- "phyDat"
+  data
+}
+
+
+
+uncompress.phyDat <- function(data){
+  attrib <- attributes(data)
+  stopifnot(all.equal(sum(attrib$weight), length(attrib$index)))
+  for(i in seq_along(data))
+     data[[i]] <- data[[i]][attrib$index]
+  attrib$nr <- length(attrib$index)
+  attrib$index <- seq_along(attrib$index)
+  attrib$weight <- rep(1, attrib$nr)
+  attributes(data) <- attrib
   data
 }
 
@@ -444,7 +482,6 @@ allSitePattern <- function(n, levels=NULL, names=NULL, type="DNA", code=1){
 }
 
 
-##constSitePattern <- function(n, levels=c("a", "c", "g", "t"), names=NULL){
 constSitePattern <- function(n, names=NULL, type="DNA", levels=NULL){
   if(type=="DNA"){
     levels <- c("a", "c", "g", "t")
@@ -493,9 +530,9 @@ constSitePattern <- function(n, names=NULL, type="DNA", levels=NULL){
 #'
 #' Felsenstein, J. (1993) Phylip (Phylogeny Inference Package) version 3.5c.
 #' Department of Genetics, University of Washington.
-#' \url{https://evolution.genetics.washington.edu/phylip/phylip.html}
+#' \url{https://phylipweb.github.io/phylip/}
 #' @keywords IO
-#' @export read.aa
+#' @noRd
 read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
                      comment.char = "#", seq.names = NULL){
   getTaxaNames <- function(x) {
@@ -523,10 +560,10 @@ read.aa <- function (file, format = "interleaved", skip = 0, nlines = 0,
     oop <- options(warn = -1)
     fl.num <- as.numeric(unlist(strsplit(gsub("^ +", "", fl), " +")))
     options(oop)
-    if (all(is.na(fl.num)))
+    if (all(is.na(fl.num))  || length(fl.num) != 2)
       stop("the first line of the file must contain the dimensions of the data")
-    if (length(fl.num) != 2)
-      stop("the first line of the file must contain TWO numbers")
+#  if (length(fl.num) != 2)
+#    stop("the first line of the file must contain the dimensions of the data")
     else {
       n <- fl.num[1]
       s <- fl.num[2]

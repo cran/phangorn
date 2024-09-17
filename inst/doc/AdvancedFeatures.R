@@ -51,7 +51,7 @@ fdir <- system.file("extdata/trees", package = "phangorn")
 hiv_2_nef <- read.phyDat(file.path(fdir, "seqfile.txt"), format="sequential")
 tree <- read.tree(file.path(fdir, "tree.txt"))
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 load("AF.RData")
 
 ## ----codonTest, eval=FALSE----------------------------------------------------

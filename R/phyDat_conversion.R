@@ -15,7 +15,7 @@
 #' @aliases
 #' as.phyDat.character as.phyDat.data.frame as.phyDat.matrix
 #' as.MultipleAlignment as.MultipleAlignment.phyDat
-#' acgt2ry phyDat2MultipleAlignment
+#' as.StringSet as.StringSet.phyDat acgt2ry phyDat2MultipleAlignment
 #' @param data An object containing sequences.
 #' @param x An object containing sequences.
 #' @param obj as object of class phyDat
@@ -28,9 +28,9 @@
 #' @param ... further arguments passed to or from other methods.
 #' @return The functions return an object of class \code{phyDat}.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso [DNAbin()], [as.DNAbin()],
+#' @seealso \code{\link[ape]{DNAbin}}, \code{\link[ape]{as.DNAbin}},
 #' \code{\link{baseFreq}}, \code{\link{glance.phyDat}},
-#' \code{\link{read.dna}}, \code{\link{read.aa}}, \code{\link{read.nexus.data}}
+#' \code{\link[ape]{read.dna}}, \code{\link[ape]{read.nexus.data}}
 #' and the chapter 1 in the \code{vignette("phangorn-specials",
 #' package="phangorn")} and the example of \code{\link{pmlMix}} for the use of
 #' \code{allSitePattern}
@@ -87,6 +87,11 @@ as.phyDat.factor <- function(x, ...){
 #' @export
 as.phyDat.DNAbin <- function(x, ...) phyDat.DNA(x, ...)
 
+#' @rdname as.phyDat
+#' @method as.phyDat AAbin
+#' @export
+as.phyDat.AAbin <- function(x, ...) phyDat.AA(x, ...)
+
 
 #' @rdname as.phyDat
 #' @method as.phyDat alignment
@@ -132,6 +137,47 @@ as.phyDat.MultipleAlignment <- function(x, ...){
     if(inherits(x, "AAMultipleAlignment"))
       res <- phyDat.AA(Biostrings::as.matrix(x))
     return(res)
+  }
+  return(NULL)
+}
+
+
+#' @rdname as.phyDat
+#' @method as.phyDat AAStringSet
+#' @export
+as.phyDat.AAStringSet <- function(x, ...){
+  as.AAbin(x, ...)  |> as.phyDat()
+}
+
+
+#' @rdname as.phyDat
+#' @method as.phyDat DNAStringSet
+#' @export
+as.phyDat.DNAStringSet <- function(x, ...){
+  as.DNAbin(x, ...)  |> as.phyDat()
+}
+
+
+#' @rdname as.phyDat
+#' @export
+as.StringSet <- function (x, ...){
+  if (inherits(x, "StringSet")) return(x)
+  UseMethod("as.StringSet")
+}
+
+
+
+#' @rdname as.phyDat
+#' @export
+as.StringSet.phyDat <- function(x, ...){
+  if (requireNamespace("Biostrings")){
+    z <- as.character(x)
+    type <- attr(x, "type")
+    seq <- switch(type,
+                  DNA = tolower(apply(z, 1, paste, collapse="")),
+                  AA = toupper(apply(z, 1, paste, collapse="")))
+    if(type=="DNA") return(Biostrings::DNAStringSet(seq))
+    if(type=="AA") return(Biostrings::AAStringSet(seq))
   }
   return(NULL)
 }

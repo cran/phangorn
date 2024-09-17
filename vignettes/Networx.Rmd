@@ -87,7 +87,7 @@ plot(tree2, show.node.label=TRUE)
 
 Consensus networks, on the other hand, provide primarily information about support values corresponding to a split, but no information about the actual difference between the taxon bipartitions defined by that split. For example, one may be interested how the alternative support values correspond with the actual genetic distance between the involved taxa.
 Given a distance matrix, we can estimate edge weights using non-negative Least-Squares, and plot them onto the consensusNet splits graph. 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 cnet <- nnls.networx(cnet, dm)
 par("mar" = rep(1, 4))
 plot(cnet, show.edge.label=TRUE)
@@ -103,4 +103,5 @@ The functions `read.nexus.networx` and `write.nexus.networx` can read and write 
 ```{r, eval=TRUE}
 sessionInfo()
 ```
+
 ## References

@@ -64,14 +64,14 @@ parsimony(c(treeRA, treeSPR), primates)
 ## ----mt, echo=TRUE, eval=FALSE------------------------------------------------
 #  mt <- modelTest(primates)
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 load("Trees.RData")
 
 ## ----mt_selected, echo=TRUE, eval=FALSE---------------------------------------
 #  mt <- modelTest(primates, model=c("JC", "F81", "K80", "HKY", "SYM", "GTR"),
 #                  control = pml.control(trace = 0))
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 library(knitr)
 kable(mt, digits=2)
 
@@ -135,14 +135,12 @@ dates <- setNames(tmp$numdate_given, tmp$name)
 head(dates)
 
 ## ----tipdated_fit-------------------------------------------------------------
-fit_td <- pml_bb(H3N2, model="GTR+G(4)", method="tipdated", tip.dates=dates, 
+fit_td <- pml_bb(H3N2, model="HKY+I", method="tipdated", tip.dates=dates, 
                rearrangement="NNI", control = pml.control(trace = 0))
+fit_td
 
 ## ----tipdated_plot------------------------------------------------------------
-tree_td <- fit_td$tree
-root_time <- max(dates) - max(node.depth.edgelength(tree_td))
-plot(tree_td, show.tip.label = FALSE)
-axisPhylo(root.time = root_time, backward = FALSE)
+plot(fit_td, align.tip.label=TRUE)
 
 ## ----sessionInfo, echo=FALSE--------------------------------------------------
 sessionInfo()

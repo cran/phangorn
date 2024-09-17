@@ -30,7 +30,7 @@
 #' assumes that different co-variables are tab delimited and the bipartition
 #' are separated with white-space. Comments in square brackets are ignored.
 #' @author Klaus Schliep \email{klaus.schliep@@gmail.com}
-#' @seealso \code{\link{prop.part}}, \code{\link{lento}},
+#' @seealso \code{\link[ape]{prop.part}}, \code{\link{lento}},
 #' \code{\link{as.splits}}, \code{\link{as.networx}}
 #' @keywords cluster
 #' @examples
@@ -64,6 +64,7 @@ read.nexus.splits <- function(file) {
   spEnd <- spEnd[spEnd > sp][1]
   dims <- grep("DIMENSION", X, ignore.case = TRUE)
   cyc <- grep("CYCLE", X, ignore.case = TRUE)
+  fcyc <- FALSE
   matr <- grep("MATRIX", X, ignore.case = TRUE)
   format <- grep("FORMAT", X, ignore.case = TRUE)
   start <- matr[matr > sp][1] + 1
@@ -113,13 +114,14 @@ read.nexus.splits <- function(file) {
     tmp <- gsub("CYCLE", "", tmp, ignore.case = TRUE)
     tmp <- sub("\\s+", "", tmp)
     cyc <- as.integer(na.omit(as.numeric(strsplit(tmp, " ")[[1]])))
+    fcyc <- TRUE
   }
   attr(res, "labels") <- x
   if (fwei) attr(res, "weights") <- weights
   if (fint) attr(res, "intervals") <- intervals
   if (fcon) attr(res, "confidences") <- confidences
   if (flab) attr(res, "splitlabels") <- labels
-  attr(res, "cycle") <- cyc
+  if (fcyc) attr(res, "cycle") <- cyc
   class(res) <- "splits"
   res
 }

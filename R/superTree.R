@@ -1,7 +1,7 @@
 tree2phyDat <- function(trees) {
   # some minor error checking
   if (!inherits(trees, "multiPhylo"))
-    stop("trees must be object of class 'multiPhylo.'")
+    stop("trees must be of class multiPhylo")
 
   labels <- lapply(trees, function(x) sort(x$tip.label))
   ulabels <- unique(labels)
@@ -147,9 +147,9 @@ dist.superTree <- function(tree, trace = 0, fun, start = NULL,
 #' bs <- bootstrap.phyDat(Laurasiatherian,
 #'                        FUN = function(x) upgma(dist.hamming(x)), bs=50)
 #'
-#' mrp_st <- superTree(bs)
+#' mrp_st <- superTree(bs, minit = 25, maxit=50)
 #' plot(mrp_st)
-#' \dontrun{
+#' \donttest{
 #' rf_st <- superTree(bs, method = "RF")
 #' spr_st <- superTree(bs, method = "SPR")
 #' }
@@ -180,6 +180,7 @@ superTree <- function(tree, method = "MRP", rooted = FALSE, trace = 0,
     tree <- tree_tmp
   }
 
+# start <- allCompat(tree) ??
 
   if (method != "MRP") rooted <- FALSE
   if (!rooted) tree <- unroot(tree)
@@ -192,15 +193,15 @@ superTree <- function(tree, method = "MRP", rooted = FALSE, trace = 0,
     }
     res <- my.supertree(tree, trace = trace, ...)
     if (rooted) {
-      if (inherits(res, "multiPhylo")) {
-        res <- lapply(res, root, "ZZZ")
-        res <- lapply(res, drop.tip, "ZZZ")
-        class(res) <- "multiPhylo"
-      }
-      else {
+#      if (inherits(res, "multiPhylo")) {
+#        res <- lapply(res, root, "ZZZ")
+#        res <- lapply(res, drop.tip, "ZZZ")
+#        class(res) <- "multiPhylo"
+#      }
+#      else {
         res <- root(res, "ZZZ")
         res <- drop.tip(res, "ZZZ")
-      }
+#      }
     }
     if (inherits(res, "multiPhylo")) {
       fun <- function(x) {

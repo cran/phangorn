@@ -8,7 +8,7 @@ knitr::knit_hooks$set(small.mar=function(before, options, envir){
    if (before && options$fig.show!='none') par(mar=c(.5,.5,.5,.5))
 })
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  install.packages("phangorn", dependencies=TRUE)
 #  # install latest development version needs devtools
 #  install.packages("devtools", dependencies=TRUE)
@@ -62,7 +62,7 @@ plot(Nnet,"2D")
 # plot(Nnet,"2D")
 
 
-## ---- fig.width=7, fig.height=4, small.mar=TRUE-------------------------------
+## ----fig.width=7, fig.height=4, small.mar=TRUE--------------------------------
 # create a vector of labels for the network corresponding to edges in the tree
 edge.lab <- createLabel(Nnet, raxml.tree, raxml.tree$edge[,2], "edge")
 # could be also 1:27 instead of raxml.tree$edge[,2]
@@ -84,7 +84,7 @@ x <- plot(Nnet, edge.label = edge.lab, show.edge.label = T, "2D",
 # also contains the colors for the edges.
 
 
-## ---- small.mar=TRUE----------------------------------------------------------
+## ----small.mar=TRUE-----------------------------------------------------------
 # the scaler argument multiplies the confidence values. This is useful to switch
 # confidences values between total, percentage or ratios.   
 x <- addConfidences(Nnet,raxml.tree, scaler = .01)
@@ -104,7 +104,7 @@ out.x <- plot(x,"2D",show.edge.label=TRUE, split.color=split.col,
 ## or we can also export the splits alone (for usage in software other than SplitsTree)
 # write.nexus.splits(as.splits(out.x),"woodmouse.splits.support.nxs")
 
-## ---- small.mar=TRUE----------------------------------------------------------
+## ----small.mar=TRUE-----------------------------------------------------------
 y <- addConfidences(Nnet, as.splits(raxml.bootstrap))
 edge.col <- createLabel(y, raxml.tree, label="black", "edge", nomatch="grey")
 
@@ -113,7 +113,7 @@ y <- plot(y,"2D",show.edge.label=TRUE, edge.color=edge.col)
 ## Write to SplitsTree for viewing
 # write.nexus.networx(y,"NN.with.bs.support.nxs")
 
-## ---- small.mar=TRUE----------------------------------------------------------
+## ----small.mar=TRUE-----------------------------------------------------------
 cnet <- consensusNet(raxml.bootstrap,prob=0.10)
 edge.col <- createLabel(cnet, Nnet, label="black", "edge", nomatch="grey")
 cnet <- plot(cnet, "2D", show.edge.label = TRUE, edge.color=edge.col)
@@ -127,7 +127,7 @@ plot(obj,"2D",show.edge.label=T, edge.color=edge.col, col.edge.label = "blue")
 ## Write to SplitsTree for viewing
 # write.nexus.networx(obj,"Nnet.with.ML.Cnet.Bootstrap.nxs")
 
-## ---- fig.width=7, fig.height=6-----------------------------------------------
+## ----fig.width=7, fig.height=6------------------------------------------------
 Nnet <- read.nexus.networx(file.path(fdir,"RAxML_distances.Wang.nxs"))
 raxml.tree <- read.tree(file.path(fdir,"RAxML_bestTree.Wang.out")) |> unroot()
 raxml.bootstrap <- read.tree(file.path(fdir,"RAxML_bootstrap.Wang.out"))
@@ -188,7 +188,7 @@ ncAI <- plotBS(midpoint(ncAI), ncAI_boot, "phylogram", p=0, main = "ncAI")
 all_data <- plotBS(midpoint(all_data), all_data_boot, "phylogram", p=0, 
                    main = "All data")
 
-## ---- small.mar=TRUE----------------------------------------------------------
+## ----small.mar=TRUE-----------------------------------------------------------
 par(mfrow=c(1,1))
 cn <- consensusNet(c(YCh, mtG, ncAI))
 cn <- addConfidences(cn, YCh_boot) |> addConfidences(mtG_boot, add=TRUE) |> 

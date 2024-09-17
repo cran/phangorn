@@ -1,3 +1,4 @@
+#' @rdname pml
 #' @export
 logLik.pml <- function(object, ...) {
   res <- object$logLik
@@ -28,7 +29,7 @@ BIC.pml <- function(object, ...) {
   res
 }
 
-
+#' @rdname pml
 #' @export
 anova.pml <- function(object, ...) {
   X <- c(list(object), list(...))
@@ -47,6 +48,7 @@ anova.pml <- function(object, ...) {
 }
 
 
+#' @rdname pml
 #' @export
 vcov.pml <- function(object, ...) {
   FI <- score(object, FALSE)[[2]]
@@ -59,17 +61,7 @@ vcov.pml <- function(object, ...) {
   res
 }
 
-
-#' @export
-plot.pml <- function(x, type="phylogram", ...){
-  type <- match.arg(type, c("phylogram","cladogram", "fan", "unrooted",
-                            "radial", "tidy"))
-  plot.phylo(x$tree, type=type, ...)
-  if(is.rooted(x$tree) & (type %in% c("phylogram","cladogram"))) axisPhylo()
-  else add.scale.bar()
-}
-
-
+#' @rdname pml
 #' @export
 print.pml <- function(x, ...) {
   model <- guess_model(x)
@@ -84,10 +76,24 @@ print.pml <- function(x, ...) {
   cat("unconstrained loglikelihood:", ll0, "\n")
   if (x$inv > 0) cat("Proportion of invariant sites:", x$inv, "\n")
   if (x$k > 1) {
-    cat("Discrete gamma model\n")
+    cat("Model of rate heterogeneity: ")
+    if(x$site.rate=="gamma") cat("Discrete gamma model\n")
+    if(x$site.rate=="free_rate") cat("Free rate model\n")
+    if(x$site.rate=="gamma_quadrature") cat("Discrete gamma model (quadrature) \n")
+    if(x$site.rate=="gamma_unbiased") cat("Discrete gamma model (phangorn) \n")
     cat("Number of rate categories:", x$k, "\n")
-    cat("Shape parameter:", x$shape, "\n")
+    if(x$site.rate!="free_rate") cat("Shape parameter:", x$shape, "\n")
+    rate <- x$g
+    prop <- x$w
+    if (x$inv > 0) {
+      rate <- c(0, rate)
+      prop <- c(x$inv, prop)
+    }
+    rw <- cbind(Rate=rate, Proportion=prop)
+    row.names(rw) <- as.character(seq_len(nrow(rw)))
+    print(rw)
   }
+  if(!is.null(x$method) && x$method == "tipdated") cat("\nRate:", x$rate, "\n")
   if (type == "AA") cat("Rate matrix:", x$model, "\n")
   if (type == "DNA") {
     cat("\nRate matrix:\n")
@@ -116,4 +122,30 @@ print.pml <- function(x, ...) {
     names(bf) <- levels
     print(bf) #cat(bf, "\n")
   }
+  if(!isTRUE(all.equal(x$rate, 1))) cat("\nRate:", x$rate, "\n")
+}
+
+
+#' Export pml objects
+#'
+#' \code{write.pml} writes out the ML tree and the model parameters.
+#'
+#' @param x an object of class ancestral.
+#' @param file a file name. File endings are added.
+#' @param ... Further arguments passed to or from other methods.
+#' @returns \code{write.pml}  returns the input x invisibly.
+#' @seealso \code{\link{ancestral.pml}}, \code{\link{plotAnc}}
+#' @examples
+#' data(woodmouse)
+#' fit <- pml_bb(woodmouse, "JC", rearrangement = "none")
+#' write.pml(fit, "woodmouse")
+#' unlink(c("woodmouse_pml.txt", "woodmouse_tree.nwk"))
+#' @export
+write.pml <- function(x, file=tempfile(), ...){
+  write.tree(x$tree, file=paste0(file, "_tree.nwk"))
+  if(!is.null(x$bs)) write.tree(x$bs, file=paste0(file, "_bs.nwk"))
+  sink(paste0(file, "_pml.txt"))
+  print.pml(x)
+  sink()
+  invisible(x)
 }
